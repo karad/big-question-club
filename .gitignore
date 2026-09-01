@@ -141,3 +141,25 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+
+# Local editor workspace files
+*.code-workspace
+
+# codex
+
+.agents/*
+.specify/*
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+*.tmp
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
