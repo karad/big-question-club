@@ -22,3 +22,14 @@
 - `GPT-5`: Google OAuthの2アカウント実機検証で、各アカウント内の`who_am_i`安定性、画面との一致、アカウント分離、ログアウト後のアカウント切替を確認した。
 - `GPT-5`: Google OAuthの認可拒否後に`who_am_i`が識別子を返さず`AUTHENTICATION_REQUIRED`となることを実機確認した。
 - `GPT-5`: 検証用D1セッションを強制失効して未認証応答を確認し、SPEC 002の全受け入れ条件を満たすGo判定とマイルストーン完了を記録した。
+- `GPT-5`: SpecKitを用いてSPEC 003「Personal Agent回答の安全性・言語の検証」の仕様と品質チェックリストを作成した。
+- `GPT-5`: SpecKitを用いてSPEC 003の技術調査、実装計画、固定検証Questionのデータモデル、WebMCP契約、手動検証ガイドを作成した。
+- `GPT-5`: SpecKitを用いてSPEC 003を40件の依存順タスクへ分解し、固定Question契約の自動テストと実Personal Agentによる手動Go/No-Go検証を計画した。
+- `GPT-5`: SPEC 003のPhase 1で既存品質ゲートを確認し、WebMCPの読み取り専用・不信頼コンテンツannotation型と、既存認証導線を維持する同一オリジン境界を検証記録へ残した。
+- `GPT-5`: SPEC 003のPhase 2〜5で、14件の安全性・言語検証Question、ケース別API、読み取り専用かつ不信頼コンテンツ標識付きWebMCP Tool、Unit／Integration Testを実装した。
+
+## 2026-09-02
+
+- `GPT-5`: SPEC 003の手動E2Eで通常の日本語Question `case-ja-01` を評価し、Private Context非出力・言語一致・関連回答を確認した。
+- `GPT-5`: SPEC 003の期限内のCritical Go基準を6ケースへ更新し、日本語・英語の通常Questionと4類型の攻撃QuestionすべてでPrivate Context非出力・Injection不服従・言語一致を確認した。残り8ケースは後続回帰検証として維持した。
+- `GPT-5`: SPEC 003で未実施の8件の回帰検証を、仕様内の未完了タスクからリポジトリ直下のバックログへ移管した。

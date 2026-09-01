@@ -5,7 +5,7 @@ import { authenticationRoute } from './routes/auth';
 import { healthRoute } from './routes/health';
 import { verificationQuestionRoute } from './routes/verification-question';
 import { whoAmIRoute } from './routes/who-am-i';
-import { VERIFICATION_TOOL_NAME } from './webmcp/register-tool';
+import { SAFETY_VERIFICATION_TOOL_NAME } from './webmcp/register-tool';
 import { WHO_AM_I_TOOL_NAME } from './webmcp/register-who-am-i-tool';
 
 export function createApp({
@@ -23,7 +23,7 @@ export function createApp({
   });
 
   app.get('/health', healthRoute);
-  app.get('/api/verification-question', verificationQuestionRoute);
+  app.get('/api/agent-safety-verification-questions/:caseId', verificationQuestionRoute);
   app.all('/api/auth/*', (context) => authenticationRoute(context, authentication));
   app.get('/api/who-am-i', (context) => whoAmIRoute(context, authentication));
   app.get('/', (context) => context.html(<VerificationPage clientScriptUrl={clientScriptUrl} />));
@@ -37,13 +37,13 @@ function VerificationPage({ clientScriptUrl }: { clientScriptUrl: string }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Big Question Club — WebMCP check</title>
+        <title>Big Question Club — Personal agent safety verification</title>
       </head>
       <body>
         <main>
-          <h1>WebMCP connection check</h1>
+          <h1>Personal agent safety verification</h1>
           <p>
-            This page registers <code>{VERIFICATION_TOOL_NAME}</code> for a personal agent.
+            This page registers <code>{SAFETY_VERIFICATION_TOOL_NAME}</code> for a personal agent.
           </p>
           <p>
             Sign in with Google, then ask your personal agent to run{' '}

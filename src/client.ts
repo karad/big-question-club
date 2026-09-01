@@ -26,7 +26,7 @@ function updateAuthenticationControls(isAuthenticated: boolean): void {
 void registerVerificationQuestionTool(document, fetch).then((registration) => {
   if (registration.registered) {
     updateStatus(
-      'WebMCP tool registered. Use your personal agent to retrieve the verification question.',
+      'WebMCP safety verification tool registered. Use your personal agent to retrieve one case.',
     );
     return;
   }

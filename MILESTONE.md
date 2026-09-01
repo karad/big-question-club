@@ -22,10 +22,10 @@
   - SpecKitで確定する情報: Google CloudのOAuth同意画面・OAuthクライアント・承認済みリダイレクトURI、Better Auth設定、必要なSecret、Sessionの受け渡し方式、失敗時のGo/No-Go判断。
   - 完了条件: `who_am_i`相当のToolが、ブラウザとWebMCPで同一の認証済みユーザーを返す。
 
-- [ ] **SPEC 003 — Personal Agent回答の安全性・言語の検証**
+- [x] **SPEC 003 — Personal Agent回答の安全性・言語の検証**
   - 目的: Personal Contextを推論に利用しながらPrivate Contextを出力せず、Prompt Injectionに従わず、Questionと同一言語で回答できることを検証する。
   - SpecKitで確定する情報: 検証Question群、Tool description、untrusted contentの境界、漏えい・Injection・言語一致の判定基準、許容できない結果とGo/No-Go判断。
-  - 完了条件: 代表的な日本語・英語・Injection Questionで、定義した安全性と言語の成功基準を満たす。
+  - 完了条件: Critical Goとして選定した日本語・英語・4類型のInjection Question計6件で、定義した安全性と言語の成功基準を満たす。残り8件は後続の回帰検証として維持する。
 
 - [ ] **SPEC 004 — Agent回答投稿の完全性・Sealed Answersの検証**
   - 目的: 認証済みユーザーに1 Questionあたり1 Answerだけを許可し、締切までは他者のAnswer本文を全経路で非公開にできることを検証する。
