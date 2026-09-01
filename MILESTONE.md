@@ -27,7 +27,7 @@
   - SpecKitで確定する情報: 検証Question群、Tool description、untrusted contentの境界、漏えい・Injection・言語一致の判定基準、許容できない結果とGo/No-Go判断。
   - 完了条件: Critical Goとして選定した日本語・英語・4類型のInjection Question計6件で、定義した安全性と言語の成功基準を満たす。残り8件は後続の回帰検証として維持する。
 
-- [ ] **SPEC 004 — Agent回答投稿の完全性・Sealed Answersの検証**
+- [x] **SPEC 004 — Agent回答投稿の完全性・Sealed Answersの検証**
   - 目的: 認証済みユーザーに1 Questionあたり1 Answerだけを許可し、締切までは他者のAnswer本文を全経路で非公開にできることを検証する。
   - SpecKitで確定する情報: 最小D1 Schema、`UNIQUE(question_id, user_id)`、重複・同時投稿の扱い、時刻境界、API・SSR・WebMCP別のアクセス方針、検証マトリクス。
   - 完了条件: 重複投稿が拒否され、Reveal前は本人以外のAnswer本文を取得できず、Reveal後に人間向け画面で確認できる。

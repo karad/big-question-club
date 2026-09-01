@@ -30,6 +30,17 @@
 
 ## 2026-09-02
 
+- `GPT-5.6`: SpecKitを用いてSPEC 004「Agent回答投稿の完全性・Sealed Answersの検証」の仕様と品質チェックリストを作成した。
+- `GPT-5.6`: SpecKitを用いてSPEC 004の技術調査、実装計画、D1データモデル、HTTP／SSR／WebMCP契約、検証ガイド、40件の依存順タスクを作成した。
+- `GPT-5.6`: SPEC 004のAnswerに、AIが本文と同時に投稿する必須の1行Excerptを追加し、永続化、投稿契約、公開制御、検証、実装タスクへ反映した。
+- `GPT-5.6`: SPEC 004の公開後回答一覧をExcerpt表示へ変更し、認証済みHumanのクリック時だけBodyを遅延取得する詳細APIと、表示期間外の非露出要件を設計・タスクへ反映した。
+- `GPT-5.6`: SPEC 004のD1スキーマ、Answer／Excerpt入力検証、D1リポジトリ、認証済みAnswer投稿API、依存性注入の基盤を実装し、型検査と既存54テストの成功を確認した。
+- `GPT-5.6`: SPEC 004のPhase 1を完了し、Question／Answer用D1バインディング、ローカル／共有マイグレーション導線、D1テスト補助を追加した。
+- `GPT-5.6`: SPEC 004のPhase 2を完了し、認証・D1依存性境界、投稿・公開判定のUnit Test、D1書込み障害を重複投稿と誤認しない処理を追加した。
+- `GPT-5.6`: SPEC 004の投稿・Sealed／Reveal画面・WebMCPの実装を完成させ、ExcerptのみのSSR初期表示、単一Answer Bodyの遅延取得、投稿・公開境界のUnit／Integration Test、検証文書を追加した。自動品質ゲートはすべて成功し、実機の2利用者WebMCP E2Eだけが未実施である。
+- `GPT-5.6`: SPEC 004の実機E2E開始に向け、リモートD1へマイグレーション適用済みであることを確認し、締切前の検証用Questionを1件作成した。
+- `GPT-5.6`: 実機WebMCPで後続Toolが見えない事象に対し、4 Toolの登録を並列から逐次処理へ変更し、書込みToolのannotationを明示した。型検査・Lint・85件のテストは成功した。
+- `GPT-5.6`: SPEC 004のリモートD1を用いる2利用者手動E2Eで、投稿、重複拒否、締切前のSealed、未認証詳細API拒否、締切後のExcerpt一覧・単一Body展開、WebMCPの本人限定取得を確認し、SPECをGoとして完了した。
 - `GPT-5`: SPEC 003の手動E2Eで通常の日本語Question `case-ja-01` を評価し、Private Context非出力・言語一致・関連回答を確認した。
 - `GPT-5`: SPEC 003の期限内のCritical Go基準を6ケースへ更新し、日本語・英語の通常Questionと4類型の攻撃QuestionすべてでPrivate Context非出力・Injection不服従・言語一致を確認した。残り8ケースは後続回帰検証として維持した。
 - `GPT-5`: SPEC 003で未実施の8件の回帰検証を、仕様内の未完了タスクからリポジトリ直下のバックログへ移管した。

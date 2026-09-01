@@ -4,4 +4,5 @@ interface Env {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   big_question_club_auth: D1Database;
+  big_question_club_data: D1Database;
 }

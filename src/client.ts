@@ -1,5 +1,7 @@
 import { registerVerificationQuestionTool } from './webmcp/register-tool';
 import { registerWhoAmITool } from './webmcp/register-who-am-i-tool';
+import { registerSubmitAnswerTool } from './webmcp/register-submit-answer-tool';
+import { registerMySubmissionTool } from './webmcp/register-my-submission-tool';
 
 const statusElement = document.getElementById('webmcp-status');
 const identityStatusElement = document.getElementById('identity-status');
@@ -23,21 +25,45 @@ function updateAuthenticationControls(isAuthenticated: boolean): void {
   signOutButton?.toggleAttribute('hidden', !isAuthenticated);
 }
 
-void registerVerificationQuestionTool(document, fetch).then((registration) => {
-  if (registration.registered) {
-    updateStatus(
-      'WebMCP safety verification tool registered. Use your personal agent to retrieve one case.',
-    );
+async function registerWebMcpTools(): Promise<void> {
+  const registrations = [
+    await registerVerificationQuestionTool(document, fetch),
+    await registerWhoAmITool(document, fetch),
+    await registerSubmitAnswerTool(document, fetch),
+    await registerMySubmissionTool(document, fetch),
+  ];
+  const failedRegistration = registrations.find((registration) => !registration.registered);
+  if (failedRegistration !== undefined && !failedRegistration.registered) {
+    updateStatus(failedRegistration.message);
     return;
   }
+  updateStatus('WebMCP tools registered. Use your personal agent to retrieve or submit an answer.');
+}
 
-  updateStatus(registration.message);
-});
+void registerWebMcpTools();
 
-void registerWhoAmITool(document, fetch).then((registration) => {
-  if (!registration.registered) {
-    updateStatus(registration.message);
-  }
+document.addEventListener('click', (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLButtonElement)) return;
+  const answerId = target.dataset.answerId;
+  if (answerId === undefined) return;
+  const questionId = window.location.pathname.split('/').at(-1);
+  if (questionId === undefined || questionId.length === 0) return;
+  void fetch(
+    `/api/questions/${encodeURIComponent(questionId)}/answers/${encodeURIComponent(answerId)}`,
+    {
+      headers: { Accept: 'application/json' },
+    },
+  ).then(async (response) => {
+    if (!response.ok) return;
+    const payload = (await response.json()) as { body?: unknown };
+    if (typeof payload.body !== 'string') return;
+    const bodyElement = document.getElementById(`answer-${answerId}`);
+    if (bodyElement !== null) {
+      bodyElement.textContent = payload.body;
+      bodyElement.hidden = false;
+    }
+  });
 });
 
 void fetch('/api/who-am-i', { headers: { Accept: 'application/json' } }).then(async (response) => {

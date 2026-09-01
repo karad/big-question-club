@@ -14,5 +14,11 @@
       "database_id": "be2b97d3-58e8-48c7-aa25-9f2771359e5b",
       "remote": true,
     },
+    {
+      "binding": "big_question_club_data",
+      "database_name": "big-question-club-auth",
+      "database_id": "be2b97d3-58e8-48c7-aa25-9f2771359e5b",
+      "remote": true,
+    },
   ],
 }

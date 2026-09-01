@@ -7,13 +7,25 @@ import { verificationQuestionRoute } from './routes/verification-question';
 import { whoAmIRoute } from './routes/who-am-i';
 import { SAFETY_VERIFICATION_TOOL_NAME } from './webmcp/register-tool';
 import { WHO_AM_I_TOOL_NAME } from './webmcp/register-who-am-i-tool';
+import type { QuestionRepository } from './repositories/question-repository';
+import { submitAnswerRoute } from './routes/submit-answer';
+import {
+  answerDetailRoute,
+  mySubmissionRoute,
+  questionPageRoute,
+  questionRoute,
+} from './routes/question';
 
 export function createApp({
   authentication,
   clientScriptUrl = '/client.js',
+  repository,
+  now,
 }: {
   authentication?: Authentication;
   clientScriptUrl?: string;
+  repository?: QuestionRepository;
+  now?: () => number;
 } = {}): Hono {
   const app = new Hono();
 
@@ -26,6 +38,21 @@ export function createApp({
   app.get('/api/agent-safety-verification-questions/:caseId', verificationQuestionRoute);
   app.all('/api/auth/*', (context) => authenticationRoute(context, authentication));
   app.get('/api/who-am-i', (context) => whoAmIRoute(context, authentication));
+  app.post('/api/questions/:questionId/answers', (context) =>
+    submitAnswerRoute(context, authentication, repository, now ?? Date.now),
+  );
+  app.get('/api/questions/:questionId', (context) =>
+    questionRoute(context, authentication, repository),
+  );
+  app.get('/api/questions/:questionId/my-submission', (context) =>
+    mySubmissionRoute(context, authentication, repository),
+  );
+  app.get('/api/questions/:questionId/answers/:answerId', (context) =>
+    answerDetailRoute(context, authentication, repository, now ?? Date.now),
+  );
+  app.get('/questions/:questionId', (context) =>
+    questionPageRoute(context, authentication, repository, now ?? Date.now, clientScriptUrl),
+  );
   app.get('/', (context) => context.html(<VerificationPage clientScriptUrl={clientScriptUrl} />));
 
   return app;

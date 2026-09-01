@@ -7,6 +7,10 @@ export type Authentication = {
   handle: (request: Request) => Promise<Response>;
 };
 
+export type ApplicationDatabases = {
+  questions: D1Database;
+};
+
 export async function readCurrentIdentity(
   authentication: Pick<Authentication, 'getSession'> | undefined,
   request: Request,
