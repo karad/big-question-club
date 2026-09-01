@@ -10,6 +10,9 @@ describe('GET /', () => {
     expect(response.status).toBe(200);
     expect(html).toContain('WebMCP connection check');
     expect(html).toContain('get_verification_question');
+    expect(html).toContain('who_am_i');
+    expect(html).toContain('Sign in with Google');
+    expect(html).toContain('Sign out');
     expect(html).toContain('<script type="module" src="/client.js"></script>');
   });
 

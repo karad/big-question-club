@@ -145,6 +145,7 @@ client-dist/
 .wrangler/
 .dev.vars
 .dev.vars.*
+!.dev.vars.example
 
 
 # Local editor workspace files

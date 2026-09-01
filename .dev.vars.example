@@ -1,0 +1,5 @@
+# Copy this file to .dev.vars and replace every placeholder outside version control.
+BETTER_AUTH_URL=http://localhost:5173
+BETTER_AUTH_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=

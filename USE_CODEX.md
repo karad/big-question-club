@@ -10,3 +10,15 @@
 - `GPT-5`: SPEC 001のPhase 2からPhase 5を実装し、固定Question API、WebMCP Tool登録、検証画面、Unit／Integration Test、再現手順を追加した。手動WebMCP E2Eと外部公開が必要なタスクは未完了として記録した。
 - `GPT-5`: WebMCP Tool登録をインラインJavaScript文字列からViteでビルドする`src/client.ts`へ移し、HTMLが静的クライアントアセットを参照する構成へ変更した。
 - `GPT-5`: Chrome DevToolsがTool実行時に実行オプションを省略するケースに対応し、`INVALID_ARGUMENT`の返却をユニットテストで固定した。
+- `GPT-5`: 手動WebMCP E2Eの完了記録を反映し、SPEC 001のT035・T040とマイルストーンを完了に更新した。
+- `GPT-5`: SpecKitを用いてSPEC 002「Google OAuthとWebMCPユーザー識別の検証」の仕様と品質チェックリストを作成した。
+- `GPT-5`: SpecKitを用いてSPEC 002の技術調査、実装計画、認証データモデル、`who_am_i`契約、実機検証ガイドを作成した。
+- `GPT-5`: SpecKitを用いてSPEC 002を40件の依存順タスクへ分解し、認証・WebMCP導線のテストとGo/No-Go検証を計画した。
+- `GPT-5`: Google OAuthとCloudflare D1の実装前準備を、安全なSecret管理とリダイレクトURI登録を含む手順書としてSPEC 002へ追加した。
+- `GPT-5`: SPEC 002のPhase 1でBetter Auth依存関係、Secretのローカルテンプレート、Git除外、認証検証のREADME導線を追加し、D1バインディングを要する作業は事前準備待ちとして保留した。
+- `GPT-5`: SPEC 002の認証基盤、Better AuthのD1スキーマ、`who_am_i` API・WebMCP Tool・UI導線、Unit／Integration Test、Go/No-Go検証記録テンプレートを実装し、実機OAuth検証を保留として記録した。
+- `GPT-5`: Google OAuth実機検証で判明したBetter Auth 1.7.2の`account.issuer`列不足をD1マイグレーションで修正し、同一アカウントの連続10回`who_am_i`確認を完了した。
+- `GPT-5`: OAuth実機検証用に安全なログアウトUIを追加し、ログアウト後に`who_am_i`が識別子を返さず`AUTHENTICATION_REQUIRED`となることを確認した。
+- `GPT-5`: Google OAuthの2アカウント実機検証で、各アカウント内の`who_am_i`安定性、画面との一致、アカウント分離、ログアウト後のアカウント切替を確認した。
+- `GPT-5`: Google OAuthの認可拒否後に`who_am_i`が識別子を返さず`AUTHENTICATION_REQUIRED`となることを実機確認した。
+- `GPT-5`: 検証用D1セッションを強制失効して未認証応答を確認し、SPEC 002の全受け入れ条件を満たすGo判定とマイルストーン完了を記録した。

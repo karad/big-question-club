@@ -3,7 +3,16 @@
   "name": "big-question-club",
   "main": "src/index.tsx",
   "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "not_found_handling": "single-page-application",
   },
+  "d1_databases": [
+    {
+      "binding": "big_question_club_auth",
+      "database_name": "big-question-club-auth",
+      "database_id": "be2b97d3-58e8-48c7-aa25-9f2771359e5b",
+      "remote": true,
+    },
+  ],
 }

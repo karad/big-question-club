@@ -39,3 +39,9 @@ npm run deploy
 ```
 
 For a shared WebMCP validation, configure an active WebMCP Origin Trial for the deployed HTTPS origin. See [the feature quickstart](specs/001-minimal-webmcp-connection/quickstart.md) for the browser and personal-agent verification procedure.
+
+## Google OAuth validation preparation
+
+SPEC 002 adds Google OAuth and a `who_am_i` WebMCP validation tool. Before running its end-to-end validation, follow the [Google OAuth and Cloudflare preparation guide](specs/002-google-oauth-identity/oauth-cloudflare-setup.md).
+
+Copy `.dev.vars.example` to `.dev.vars` for local development. Keep `BETTER_AUTH_SECRET` and `GOOGLE_CLIENT_SECRET` outside version control; set their deployed values with Cloudflare Workers Secrets. The `db:migrate:auth` script is reserved for the authentication migration after the D1 database has been created and bound.

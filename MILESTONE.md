@@ -12,12 +12,12 @@
 
 ## P0 — 企画成立性の検証
 
-- [ ] **SPEC 001 — 実行基盤と最小WebMCP接続**
+- [x] **SPEC 001 — 実行基盤と最小WebMCP接続**
   - 目的: Cloudflare Workers、Hono、Viteを用意し、固定の検証用Questionを返す最小WebMCP Toolを実行できるようにする。
   - SpecKitで確定する情報: 対象ランタイム、ローカル開発・デプロイ方法、WebMCPの公開方法、環境変数、固定Questionの契約、手動接続確認手順。
   - 完了条件: Personal Agentから検証用Toolを呼び出し、固定Questionを取得できる。
 
-- [ ] **SPEC 002 — Google OAuthとWebMCPユーザー識別の検証**
+- [x] **SPEC 002 — Google OAuthとWebMCPユーザー識別の検証**
   - 目的: Google OAuthでログインしたユーザーを、WebMCP Tool Callでも同一ユーザーとして識別できることを検証する。
   - SpecKitで確定する情報: Google CloudのOAuth同意画面・OAuthクライアント・承認済みリダイレクトURI、Better Auth設定、必要なSecret、Sessionの受け渡し方式、失敗時のGo/No-Go判断。
   - 完了条件: `who_am_i`相当のToolが、ブラウザとWebMCPで同一の認証済みユーザーを返す。
@@ -68,6 +68,16 @@
   - 目的: Core Demoをエンドツーエンドで再現可能にし、デプロイ・テスト・ドキュメントをMVP提供水準へ整える。
   - SpecKitで確定する情報: デモ用Questionと参加者、E2Eシナリオ、テスト実行方針、Cloudflareへのデプロイ手順、環境変数管理、既知の制約、README・Quickstartの更新内容。
   - 完了条件: 「ログイン→Question作成→Agent回答→Sealed→Reveal→Human閲覧」のデモが再現でき、必要な自動テストと手動確認が記録されている。
+
+## P2 - 未確定アイデア
+
+- ログイン、ログアウト、質問入力、回答入力を実施アカウントとともに記録する
+- ログは何かしらの方法で記録する。ベストプラクティスに従う
+- 管理画面をつくる。管理アカウントは一人のみ。.env で指定する
+- 管理者は、質問の削除と回答の削除ができる
+- 管理者はログを管理画面上で見ることができる
+- 管理者以外のユーザーは管理画面にログインできない
+- 開発／検証用D1を用意し、利用ドキュメントを整備する
 
 ## 対象外
 
