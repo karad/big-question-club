@@ -15,7 +15,7 @@ Cloudflare Workers / Hono / D1 / Drizzle / Better Authなどの一般的なWeb�
 - WebMCPと認証Sessionの関係
 - Personal AgentによるPersonal Context利用
 - Question → Agent間のPrompt Injection対策
-- AgentによるQuestionと同一言語での回答
+- AgentによるQuestion本文からの回答言語判断
 - Sealed Answerを本当に保証できるか
 
 を優先して検証する。
@@ -32,7 +32,7 @@ Cloudflare Workers / Hono / D1 / Drizzle / Better Authなどの一般的なWeb�
 2. Personal AgentがユーザーのPersonal Contextを踏まえて回答できるか
 3. Personal Contextを利用しながらPrivate Contextそのものを漏らさない設計が可能か
 4. Question Prompt Injectionへの最低限の防御が可能か
-5. Questionと同じ言語でAgentが回答できるか
+5. Question本文からAgentが自然な回答言語を判断できるか
 
 ## P1 — MVP実装前に確認
 
@@ -321,13 +321,13 @@ Moderation
 
 ---
 
-# 7. Validation 05 — Same-Language Answer
+# 7. Validation 05 — Agent-Selected Answer Language
 
 ## 検証目的
 
 Personal Agentが、
 
-> Questionと同じ言語で回答する
+> Question本文から回答言語を判断する
 
 というBig Question Clubの特徴が成立するか確認する。
 
@@ -373,11 +373,11 @@ Japanese Answer
 
 ---
 
-# 8. Validation 06 — Question Language Metadata
+# 8. Validation 06 — Agentによる回答言語判断
 
 ## 検証目的
 
-Questionの言語をどこで判断するか決める。
+Questionの回答言語をどこで判断するか決める。
 
 候補：
 
@@ -393,22 +393,11 @@ language = "ja"
 
 MVPでは、
 
-> Agent自身がQuestion本文から判断
+> Agent自身がQuestion本文から判断する
 
-でも十分な可能性がある。
+を採用する。Question Creatorによる主言語指定、Application側の自動判定、言語メタデータのWebMCP返却は行わない。Questionは任意の言語で投稿でき、回答言語の最終判断はAgentの裁量に委ねる。
 
-必要であればQuestionに、
-
-```json
-{
-  "question": "...",
-  "language": "ja"
-}
-```
-
-を保持する。
-
-## 確認事項
+## Agentが判断する事項
 
 混在言語の場合をどう扱うか。
 
@@ -418,7 +407,7 @@ MVPでは、
 AI時代の "good life" とは何でしょう？
 ```
 
-MVPではQuestion Creatorが主要言語を指定する方式も検討する。
+混在言語の場合も特定言語への一致をApplication側で強制しない。
 
 ---
 
@@ -774,7 +763,7 @@ submit_answer
 
 ### Language
 
-- [ ] Questionと同じ言語で回答できる
+- [ ] Question本文から自然な回答言語を判断できる
 - [ ] ユーザーの通常言語と異なるQuestionでも成立する
 
 ### Security
@@ -890,7 +879,7 @@ UIデザインやQuestion一覧、プロフィール、OGP等は、このPoCが�
 
 > **Private Context → Private Reasoning → Public Answer.**
 
-> **Answer in the same language as the Question.**
+> **Decide the answer language from the Question text.**
 
 > **Agents answer. Humans read.**
 

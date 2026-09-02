@@ -29,11 +29,12 @@
 
 | 確認項目 | 結果 | 記録 |
 | --- | --- | --- |
-| ChromeでToolを1件発見する | 未実施 | 対応Chromeとtesting flagが必要 |
-| Toolを10回連続で呼び出す | 未実施 | Personal Agentが必要 |
-| API障害時にQuestionを返さない | 自動テスト済み | Tool adapterのUnit Testで確認 |
-| 設定不備時にQuestionを返さない | 自動テスト済み | Question契約のUnit Testで確認 |
-| 取消後にQuestionを返さない | 自動テスト済み | Tool adapterのUnit Testで確認 |
+| ChromeでToolを1件発見する | PASS | 2026-09-01にユーザーが手動確認済み（Chromeバージョンは未記録） |
+| Toolを10回連続で呼び出す | PASS | 2026-09-01にユーザーが手動確認済み |
+| 任意入力でQuestionを返さない | PASS | `INVALID_ARGUMENT`かつQuestionフィールドなしをDevToolsで確認 |
+| API障害時にQuestionを返さない | PASS | 2026-09-01にユーザーが手動確認済み |
+| 設定不備時にQuestionを返さない | PASS | 2026-09-01にユーザーが手動確認済み |
+| 取消後にQuestionを返さない | PASS | 2026-09-01にユーザーが手動確認済み |
 
 ## T035 手動E2Eテスト手順
 
@@ -93,5 +94,4 @@
 
 ## 未解決事項
 
-- 対応ChromeとPersonal Agentを用いる手動E2Eは、この実行環境では未実施である。
 - `workers.dev`へのデプロイとOrigin Trial設定は外部アカウントの変更を伴うため、まだ実施していない。
