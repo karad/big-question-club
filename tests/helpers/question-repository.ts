@@ -77,6 +77,20 @@ export function createInMemoryQuestionRepository({
           answerCount: storedAnswers.filter((answer) => answer.questionId === item.id).length,
         }));
     },
+    async listOpenQuestions(snapshotNow) {
+      return storedQuestions
+        .filter((item) => getQuestionState(item, snapshotNow) === 'OPEN')
+        .sort(
+          (left, right) =>
+            left.closesAt - right.closesAt ||
+            (left.publishedAt ?? 0) - (right.publishedAt ?? 0) ||
+            left.id.localeCompare(right.id),
+        )
+        .map((item) => ({
+          question: item,
+          answerCount: storedAnswers.filter((answer) => answer.questionId === item.id).length,
+        }));
+    },
     async submit(questionId, userId, input, now): Promise<SubmitResult> {
       const current = storedQuestions.find((item) => item.id === questionId);
       if (current === undefined) return { kind: 'missing' };

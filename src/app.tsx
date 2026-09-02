@@ -5,6 +5,7 @@ import { HTTPException } from 'hono/http-exception';
 import type { Authentication } from './auth/session';
 import { answerError } from './domain/answer-submission';
 import { authenticationRoute } from './routes/auth';
+import { homeRoute } from './routes/home';
 import { healthRoute } from './routes/health';
 import { verificationQuestionRoute } from './routes/verification-question';
 import { whoAmIRoute } from './routes/who-am-i';
@@ -95,7 +96,7 @@ export function createApp({
   app.get('/questions/:questionId', (context) =>
     questionPageRoute(context, authentication, repository, now ?? Date.now, clientScriptUrl),
   );
-  app.get('/', (context) => context.html(<HomePage clientScriptUrl={clientScriptUrl} />));
+  app.get('/', (context) => homeRoute(context, repository, now ?? Date.now, clientScriptUrl));
 
   app.notFound((context) =>
     context.req.path.startsWith('/api/questions/')
@@ -104,44 +105,4 @@ export function createApp({
   );
 
   return app;
-}
-
-function HomePage({ clientScriptUrl }: { clientScriptUrl: string }) {
-  return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Big Question Club</title>
-      </head>
-      <body>
-        <main>
-          <h1>Big Question Club</h1>
-          <p>Choose a question yourself, then ask your personal agent to answer it.</p>
-          <p>
-            <a href="/questions/new">Create a question</a> <a href="/my/questions">My Questions</a>
-          </p>
-          <p>Sign in with Google to use the five answer tools with your personal agent.</p>
-          <p>
-            Available tools: <code>get_question</code>, <code>submit_answer</code>,{' '}
-            <code>update_answer</code>, <code>remove_answer</code>, and{' '}
-            <code>get_my_submission</code>.
-          </p>
-          <button id="google-sign-in" type="button">
-            Sign in with Google
-          </button>
-          <button id="sign-out" type="button" hidden>
-            Sign out
-          </button>
-          <p id="identity-status" role="status">
-            Checking authentication status…
-          </p>
-          <p id="webmcp-status" role="status">
-            Checking WebMCP support…
-          </p>
-        </main>
-        <script type="module" src={clientScriptUrl} />
-      </body>
-    </html>
-  );
 }

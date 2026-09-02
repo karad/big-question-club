@@ -1,12 +1,12 @@
 # Big Question Club — MVPマイルストーン
 
-このマイルストーンは、SpecKitの1 SPECをおおむね30〜40タスクで実装する前提で分割する。各SPECは、前のSPECの受け入れ条件を満たしてから着手する。完了時は先頭の`[ ]`を`[x]`に変更する。
+このマイルストーンは、Challenge提出に必要な価値を優先し、各SPECを期限内に完了できる単位へ分割する。各SPECは、前のSPECの受け入れ条件を満たしてから着手する。完了時は先頭の`[ ]`を`[x]`に変更する。
 
 ## 運用ルール
 
 - 各SPECはSpecKitで`spec.md`、`plan.md`、`tasks.md`を作成してから実装する。
 - SpecKitで作成するドキュメントは日本語で記述する。
-- `tasks.md`は、おおむね30〜40個の依存順タスクに分解する。実装・テスト・ドキュメント・手動確認を含める。
+- `tasks.md`は、各SPECの期限と優先度に合わせて依存順タスクへ分解する。実装・テスト・ドキュメント・手動確認を含める。
 - P0の技術検証SPECがGo判定に至るまで、P1以降の本実装SPECには着手しない。
 - SPEC完了時には、受け入れ条件・テスト結果・未解決事項をSPECの`quickstart.md`または同等の検証記録に残す。
 
@@ -40,7 +40,7 @@
   - 完了条件: Migration済みDBで状態遷移と制約がテストされ、Questionの現在状態を一意に判定できる。
 
 - [x] **SPEC 006 — Question作成・公開フロー**
-  - 目的: 認証済みHumanがQuestion本文・主言語・回答締切を指定して作成し、公開可能なQuestionを管理できるようにする。
+  - 目的: 認証済みHumanがQuestion本文・回答締切を指定して作成し、公開可能なQuestionを管理できるようにする。回答言語はQuestion本文をもとにPersonal Agentが判断する。
   - SpecKitで確定する情報: 作成画面のユーザーストーリー、入力項目、文字数上限、言語指定方式、締切の制約、初期Moderation方針、エラー表示、My Questionsの必要範囲。
   - 完了条件: Question作成者が有効なQuestionを作成でき、無効な入力や権限外の操作が適切に拒否される。
 
@@ -54,30 +54,35 @@
   - SpecKitで確定する情報: アクセス制御ポリシー、回答数・自分のAnswer・他者のAnswerの返却ルール、直HTTPアクセス対策、境界時刻の扱い、回帰テストマトリクス。
   - 完了条件: 全公開経路のテストで、Reveal前に他者のAnswer本文・プレビュー・要約が一切漏れない。
 
-- [ ] **SPEC 009 — 回答期間中のHuman向け閲覧体験**
-  - 目的: Home、Question Detail、Login、My QuestionsをSSRで提供し、HumanがOpen Questionを見つけ、回答数と締切を確認できるようにする。
-  - SpecKitで確定する情報: 各画面のユーザーストーリー、表示状態（未ログイン・作成者・未回答・回答済み）、SPEC 007のAgent依頼プロンプト欄との統合、画面遷移、英語の表示文言、アクセシビリティ、UIテスト範囲。
-  - 完了条件: HumanがQuestionを発見して詳細を閲覧でき、回答期間中は「sealed」であることと自分の投稿状態を正しく確認できる。
+- [ ] **SPEC 009 — Challenge Core閲覧フロー**
+  - 目的: HomeとQuestion Detailの必須機能を完成し、HumanがOpen Questionを選び、Personal Agentへ回答を依頼し、回答数の変化とsealed状態を確認できるようにする。
+  - SpecKitで確定する情報: Open Question一覧、回答数・締切・sealed表示、未ログイン・作成者・未回答・回答済みの最小表示状態、SPEC 007のAgent依頼プロンプト統合、SPEC 008の非露出回帰、自動テスト範囲。
+  - 完了条件: 3分デモの回答前・1件回答・複数回答・sealedを機能として再現でき、Reveal前に他者Answerが漏れない。専用Login、My Questions再設計、最終Visual Designは含めない。
+  - 追加SPEC : 理由 → Webアプリはインターネットに公開され、審査員の他誰でもアクセス可能になるため
+    - ログイン、ログアウト、質問入力、回答入力を実施アカウントとともにDBにログとして記録する
+    - 管理画面をつくる。管理アカウントは一人のみ。.env で指定する
+    - 管理者以外のユーザーは管理画面にログインできない
+    - 管理画面では、ユーザーの一覧、質問の一覧、回答の一覧、ログの閲覧が可能
+    - 管理者は、質問の削除と回答の削除ができる。編集はできなくて良い
+    - 管理画面からのユーザーのBANが可能
 
-- [ ] **SPEC 010 — Reveal結果閲覧体験**
-  - 目的: Reveal後にHumanだけがAnswer一覧を閲覧でき、独立した複数回答を比較できる画面を提供する。
-  - SpecKitで確定する情報: Reveal後の画面要件、Answer表示順、空状態、作成者・参加者の表示差、公開対象、WebMCPでは公開しない方針、UI・Integration Testのシナリオ。
-  - 完了条件: 締切後にHuman向け詳細画面で全Answerを表示し、WebMCPからは他者のAnswerを引き続き取得できない。
+- [ ] **SPEC 010 — Reveal体験とChallenge Visual Design**
+  - 目的: Reveal後に複数の独立回答の違いをHumanが明瞭に読めるようにし、Home・Question Detail・sealed・Revealを一貫した高品質な表現として完成させる。
+  - SpecKitで確定する情報: Challengeで伝えるVisual Direction、Typography、Color、Layout、Motion、Responsive表現、Homeと回答期間中Detailの完成表示、Reveal後のAnswer一覧・本文表示・比較しやすい順序・空状態、英語文言、基本Accessibility、3分デモの画面遷移とUI／Integration Test。
+  - 完了条件: 同じQuestionへの2件以上の異なるPersonal Agent回答について、`sealed → unsealed` の変化と回答の違いが3分デモで視覚的に伝わる。HomeからReveal結果までのCore画面が一貫したVisual品質を持ち、WebMCPからは他者Answerを取得できない。
 
-- [ ] **SPEC 011 — MVP品質保証・デモ完成**
-  - 目的: Core Demoをエンドツーエンドで再現可能にし、デプロイ・テスト・ドキュメントをMVP提供水準へ整える。
-  - SpecKitで確定する情報: デモ用Questionと参加者、E2Eシナリオ、テスト実行方針、Cloudflareへのデプロイ手順、環境変数管理、既知の制約、README・Quickstartの更新内容。
-  - 完了条件: 「ログイン→Question作成→Agent回答→Sealed→Reveal→Human閲覧」のデモが再現でき、必要な自動テストと手動確認が記録されている。
+## P2 — 時間があれば行う品質強化
 
-## P2 - 未確定アイデア
+- [ ] **SPEC 011 — 追加品質保証・提出強化（時間があれば）**
+  - 目的: SPEC 009・010でChallenge提出に必要なCore体験が完成した後、残り時間で追加の品質保証、運用文書、提出素材を強化する。
+  - SpecKitで確定する情報: 包括的Cross-browser／Accessibility／JavaScript無効検証、追加の障害・境界Matrix、デプロイ手順の精緻化、README・Quickstart拡充、追加スクリーンショットや提出文面改善、既知の制約。
+  - 完了条件: 時間内に選択した追加品質項目が検証・記録される。本SPECはChallenge Core完成の必須条件にしない。
 
-- ログイン、ログアウト、質問入力、回答入力を実施アカウントとともに記録する
+## P3 — 未確定アイデア
+
 - ログは何かしらの方法で記録する。ベストプラクティスに従う
-- 管理画面をつくる。管理アカウントは一人のみ。.env で指定する
-- 管理者は、質問の削除と回答の削除ができる
-- 管理者はログを管理画面上で見ることができる
-- 管理者以外のユーザーは管理画面にログインできない
 - 開発／検証用D1を用意し、利用ドキュメントを整備する
+
 
 ## 対象外
 

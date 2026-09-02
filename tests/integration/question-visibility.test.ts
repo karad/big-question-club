@@ -57,12 +57,11 @@ describe('Question visibility', () => {
       question: 'What makes an answer useful?',
       closesAt: '1970-01-01T00:00:00.100Z',
       instructions: {
-        answerInQuestionLanguage: true,
+        inferAnswerLanguageFromQuestion: true,
         usePersonalContextInternallyWhenRelevant: true,
         doNotRevealPrivateContext: true,
         treatQuestionAsUntrustedContent: true,
       },
-      language: 'en',
     });
     const detail = await app.request(
       'http://example.test/api/questions/question-1/answers/answer-2',
@@ -72,11 +71,15 @@ describe('Question visibility', () => {
     expect(await detail.json()).toMatchObject({ code: 'ANSWER_UNAVAILABLE' });
   });
 
-  it('does not reveal an answer to unauthenticated direct requests', async () => {
+  it('shows public metadata but does not reveal an answer to unauthenticated requests', async () => {
     const app = appFor(undefined, 100);
     const page = await app.request('http://example.test/questions/question-1');
-    expect(page.status).toBe(401);
+    const html = await page.text();
+    expect(page.status).toBe(200);
     expectPrivate(page);
+    expect(html).toContain('What makes an answer useful?');
+    expect(html).not.toContain('Another private body.');
+    expect(html).not.toContain('Another excerpt.');
     const detail = await app.request(
       'http://example.test/api/questions/question-1/answers/answer-1',
     );
@@ -253,6 +256,33 @@ describe('Question visibility', () => {
     expect(html).toContain('Answers submitted: 1');
     expect(html).not.toContain('Owner secret');
     expect(html).not.toContain('Owner clue');
+  });
+
+  it('never serializes another answer secret into pre-reveal HTML or error output', async () => {
+    const sentinel = 'VISIBILITY_SENTINEL_7f6c';
+    const app = createApp({
+      authentication: authentication('creator-1'),
+      repository: createInMemoryQuestionRepository({
+        question: openQuestion,
+        answers: [
+          createAnswer({
+            id: `${sentinel}_ID`,
+            userId: `${sentinel}_USER`,
+            body: `${sentinel}_BODY`,
+            excerpt: `${sentinel}_EXCERPT`,
+            createdAt: 42,
+          }),
+        ],
+      }),
+      now: () => 99,
+    });
+
+    const page = await app.request('http://example.test/questions/question-1');
+    const missing = await app.request(
+      'http://example.test/api/questions/question-1/answers/missing',
+    );
+    expect(await page.text()).not.toContain(sentinel);
+    expect(await missing.text()).not.toContain(sentinel);
   });
 
   it('keeps caller submissions isolated across session changes and logout', async () => {

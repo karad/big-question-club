@@ -56,7 +56,6 @@ describe('Question management repository', () => {
 
   it.each([
     ['short body', { body: 'short' }],
-    ['unsupported language', { language: 'fr' }],
     ['deadline too soon', { closesAt: now + hour - 1, revealsAt: now + hour - 1 }],
     ['deadline too late', { closesAt: now + 31 * 24 * hour, revealsAt: now + 31 * 24 * hour }],
     ['different reveal', { revealsAt: deadline + 1 }],

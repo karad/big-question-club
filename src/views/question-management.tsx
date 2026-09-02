@@ -1,4 +1,4 @@
-import type { Question, QuestionLanguage, QuestionState } from '../domain/question';
+import type { Question, QuestionState } from '../domain/question';
 import { toIsoTimestamp } from '../domain/question';
 import type { QuestionDraftForm, QuestionFormErrors } from '../domain/question-input';
 import { getQuestionState } from '../domain/question-lifecycle';
@@ -118,12 +118,6 @@ export function QuestionFormPage({
           </p>
           <FieldError id="body-error" message={errors.body} />
         </div>
-        <fieldset aria-describedby={errors.language === undefined ? undefined : 'language-error'}>
-          <legend>Primary language</legend>
-          <LanguageOption value="en" label="English" selected={form.language === 'en'} />
-          <LanguageOption value="ja" label="Japanese" selected={form.language === 'ja'} />
-          <FieldError id="language-error" message={errors.language} />
-        </fieldset>
         <div>
           <label for="question-deadline">Answer deadline</label>
           <input
@@ -186,8 +180,6 @@ export function QuestionReviewPage({
       <ErrorSummary errors={errors} />
       <p>{question.body}</p>
       <dl>
-        <dt>Primary language</dt>
-        <dd>{question.language === 'ja' ? 'Japanese' : 'English'}</dd>
         <dt>Answer deadline</dt>
         <dd>
           <time dateTime={toIsoTimestamp(question.closesAt)} data-deadline-display>
@@ -298,22 +290,6 @@ function FieldError({ id, message }: { id: string; message: string | undefined }
   );
 }
 
-function LanguageOption({
-  value,
-  label,
-  selected,
-}: {
-  value: QuestionLanguage;
-  label: string;
-  selected: boolean;
-}) {
-  return (
-    <label>
-      <input type="radio" name="language" value={value} checked={selected} /> {label}
-    </label>
-  );
-}
-
 function formatTimestamp(value: string): string {
   const timestamp = Number(value);
   return Number.isSafeInteger(timestamp) && timestamp > 0
@@ -337,7 +313,6 @@ function questionState(question: Question, now: number): QuestionState {
 
 function errorTarget(key: string): string {
   if (key === 'body') return 'question-body';
-  if (key === 'language') return 'language-error';
   if (key === 'closesAt') return 'question-deadline';
   if (key === 'contentAcknowledged') return 'content-acknowledged';
   if (key === 'confirmPublication') return 'confirm-publication';

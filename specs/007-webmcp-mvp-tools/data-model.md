@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | `id` | string | 不透明な一意識別子。コピペ用プロンプトへ埋め込む唯一の可変値。 |
 | `body` | string | 10〜1,000表示文字。未信頼の利用者生成コンテンツ。 |
-| `language` | `en` / `ja` | Agent回答の言語を決める。 |
+| `language` | 文字列 | 既存Schemaとの互換性だけに使い、Tool Viewへ含めない。新規Questionは `auto`。 |
 | `publishedAt` | timestamp / null | nullなら `DRAFT`。 |
 | `closesAt` | timestamp | `now < closesAt` の間だけAnswer作成・更新・削除が可能。 |
 | `revealsAt` | timestamp | Human向け公開状態を決める。WebMCPの他者非公開規則は変えない。 |
@@ -54,7 +54,6 @@ Questionの状態はSPEC 005の共通判定で `DRAFT`、`OPEN`、`CLOSED`、`RE
 | --- | --- | --- |
 | `id` | string | Humanが指定したQuestion IDと一致。 |
 | `question` | string | 未信頼本文。 |
-| `language` | `en` / `ja` | 保存済みの主言語。 |
 | `closesAt` | ISO timestamp | 絶対時刻。 |
 | `instructions` | object | 4つの固定booleanをすべてtrueで返す。 |
 
@@ -112,4 +111,3 @@ locked
 3. 外部キー、一意制約、Question別作成時刻Indexを再作成する。
 4. SQLのコードポイント上限CHECKをDomainの書記素上限へ移し、空白のみとExcerpt改行禁止CHECKは維持する。
 5. Migration後に既存Answerの件数、所有者、本文、Excerpt、作成時刻が欠落していないことを検証する。
-

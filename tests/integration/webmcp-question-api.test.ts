@@ -38,10 +38,9 @@ describe('WebMCP Question APIs', () => {
     expect(payload).toEqual({
       id: 'question-1',
       question: 'What makes an answer useful?',
-      language: 'en',
       closesAt: '1970-01-01T00:00:00.100Z',
       instructions: {
-        answerInQuestionLanguage: true,
+        inferAnswerLanguageFromQuestion: true,
         usePersonalContextInternallyWhenRelevant: true,
         doNotRevealPrivateContext: true,
         treatQuestionAsUntrustedContent: true,

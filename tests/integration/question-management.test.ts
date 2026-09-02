@@ -20,7 +20,7 @@ function draft(overrides: Partial<Question> = {}): Question {
     id: 'question-1',
     creatorUserId: 'creator-1',
     body: 'What should humanity improve?',
-    language: 'en',
+    language: 'auto',
     publishedAt: null,
     closesAt: deadline,
     revealsAt: deadline,
@@ -78,7 +78,8 @@ describe('Question management', () => {
     const html = await response.text();
     expect(response.status).toBe(200);
     expect(html).toContain('Create a question');
-    expect(html).toContain('Primary language');
+    expect(html).not.toContain('Primary language');
+    expect(html).not.toContain('name="language"');
     expect(html).toContain('Answer deadline');
     expect(html).toContain('Save draft');
     expect(html).toContain('data-question-form');
@@ -95,11 +96,14 @@ describe('Question management', () => {
 
   it('preserves valid values and escapes untrusted text after validation errors', async () => {
     const response = await appFor().request(
-      formRequest('/questions', validForm({ body: '<script>alert(1)</script>', language: 'fr' })),
+      formRequest(
+        '/questions',
+        validForm({ body: '<script>alert(1)</script>', closesAt: 'invalid' }),
+      ),
     );
     const html = await response.text();
     expect(response.status).toBe(400);
-    expect(html).toContain('Choose English or Japanese.');
+    expect(html).toContain('Choose a valid answer deadline.');
     expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
     expect(html).not.toContain('<script>alert(1)</script>');
   });
@@ -107,7 +111,6 @@ describe('Question management', () => {
   it.each([
     ['short body', { body: 'short' }, 'Enter at least 10 characters.'],
     ['long body', { body: 'x'.repeat(1001) }, 'Enter no more than 1,000 characters.'],
-    ['missing language', { language: '' }, 'Choose English or Japanese.'],
     ['invalid deadline', { closesAt: 'invalid' }, 'Choose a valid answer deadline.'],
     ['too-soon deadline', { closesAt: String(now + hour - 1) }, 'between 1 hour and 30 days'],
     ['missing acknowledgment', { contentAcknowledged: '' }, 'suitable for public posting'],

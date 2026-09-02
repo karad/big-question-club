@@ -55,7 +55,7 @@ Draftは `publishedAt === null` とし、Answerを受け付けない。公開済
 
 ### `createDraft(input, now)`
 
-- 認証済み `creatorUserId`、本文、主言語、締切、Reveal時刻を持つDraftを作る。
+- 認証済み `creatorUserId`、本文、締切、Reveal時刻を持つDraftを作る。既存の言語列には内部互換値 `auto` を保存する。
 - `publishedAt`は必ず `null`。
 - 存在しないUser、空の本文・言語、不正な時刻順序を拒否する。
 - 詳細な本文・言語・締切入力規則はSPEC 006で追加する。

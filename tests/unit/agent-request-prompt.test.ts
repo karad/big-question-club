@@ -3,13 +3,15 @@ import {
   createAgentRequestPrompt,
   getAgentRequestAvailability,
 } from '../../src/domain/agent-request-prompt';
-import { renderAgentRequestSection } from '../../src/views/question-detail';
+import { AgentRequestSection } from '../../src/views/question-detail';
 
 describe('Agent request prompt', () => {
   it('matches the fixed contract and varies only by opaque question id', () => {
     const prompt = createAgentRequestPrompt('question-123');
     expect(prompt).toContain('Question ID: question-123');
     expect(prompt).toContain('Call get_question with this exact Question ID');
+    expect(prompt).toContain('Decide the answer language from the Question text');
+    expect(prompt).not.toContain("Question's specified language");
     expect(prompt).toContain('Submit them once with submit_answer');
     expect(prompt).toContain('Call get_my_submission for this exact Question ID');
     expect(prompt).not.toContain('update_answer');
@@ -32,7 +34,9 @@ describe('Agent request prompt', () => {
   });
 
   it('escapes an opaque id without including question or identity content', () => {
-    const html = renderAgentRequestSection('q</textarea><script>alert(1)</script>');
+    const html = String(
+      AgentRequestSection({ questionId: 'q</textarea><script>alert(1)</script>' }),
+    );
     expect(html).not.toContain('</textarea><script>');
     expect(html).toContain('q&lt;/textarea&gt;&lt;script&gt;alert(1)&lt;/script&gt;');
     expect(html).toContain('Ask your personal agent');

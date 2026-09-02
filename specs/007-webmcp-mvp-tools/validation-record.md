@@ -48,7 +48,7 @@ D1では既存Answer保持と `updatedAt` 初期化、書記素境界、本人�
 - 利用者確認後に `remove_answer` でローカル検証用AnswerをHard Deleteし、`not_submitted`、Prompt再表示、締切前の再投稿成功を確認した。
 - アカウントBはAの投稿後も操作前に `not_submitted` となり、Bの投稿後もAの `get_my_submission` にBの本文・Excerpt・識別子・時刻が含まれないことを確認した。Aの更新後もBの保存内容と時刻が変化しないことをローカルD1で確認した。
 - 締切後は `get_question`、`update_answer`、`remove_answer` がすべて `QUESTION_CLOSED` となり、`get_my_submission` の本人内容が変化しないことを確認した。
-- 英語と日本語のInjection Questionで固定instruction 4項目、指定言語回答、秘密・以前の会話・認証情報の非出力を確認した。
+- 英語と日本語のInjection Questionで固定instruction 4項目、Question本文からの言語判断、秘密・以前の会話・認証情報の非出力を確認した。このコーパスは対応言語の制限を意味しない。
 - Clipboard API不在・拒否時の英語案内とPrompt維持はUnit Test、成功経路は実ブラウザーで確認した。
 
 未解決事項はない。共有D1へのMigration適用およびデプロイは本SPECの実機検証では実施していない。

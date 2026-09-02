@@ -96,7 +96,7 @@
 
 ## 8. テスト境界
 
-**決定**: 書記素文字数、言語、締切、Form値解析はNode上のUnit Test、SSR表示・項目エラー・認証・CSRF・redirectはHono Integration Test、所有者付き取得・楽観的編集・原子的公開・集計一覧は分離D1 Integration Testで検証する。全自動テスト完了後にQuickstartでキーボード導線と2利用者の手動確認を行う。
+**決定**: 書記素文字数、締切、Form値解析はNode上のUnit Test、SSR表示・項目エラー・認証・CSRF・redirectはHono Integration Test、所有者付き取得・楽観的編集・原子的公開・集計一覧は分離D1 Integration Testで検証する。全自動テスト完了後にQuickstartでキーボード導線と2利用者の手動確認を行う。
 
 **理由**: 純粋ロジックを高速に境界網羅し、実D1でしか保証できない条件付き更新と集計をmockへ委ねず、最終的な画面導線だけを手動確認に限定できる。プロジェクトのテスト方針にも一致する。
 

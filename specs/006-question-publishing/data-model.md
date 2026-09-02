@@ -11,7 +11,7 @@
 | `id` | 文字列 | 不可 | Draft作成時に一意生成する。 |
 | `creatorUserId` | 文字列 | 不可 | 認証済みHumanのUser ID。 |
 | `body` | 文字列 | Draftのみ | trim後の書記素クラスタ10〜1,000文字。 |
-| `language` | `en` または `ja` | Draftのみ | 作成者の選択を正とし、自動推定しない。 |
+| `language` | 文字列 | 内部互換用 | 既存Schemaとの互換性のため残す。新規Questionは `auto` を保存し、利用者向け入力・表示・WebMCP契約には使わない。 |
 | `publishedAt` | UTC Unixミリ秒またはnull | 公開時に1回 | nullはDraft。公開時のサービス側 `now` を設定する。 |
 | `closesAt` | UTC Unixミリ秒 | Draftのみ | 保存・編集・公開時の `now + 1時間` 以上 `now + 30日` 以内。 |
 | `revealsAt` | UTC Unixミリ秒 | Draftのみ | 常に `closesAt` と同じ値。利用者入力にはしない。 |
@@ -33,7 +33,6 @@ Better Authが管理する認証主体。Sessionから得た `user.id` だけを
 | フィールド | 入力元 | 必須 | 規則 |
 | --- | --- | --- | --- |
 | `body` | textarea | 必須 | trim後10〜1,000書記素。入力値はエラー時に再表示する。 |
-| `language` | select/radio | 必須 | `en` または `ja`。 |
 | `closesAtLocal` | `datetime-local` | 必須 | 利用者が確認するローカル日時。永続化しない。 |
 | `closesAt` | hidden | 必須 | クライアントが生成したUTC Unixミリ秒。サーバーで範囲を再検証する。 |
 | `timeZone` | hidden/display | 必須 | IANAタイムゾーン名。確認表示用で、状態判定には使わない。 |
@@ -47,13 +46,13 @@ Better Authが管理する認証主体。Sessionから得た `user.id` だけを
 | フィールド | 型 | 意味 |
 | --- | --- | --- |
 | `body` | 文字列 | 前後空白を除いた本文。 |
-| `language` | `en` または `ja` | 許可済み主言語。 |
+| `language` | `auto` | 既存Schemaへ保存する内部互換値。回答言語の指定には使わない。 |
 | `closesAt` | number | 検証済みUTC Unixミリ秒。 |
 | `revealsAt` | number | `closesAt` と同値。 |
 
 ### QuestionFormErrors
 
-`body`、`language`、`closesAt`、`contentAcknowledged`、`form` の各keyに英語メッセージを最大1件ずつ持つ。画面は該当入力へ `aria-describedby` と `aria-invalid` で関連付け、先頭のerror summaryから各項目へ移動できる。
+`body`、`closesAt`、`contentAcknowledged`、`form` の各keyに英語メッセージを最大1件ずつ持つ。画面は該当入力へ `aria-describedby` と `aria-invalid` で関連付け、先頭のerror summaryから各項目へ移動できる。
 
 ### OwnedQuestionSummary
 

@@ -30,7 +30,7 @@
 **⚠️ CRITICAL**: このPhaseが完了するまでユーザーストーリー実装を開始しない
 
 - [x] T004 `tests/unit/question-input.test.ts` にtrim、書記素クラスタ10／1,000文字、`en`／`ja`、締切1時間／30日、確認項目を含む30件以上の失敗先行Unit Testを追加する
-- [x] T005 `src/domain/question.ts` にQuestion本文・締切範囲・対応言語の英語識別子と型を追加する
+- [x] T005 `src/domain/question.ts` にQuestion本文・締切範囲の英語識別子と型、および既存Schema互換値 `auto` を追加する
 - [x] T006 `src/domain/question-input.ts` に `Intl.Segmenter` を使う文字数、Form値解析、正規化、項目別英語error、サービス時刻による締切検証を実装してT004を通す
 - [x] T007 `src/repositories/question-repository.ts` に本人所有取得、Draft更新、本人一覧、競合・非列挙・一時障害を表す型付きRepository契約を追加する
 - [x] T008 `tests/helpers/question-repository.ts` を拡張後のRepository契約へ追従させ、複数Question、所有者、Draft更新、一覧集計を保持できるin-memory fixtureを実装する
@@ -43,7 +43,7 @@
 
 ## Phase 3: ユーザーストーリー1 — Questionを下書きとして作成する (優先度: P1) 🎯 MVP
 
-**目標**: 認証済みHumanが有効な本文・言語・締切・公開内容の確認を入力し、本人所有のDraftを保存できる
+**目標**: 認証済みHumanが任意言語の有効な本文・締切・公開内容の確認を入力し、本人所有のDraftを保存できる
 
 **独立テスト**: `/questions/new` から有効入力を送信して1件の `DRAFT` とReview redirectを得られ、無効入力と未認証操作では保存されず英語の項目別errorが表示される
 
@@ -55,7 +55,7 @@
 ### 実装
 
 - [x] T013 [US1] `src/repositories/question-repository.ts` の `createDraft` を検証済みDomain入力だけからUUID付きQuestionを保存し、作成者不足とD1障害を安定分類する実装へ更新する
-- [x] T014 [US1] `src/views/question-management.tsx` にQuestion textarea、文字数、英語・日本語選択、`datetime-local`、timezone／UTC確認、Moderation確認、関連付けた英語errorを持つ作成Formを実装する
+- [x] T014 [US1] `src/views/question-management.tsx` にQuestion textarea、文字数、`datetime-local`、timezone／UTC確認、Moderation確認、関連付けた英語errorを持つ作成Formを実装する
 - [x] T015 [US1] `src/client.ts` に書記素文字カウンターとローカル締切からUTC Unixミリ秒・IANA timezone・UTC ISO表示を生成するQuestion Form補助を追加する
 - [x] T016 [US1] `src/routes/question-management.tsx` に認証済み作成画面GETとForm検証・Draft保存・error再表示・Reviewへの303を行うPOST handlerを実装する
 - [x] T017 [US1] `src/app.tsx` で `/questions/new` をparameter routeより先に登録し、`POST /questions` と依存関係を接続してUS1 Integration Testを通す
@@ -81,7 +81,7 @@
 - [x] T021 [US2] `src/repositories/question-repository.ts` に `id + creatorUserId` の本人所有取得と `publishedAt IS NULL + expectedUpdatedAt` の条件付きDraft更新・競合分類を実装する
 - [x] T022 [US2] `src/repositories/question-repository.ts` の公開を本人・Draft・`now + 1時間 <= closesAt <= now + 30日`・`revealsAt === closesAt` の単一条件付き更新へ強化する
 - [x] T023 [US2] `src/views/question-management.tsx` にexpectedUpdatedAtを含むDraft編集Formと、stale／公開済み状態を英語で回復可能に示すViewを実装する
-- [x] T024 [US2] `src/views/question-management.tsx` に完全な本文、主言語、ローカル／timezone／UTC締切、sealed説明、不可逆性、明示確認、Edit導線を持つReview Viewを実装する
+- [x] T024 [US2] `src/views/question-management.tsx` に完全な本文、ローカル／timezone／UTC締切、sealed説明、不可逆性、明示確認、Edit導線を持つReview Viewを実装する
 - [x] T025 [US2] `src/routes/question-management.tsx` に本人Draftの編集GET／POST、最新状態取得、400／404／409／503分類、Reviewへの303を実装する
 - [x] T026 [US2] `src/routes/question-management.tsx` にReview GETと公開POSTを実装し、confirmPublication・expectedUpdatedAt・実行時入力条件を再検証してdetailへ303する
 - [x] T027 [US2] `tests/helpers/question-repository.ts` の編集・公開fixtureを実D1と同じ所有者・競合・締切・一回公開semanticsへ揃え、US2 Integration Testを通す

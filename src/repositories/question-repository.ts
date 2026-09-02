@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, isNotNull, lte } from 'drizzle-orm';
 import { parseSubmissionInput, type SubmissionInput } from '../domain/answer-submission';
 import {
   MAX_QUESTION_CLOSE_OFFSET_MS,
@@ -36,6 +36,7 @@ export type UpdateDraftResult =
   | { kind: 'invalid' }
   | { kind: 'unavailable' };
 export type OwnedQuestionSummary = { question: Question; answerCount: number };
+export type OpenQuestionSummary = { question: Question; answerCount: number };
 export type AnswerCountView = { answerCount: number };
 export type OwnAnswerView = Pick<
   Answer,
@@ -77,6 +78,7 @@ export interface QuestionRepository {
     expectedUpdatedAt?: number,
   ): Promise<PublishResult>;
   listByCreator(creatorUserId: string): Promise<OwnedQuestionSummary[]>;
+  listOpenQuestions(snapshotNow: number): Promise<OpenQuestionSummary[]>;
   submit(
     questionId: string,
     userId: string,
@@ -102,6 +104,8 @@ export interface QuestionRepository {
 
 export function createQuestionRepository(database: D1Database): QuestionRepository {
   const db = createDatabase(database);
+  // Conditional mutations stay as prepared D1 statements because ORM read-then-write sequences
+  // would weaken the existing publication, ownership, and deadline race guards.
   const repository: QuestionRepository = {
     async getQuestion(id) {
       const [question] = await db.select().from(questions).where(eq(questions.id, id)).limit(1);
@@ -157,11 +161,10 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
       try {
         const result = await database
           .prepare(
-            'UPDATE questions SET body = ?, language = ?, closes_at = ?, reveals_at = ?, updated_at = ? WHERE id = ? AND creator_user_id = ? AND published_at IS NULL AND updated_at = ?',
+            'UPDATE questions SET body = ?, closes_at = ?, reveals_at = ?, updated_at = ? WHERE id = ? AND creator_user_id = ? AND published_at IS NULL AND updated_at = ?',
           )
           .bind(
             input.body,
-            input.language,
             input.closesAt,
             input.revealsAt,
             now,
@@ -220,6 +223,22 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
         .where(eq(questions.creatorUserId, creatorUserId))
         .groupBy(questions.id)
         .orderBy(desc(questions.createdAt), desc(questions.id));
+      return rows.map(({ question, answerCount }) => ({ question, answerCount }));
+    },
+    async listOpenQuestions(snapshotNow) {
+      const rows = await db
+        .select({ question: questions, answerCount: count(answers.id) })
+        .from(questions)
+        .leftJoin(answers, eq(answers.questionId, questions.id))
+        .where(
+          and(
+            isNotNull(questions.publishedAt),
+            lte(questions.publishedAt, snapshotNow),
+            gt(questions.closesAt, snapshotNow),
+          ),
+        )
+        .groupBy(questions.id)
+        .orderBy(asc(questions.closesAt), asc(questions.publishedAt), asc(questions.id));
       return rows.map(({ question, answerCount }) => ({ question, answerCount }));
     },
     async submit(questionId, userId, input, now) {

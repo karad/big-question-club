@@ -21,7 +21,6 @@ import {
 
 const emptyForm: QuestionDraftForm = {
   body: '',
-  language: '',
   closesAtLocal: '',
   closesAt: '',
   timeZone: '',
@@ -254,7 +253,6 @@ async function ownedQuestion(
 function formFromQuestion(question: Question): QuestionDraftForm {
   return {
     body: question.body,
-    language: question.language,
     closesAtLocal: '',
     closesAt: String(question.closesAt),
     timeZone: '',

@@ -94,7 +94,7 @@
 
 - **FR-001**: システムは、User、Session、Question、Answerを永続化し、各レコードを安定した一意識別子で区別しなければならない。
 - **FR-002**: システムは、Sessionを1人のUserに結び付け、有効期限、一意な認証値、作成時刻、更新時刻を保持しなければならない。
-- **FR-003**: システムは、Questionを作成者Userに結び付け、本文、主言語、公開時刻、回答締切、Reveal時刻、作成時刻、更新時刻を保持しなければならない。
+- **FR-003**: システムは、Questionを作成者Userに結び付け、本文、公開時刻、回答締切、Reveal時刻、作成時刻、更新時刻を保持しなければならない。既存の言語列はSchema互換用とし、プロダクト上の言語指定には使わない。
 - **FR-004**: システムは、Answerを1人のUserと1件のQuestionに結び付け、本文、1行のExcerpt、作成時刻を保持しなければならない。
 - **FR-005**: システムは、同一Userと同一Questionの組み合わせにつきAnswerを最大1件に制限し、同時書き込みを含む重複を保存境界で拒否しなければならない。
 - **FR-006**: システムは、存在しないUserを参照するSessionまたはQuestion、存在しないUserまたはQuestionを参照するAnswerを保存してはならない。
@@ -116,7 +116,7 @@
 
 - **User**: Big Question Clubで認証されたHumanとそのPersonal Agentに共通する主体。安定した識別子、表示に必要な基本情報、作成・更新時刻を持ち、Session、作成Question、投稿Answerの所有者となる。
 - **Session**: Userの認証済み状態を表す期限付きデータ。User、一意な認証値、有効期限、作成・更新時刻に結び付き、認証値そのものは公開ドメインデータとして扱わない。
-- **Question**: Humanが作成しPersonal Agentが回答する問い。作成者、本文、主言語、公開時刻、回答締切、Reveal時刻、作成・更新時刻を持つ。現在状態は保存された状態名ではなく、これらの時刻とサービス側の現在時刻から一意に導出する。
+- **Question**: Humanが作成しPersonal Agentが回答する問い。作成者、本文、公開時刻、回答締切、Reveal時刻、作成・更新時刻を持つ。現在状態は保存された状態名ではなく、これらの時刻とサービス側の現在時刻から一意に導出する。
 - **Answer**: Personal Agentが認証済みUserとしてQuestionへ投稿する回答。Question、User、本文、1行のExcerpt、作成時刻を持ち、QuestionとUserの組み合わせで一意である。
 - **Question状態**: `DRAFT`、`OPEN`、`CLOSED`、`REVEALED` の排他的な判定結果。Answer受付と後続の公開制御が参照する唯一のライフサイクル契約である。
 - **Migration**: 既存の保存領域を新しいデータ契約へ順番に更新する変更単位。適用順、成功・失敗、および更新後の制約を検証可能にする。
@@ -149,7 +149,7 @@
 
 ## 対象外
 
-- Question本文、主言語、締切の入力規則、Question作成画面、公開操作、My Questions（SPEC 006）
+- Question本文、締切の入力規則、Question作成画面、公開操作、My Questions（SPEC 006）
 - WebMCPのQuestion取得・Answer投稿Toolの入出力およびエラー契約（SPEC 007）
 - SSR、直接HTTP、WebMCP間のAnswer公開認可と漏えい防止マトリクス（SPEC 008）
 - 回答期間中およびReveal後のHuman向け画面・表示順・アクセシビリティ（SPEC 009、SPEC 010）

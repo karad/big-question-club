@@ -4,9 +4,7 @@ export const MIN_QUESTION_GRAPHEMES = 10;
 export const MAX_QUESTION_GRAPHEMES = 1000;
 export const MIN_QUESTION_CLOSE_OFFSET_MS = 60 * 60 * 1000;
 export const MAX_QUESTION_CLOSE_OFFSET_MS = 30 * 24 * 60 * 60 * 1000;
-export const QUESTION_LANGUAGES = ['en', 'ja'] as const;
-
-export type QuestionLanguage = (typeof QUESTION_LANGUAGES)[number];
+export const INFERRED_QUESTION_LANGUAGE = 'auto' as const;
 
 export type QuestionState = 'DRAFT' | 'OPEN' | 'CLOSED' | 'REVEALED';
 export type QuestionSchedule = {

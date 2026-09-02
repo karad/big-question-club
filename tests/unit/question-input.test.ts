@@ -12,7 +12,6 @@ const day = 24 * hour;
 function form(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     body: 'A useful question?',
-    language: 'en',
     closesAtLocal: '2026-09-02T12:00',
     closesAt: String(now + 2 * hour),
     timeZone: 'Asia/Tokyo',
@@ -37,8 +36,8 @@ describe('Question draft input', () => {
     ['minimum body', { body: 'abcdefghij' }],
     ['maximum body', { body: 'a'.repeat(1000) }],
     ['ten family emojis', { body: '👨‍👩‍👧‍👦'.repeat(10) }],
-    ['English', { language: 'en' }],
-    ['Japanese', { language: 'ja' }],
+    ['Japanese body', { body: '人類が大切にするべき問いは何ですか？' }],
+    ['French body', { body: 'Quelle question devrions-nous poser ?' }],
     ['minimum deadline', { closesAt: String(now + hour) }],
     ['maximum deadline', { closesAt: String(now + 30 * day) }],
     ['UTC zone', { timeZone: 'UTC' }],
@@ -50,9 +49,6 @@ describe('Question draft input', () => {
     ['blank body', { body: '   ' }, 'body', 'Enter at least 10 characters.'],
     ['nine characters', { body: 'a'.repeat(9) }, 'body', 'Enter at least 10 characters.'],
     ['1001 characters', { body: 'a'.repeat(1001) }, 'body', 'Enter no more than 1,000 characters.'],
-    ['missing language', { language: '' }, 'language', 'Choose English or Japanese.'],
-    ['unsupported language', { language: 'fr' }, 'language', 'Choose English or Japanese.'],
-    ['case variant language', { language: 'EN' }, 'language', 'Choose English or Japanese.'],
     [
       'deadline one millisecond too soon',
       { closesAt: String(now + hour - 1) },
@@ -99,24 +95,25 @@ describe('Question draft input', () => {
     const result = parseQuestionDraftForm(form({ body: '  A useful question?  ' }), now);
     expect(result).toMatchObject({
       kind: 'valid',
-      value: { body: 'A useful question?', language: 'en', revealsAt: now + 2 * hour },
+      value: { body: 'A useful question?', language: 'auto', revealsAt: now + 2 * hour },
     });
+  });
+
+  it('ignores an undeclared language value and lets the agent infer it from the question', () => {
+    const result = parseQuestionDraftForm(form({ language: 'fr' }), now);
+    expect(result).toMatchObject({ kind: 'valid', value: { language: 'auto' } });
   });
 
   it.each([
     [
       'body too short',
-      { body: 'short', language: 'en', closesAt: now + hour, revealsAt: now + hour },
-    ],
-    [
-      'unsupported language',
-      { body: 'A useful question?', language: 'fr', closesAt: now + hour, revealsAt: now + hour },
+      { body: 'short', language: 'auto', closesAt: now + hour, revealsAt: now + hour },
     ],
     [
       'different reveal',
       {
         body: 'A useful question?',
-        language: 'en',
+        language: 'auto',
         closesAt: now + hour,
         revealsAt: now + 2 * hour,
       },

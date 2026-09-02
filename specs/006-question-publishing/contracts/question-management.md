@@ -32,7 +32,6 @@
 | Name | 型 | 必須 | 契約 |
 | --- | --- | --- | --- |
 | `body` | string | yes | trim後10〜1,000書記素。 |
-| `language` | string | yes | `en` または `ja`。 |
 | `closesAtLocal` | string | yes | `datetime-local`表示値。エラー再表示用。 |
 | `closesAt` | integer string | yes | UTC Unixミリ秒。サービス時刻から1時間以上30日以内。 |
 | `timeZone` | string | yes | 表示・確認用IANAタイムゾーン。状態判定には不使用。 |
@@ -46,14 +45,13 @@
 | `confirmPublication` | `on` | yes | 不可逆性とsealed期間を確認した明示操作。 |
 | `expectedUpdatedAt` | integer string | yes | ReviewしたDraftの更新時刻。 |
 
-公開実行時は保存済み本文、言語、締切、`revealsAt === closesAt`、締切範囲、Draft状態、所有者を再検証する。
+公開実行時は保存済み本文、締切、`revealsAt === closesAt`、締切範囲、Draft状態、所有者を再検証する。
 
 ## 画面契約
 
 ### Create/Edit
 
 - `Question` textareaと現在文字数
-- `Primary language`: `English` / `Japanese`
 - `Answer deadline` のローカル日時
 - `Time zone` と `UTC deadline` のread-only確認
 - `I understand this question will be public and must not include personal, confidential, or harmful content.` checkbox
@@ -62,7 +60,7 @@
 
 ### Review
 
-- 完全なQuestion本文、主言語、ローカル締切、タイムゾーン、UTC締切
+- 完全なQuestion本文、ローカル締切、タイムゾーン、UTC締切
 - `Answers remain sealed until the deadline.`
 - `You cannot edit this question after publishing.`
 - `I have reviewed this question and want to publish it.` checkbox
@@ -94,7 +92,6 @@
 
 - body不足: `Enter at least 10 characters.`
 - body超過: `Enter no more than 1,000 characters.`
-- language: `Choose English or Japanese.`
 - deadline形式: `Choose a valid answer deadline.`
 - deadline範囲: `Choose a deadline between 1 hour and 30 days from now.`
 - content確認: `Confirm that this question is suitable for public posting.`

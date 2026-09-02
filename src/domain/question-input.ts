@@ -1,16 +1,14 @@
 import {
   MAX_QUESTION_CLOSE_OFFSET_MS,
   MAX_QUESTION_GRAPHEMES,
+  INFERRED_QUESTION_LANGUAGE,
   MIN_QUESTION_CLOSE_OFFSET_MS,
   MIN_QUESTION_GRAPHEMES,
-  QUESTION_LANGUAGES,
-  type QuestionLanguage,
 } from './question';
 import { countGraphemes } from './text';
 
 export type QuestionDraftForm = {
   body: string;
-  language: string;
   closesAtLocal: string;
   closesAt: string;
   timeZone: string;
@@ -18,13 +16,13 @@ export type QuestionDraftForm = {
 };
 
 export type QuestionFormErrorKey =
-  'body' | 'language' | 'closesAt' | 'contentAcknowledged' | 'confirmPublication' | 'form';
+  'body' | 'closesAt' | 'contentAcknowledged' | 'confirmPublication' | 'form';
 
 export type QuestionFormErrors = Partial<Record<QuestionFormErrorKey, string>>;
 
 export type ValidatedQuestionDraft = {
   body: string;
-  language: QuestionLanguage;
+  language: string;
   closesAt: number;
   revealsAt: number;
 };
@@ -43,7 +41,6 @@ export function parseQuestionDraftForm(
 ): ParseQuestionDraftResult {
   const form: QuestionDraftForm = {
     body: stringField(input.body),
-    language: stringField(input.language),
     closesAtLocal: stringField(input.closesAtLocal),
     closesAt: stringField(input.closesAt),
     timeZone: stringField(input.timeZone),
@@ -58,9 +55,6 @@ export function parseQuestionDraftForm(
     errors.body = `Enter no more than ${MAX_QUESTION_GRAPHEMES.toLocaleString('en-US')} characters.`;
   }
 
-  const language = isQuestionLanguage(form.language) ? form.language : null;
-  if (language === null) errors.language = 'Choose English or Japanese.';
-
   const closesAt = parseTimestamp(form.closesAt);
   if (closesAt === null || form.closesAtLocal.length === 0 || form.timeZone.length === 0) {
     errors.closesAt = 'Choose a valid answer deadline.';
@@ -72,13 +66,13 @@ export function parseQuestionDraftForm(
     errors.contentAcknowledged = 'Confirm that this question is suitable for public posting.';
   }
 
-  if (Object.keys(errors).length > 0 || language === null || closesAt === null) {
+  if (Object.keys(errors).length > 0 || closesAt === null) {
     return { kind: 'invalid', errors, form };
   }
 
   return {
     kind: 'valid',
-    value: { body, language, closesAt, revealsAt: closesAt },
+    value: { body, language: INFERRED_QUESTION_LANGUAGE, closesAt, revealsAt: closesAt },
     form,
   };
 }
@@ -99,14 +93,9 @@ export function isPublishableQuestion(
   return (
     length >= MIN_QUESTION_GRAPHEMES &&
     length <= MAX_QUESTION_GRAPHEMES &&
-    isQuestionLanguage(question.language) &&
     question.revealsAt === question.closesAt &&
     isQuestionDeadlineAllowed(question.closesAt, now)
   );
-}
-
-export function isQuestionLanguage(value: string): value is QuestionLanguage {
-  return QUESTION_LANGUAGES.some((language) => language === value);
 }
 
 function parseTimestamp(value: string): number | null {

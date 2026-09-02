@@ -47,7 +47,7 @@ Humanが作成しPersonal Agentが回答する問い。状態は時刻から導�
 | `id` | `TEXT` | 必須 | 主キー。 |
 | `creatorUserId` | `TEXT` | 必須 | `user.id`への外部キー。User削除はQuestionがある間は拒否する。 |
 | `body` | `TEXT` | 必須 | 空白のみ不可。詳細な文字数はSPEC 006で定義する。 |
-| `language` | `TEXT` | 必須 | 空白のみ不可。Questionの主言語。許容形式はSPEC 006で定義する。 |
+| `language` | `TEXT` | 必須 | 既存Schema互換用。新規Questionは `auto` とし、回答言語の指定には使わない。 |
 | `publishedAt` | `INTEGER` | 任意 | `null`は `DRAFT`。公開確定時のサービス時刻以前。 |
 | `closesAt` | `INTEGER` | 必須 | 回答締切。`publishedAt`がある場合はそれより後。 |
 | `revealsAt` | `INTEGER` | 必須 | Human向けReveal開始。`closesAt`以上。 |

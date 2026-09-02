@@ -66,7 +66,7 @@ After applying the local D1 migrations, create a test Question and sign in as tw
 
 ## Question management
 
-Authenticated people can open `/questions/new` to save an English or Japanese question as a draft. Question text must contain 10–1,000 user-perceived characters, and the answer deadline must be between 1 hour and 30 days from the current server time. The review page shows the local and UTC deadline, explains that answers remain sealed, and requires explicit confirmation before publishing. Publishing is immediate and irreversible.
+Authenticated people can open `/questions/new` to save a question in any language as a draft. The personal agent decides the answer language from the question text. Question text must contain 10–1,000 user-perceived characters, and the answer deadline must be between 1 hour and 30 days from the current server time. The review page shows the local and UTC deadline, explains that answers remain sealed, and requires explicit confirmation before publishing. Publishing is immediate and irreversible.
 
 `/my/questions` lists only questions created by the signed-in user. Drafts provide edit and review actions; published questions link to their details. The list exposes answer counts but never answer bodies, excerpts, or participant identifiers. Human form submissions use same-origin CSRF checks, and missing questions and drafts owned by someone else share the same unavailable response.
 

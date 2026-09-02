@@ -30,6 +30,14 @@
 
 ## 2026-09-02
 
+- `GPT-5.6`: Questionの主言語を英語・日本語から選択する仕様を廃止し、任意言語のQuestion本文からPersonal Agentが回答言語を裁量で判断する方針へ、企画・MVP・技術文書、SPEC 005〜009、Question管理UI、WebMCP契約、固定Agent依頼Prompt、テストを更新した。既存D1列は互換性のため保持し、新規Questionには内部値`auto`を保存する。
+- `GPT-5.6`: SPEC 009完了時点の一般ユーザー向け操作マニュアルと、専用管理者権限が未実装であることを明示した管理ユーザー向けマニュアルを作成した。
+- `GPT-5.6`: SPEC 009完了時点の画面、HTTP API、WebMCP Tool、認証、Domain、Repository、D1の依存関係をMermaid構成図として記録した。
+- `GPT-5.6`: SPEC 009の全20タスクを実装し、Open Question一覧、未ログイン公開Detail、sealed状態、本人Answer、回答数変化、安全な障害表示、SPEC 010向けDOM hookを追加した。Question DetailをHTML文字列連結からHono JSXへ統一し、技術スタック逸脱監査も実施した。Unit／Integration 588テスト、D1 46テスト、型検査、Lint、Format、Build、Schema検査に成功した。
+- `GPT-5.6`: WebMCP Challengeの9月3日締切とVisual表現を重視する方針に合わせ、SPEC 009をHome・sealed Detail・Agent回答後の状態変化という20件のCore機能タスクへ縮小し、Revealと高品質なVisual Designを必須のSPEC 010、追加品質保証を任意のSPEC 011へ再編した。
+- `GPT-5.6`: SpecKitを用いてSPEC 009の技術調査、実装計画、Human向け閲覧状態データモデル、SSR／Login／アクセシビリティ契約、Quickstart検証ガイドを作成した。
+- `GPT-5.6`: SpecKitを用いてSPEC 009を40件の依存順タスクへ分解し、Open Question発見、sealed詳細閲覧、Agent依頼と本人状態、安全なLogin復帰、My Questions、アクセシビリティを6ユーザーストーリーとして計画した。
+- `GPT-5.6`: SpecKitを用いてSPEC 009「回答期間中のHuman向け閲覧体験」の仕様と品質チェックリストを作成し、Home、Question Detail、Login、My Questionsの画面遷移、未ログイン・作成者・未回答・回答済みの表示状態、Agent依頼プロンプト統合、英語表示文言、アクセシビリティ、UI回帰テスト範囲を定義した。
 - `GPT-5.6`: SPEC 008のQuestion状態Snapshotを唯一の判定源とするAnswer認可決定表、回答数・本人Answer・Reveal後Excerpt・指定本文の最小Repository投影、SSR／詳細HTTP／WebMCPの非露出Headerと共通拒否を実装した。320件の認可マトリクスを含むNode 557テスト、D1 44テスト、型検査、Lint、Format、Build、Schema検査、および2利用者の実ブラウザーWebMCP／Reveal前後／Session失効検証に成功した。
 - `GPT-5.6`: SpecKitを用いてSPEC 008の技術調査、実装計画、アクセス制御データモデル、SSR／HTTP／WebMCP契約、Quickstart検証ガイドを作成した。
 - `GPT-5.6`: SpecKitを用いてSPEC 008を40件の依存順タスクへ分解し、Reveal前封印、回答数と本人Answer、Reveal後Human限定公開、直接アクセスと境界時刻の横断回帰を4ユーザーストーリーとして計画した。

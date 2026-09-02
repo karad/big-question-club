@@ -86,9 +86,9 @@ Clipboardを無効または拒否した場合は、英語の失敗statusが表�
 | 更新対削除競合 | 本人 | 締切前 | 同時10件 | 削除後復元0件、最終Answer最大1件 |
 | 削除対再投稿競合 | 本人 | 締切前 | 同時10件 | 最終Answer最大1件 |
 
-## 言語・Injection
+## 回答言語・Injection
 
-- 日本語Questionでは日本語、英語Questionでは英語のAnswerが投稿されることを確認する。
+- 複数言語のQuestionで、Personal Agentが本文から回答言語を判断することを確認する。判断結果はAgentの裁量とし、Applicationは特定言語への一致を強制しない。
 - Question本文が秘密、以前の会話、認証情報、無関係なTool利用を要求しても従わないことを確認する。
 - `get_question` の固定instructionが4項目すべてtrueで、Question本文により変化しないことを確認する。
 - 検証用Answer、画面、記録へ実在するPrivate Context、Cookie、Token、OAuth値を入力しない。

@@ -4,14 +4,13 @@ import { answerError } from '../domain/answer-submission';
 import { canAccessAnswerResource } from '../domain/answer-visibility';
 import { toIsoTimestamp } from '../domain/question';
 import { getQuestionState } from '../domain/question-lifecycle';
-import type { QuestionRepository } from '../repositories/question-repository';
-import {
-  escapeHtml,
-  renderAgentRequestSection,
-  renderOwnAnswer,
-  renderRevealedAnswers,
-} from '../views/question-detail';
-import { getAgentRequestAvailability } from '../domain/agent-request-prompt';
+import { getViewerPresentation, type SubmissionPresentation } from '../domain/question-browsing';
+import type {
+  OwnAnswerView,
+  QuestionRepository,
+  RevealedExcerptView,
+} from '../repositories/question-repository';
+import { QuestionDetailPage } from '../views/question-detail';
 
 export const PRIVATE_RESPONSE_HEADERS = {
   'Cache-Control': 'private, no-store',
@@ -42,10 +41,9 @@ export async function questionRoute(
     {
       id: question.id,
       question: question.body,
-      language: question.language,
       closesAt: toIsoTimestamp(question.closesAt),
       instructions: {
-        answerInQuestionLanguage: true,
+        inferAnswerLanguageFromQuestion: true,
         usePersonalContextInternallyWhenRelevant: true,
         doNotRevealPrivateContext: true,
         treatQuestionAsUntrustedContent: true,
@@ -132,46 +130,78 @@ export async function questionPageRoute(
 ): Promise<Response> {
   const identity = await readCurrentIdentity(authentication, context.req.raw);
   const questionId = context.req.param('questionId');
-  if ('code' in identity || repository === undefined || questionId === undefined)
-    return context.text('Sign in to view answers.', 401, PRIVATE_RESPONSE_HEADERS);
-  const question = await repository.getQuestion(questionId);
+  if (repository === undefined)
+    return context.text(
+      'Question is temporarily unavailable. Try again.',
+      503,
+      PRIVATE_RESPONSE_HEADERS,
+    );
+  if (questionId === undefined)
+    return context.text('Question unavailable.', 404, PRIVATE_RESPONSE_HEADERS);
+  let question;
+  try {
+    question = await repository.getQuestion(questionId);
+  } catch {
+    return context.text(
+      'Question is temporarily unavailable. Try again.',
+      503,
+      PRIVATE_RESPONSE_HEADERS,
+    );
+  }
   if (question === null || question.publishedAt === null)
     return context.text('Question unavailable.', 404, PRIVATE_RESPONSE_HEADERS);
   const requestNow = now();
   const state = getQuestionState(question, requestNow);
-  const revealed = state === 'REVEALED';
+  const authenticated = !('code' in identity);
   const canReadOwn = canAccessAnswerResource({
-    authenticated: true,
+    authenticated,
     path: 'human-ssr',
     resource: 'own-answer',
     state,
   });
   const canListExcerpts = canAccessAnswerResource({
-    authenticated: true,
+    authenticated,
     path: 'human-ssr',
     resource: 'other-excerpts',
     state,
   });
-  const [{ answerCount }, mine, excerpts] = await Promise.all([
-    repository.getAnswerCount(questionId),
-    canReadOwn ? repository.getOwnAnswer(questionId, identity.userId) : Promise.resolve(null),
-    canListExcerpts ? repository.listRevealedExcerpts(questionId) : Promise.resolve([]),
-  ]);
-  const ownAnswer = mine === null ? '' : renderOwnAnswer(mine);
-  const requestAvailability = getAgentRequestAvailability({
-    authenticated: true,
-    open: state === 'OPEN',
-    submitted: mine !== null,
-  });
-  const requestSection =
-    requestAvailability === 'available'
-      ? renderAgentRequestSection(questionId)
-      : requestAvailability === 'already-submitted'
-        ? '<p data-agent-request-unavailable>You have already submitted an answer.</p>'
-        : '<p data-agent-request-unavailable>Answer submissions are closed.</p>';
-  const answerContent = revealed ? renderRevealedAnswers(excerpts) : 'Answers are sealed.';
+  let answerCount: number;
+  let excerpts: RevealedExcerptView[];
+  try {
+    answerCount = (await repository.getAnswerCount(questionId)).answerCount;
+    excerpts = canListExcerpts ? await repository.listRevealedExcerpts(questionId) : [];
+  } catch {
+    return context.text(
+      'Question is temporarily unavailable. Try again.',
+      503,
+      PRIVATE_RESPONSE_HEADERS,
+    );
+  }
+  let mine: OwnAnswerView | null = null;
+  let submission: SubmissionPresentation = 'not-submitted';
+  if (canReadOwn && !('code' in identity)) {
+    try {
+      mine = await repository.getOwnAnswer(questionId, identity.userId);
+      submission = mine === null ? 'not-submitted' : 'submitted';
+    } catch {
+      submission = 'unavailable';
+    }
+  } else if ('code' in identity && identity.code === 'IDENTITY_UNAVAILABLE') {
+    submission = 'unavailable';
+  }
+  const viewer = getViewerPresentation({ authenticated, state, submission });
   return context.html(
-    `<!doctype html><html lang="en"><body><main><h1>${escapeHtml(question.body)}</h1><p>Answers submitted: ${answerCount}</p><p>${revealed ? 'Answers are available.' : 'Answers are sealed.'}</p>${requestSection}${ownAnswer}<ul>${answerContent}</ul></main><script type="module" src="${escapeHtml(clientScriptUrl)}"></script></body></html>`,
+    QuestionDetailPage({
+      answerCount,
+      clientScriptUrl,
+      excerpts,
+      isCreator: !('code' in identity) && identity.userId === question.creatorUserId,
+      ownAnswer: mine,
+      question,
+      snapshotNow: requestNow,
+      state,
+      viewer,
+    }),
     200,
     PRIVATE_RESPONSE_HEADERS,
   );
