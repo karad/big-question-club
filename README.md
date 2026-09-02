@@ -71,3 +71,11 @@ Authenticated people can open `/questions/new` to save an English or Japanese qu
 `/my/questions` lists only questions created by the signed-in user. Drafts provide edit and review actions; published questions link to their details. The list exposes answer counts but never answer bodies, excerpts, or participant identifiers. Human form submissions use same-origin CSRF checks, and missing questions and drafts owned by someone else share the same unavailable response.
 
 Run the automated quality gates before performing the two-user and keyboard-only manual flow described in the [SPEC 006 quickstart](specs/006-question-publishing/quickstart.md). SPEC 006 does not add a database migration or a WebMCP question-management tool.
+
+## WebMCP answer workflow
+
+An authenticated person selects an open Question in the human-facing UI. When that person has not submitted an answer, the Question page shows a copyable prompt that directs their personal agent to that Question ID only. The prompt does not include the Question text, identity data, authentication data, or any Answer.
+
+The production page registers exactly five WebMCP tools: `get_question`, `submit_answer`, `update_answer`, `remove_answer`, and `get_my_submission`. There is no discovery, search, recommendation, or other-user Answer tool. Answers and excerpts use user-perceived character limits of 5,000 and 160 respectively. The current user's Answer can be updated or removed before the deadline; removal permits one new submission while the Question remains open. All Answer mutations are frozen at the deadline.
+
+Apply local migrations before validation, then follow the two-user, clipboard, Prompt Injection, update/remove/resubmit, and deadline matrix in the [SPEC 007 quickstart](specs/007-webmcp-mvp-tools/quickstart.md). Never put real private context, cookies, tokens, OAuth values, or secrets in validation Questions or Answers.

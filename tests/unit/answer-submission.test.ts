@@ -9,6 +9,15 @@ describe('Answer submission input', () => {
       excerpt: 'Summary',
     });
   });
+  it('counts combined characters by grapheme', () => {
+    const combined = 'e\u0301';
+    expect(
+      parseSubmissionInput({
+        answer: combined.repeat(MAX_ANSWER_LENGTH),
+        excerpt: combined.repeat(MAX_EXCERPT_LENGTH),
+      }),
+    ).not.toHaveProperty('code');
+  });
   it.each([
     {},
     { answer: '', excerpt: 'Summary' },
@@ -16,9 +25,11 @@ describe('Answer submission input', () => {
     { answer: 'Answer', excerpt: 'two\nlines' },
     { answer: 'a'.repeat(MAX_ANSWER_LENGTH + 1), excerpt: 'Summary' },
     { answer: 'Answer', excerpt: 'a'.repeat(MAX_EXCERPT_LENGTH + 1) },
+    { answer: ` ${'a'.repeat(MAX_ANSWER_LENGTH)}`, excerpt: 'Summary' },
+    { answer: 'Answer', excerpt: ` ${'a'.repeat(MAX_EXCERPT_LENGTH)}` },
     { answer: 'Answer', excerpt: 'Summary', extra: true },
   ])('rejects invalid Answer input: %#', (input) => {
-    expect(parseSubmissionInput(input)).toEqual(answerError('INVALID_ANSWER'));
+    expect(parseSubmissionInput(input)).toEqual(answerError('INVALID_INPUT'));
   });
 
   it('uses stable API error contracts for authentication, a closed question, and duplicates', () => {

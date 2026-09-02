@@ -107,15 +107,13 @@ export const answers = sqliteTable(
     body: text('body').notNull(),
     excerpt: text('excerpt').notNull(),
     createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
   },
   (table) => [
-    check(
-      'answers_body_valid',
-      sql`length(trim(${table.body})) > 0 AND length(${table.body}) <= 5000`,
-    ),
+    check('answers_body_valid', sql`length(trim(${table.body})) > 0`),
     check(
       'answers_excerpt_valid',
-      sql`length(trim(${table.excerpt})) > 0 AND length(${table.excerpt}) <= 160 AND instr(${table.excerpt}, char(10)) = 0 AND instr(${table.excerpt}, char(13)) = 0`,
+      sql`length(trim(${table.excerpt})) > 0 AND instr(${table.excerpt}, char(10)) = 0 AND instr(${table.excerpt}, char(13)) = 0`,
     ),
     unique('answers_question_user_unique').on(table.questionId, table.userId),
     index('answers_question_id_created_at').on(table.questionId, table.createdAt),

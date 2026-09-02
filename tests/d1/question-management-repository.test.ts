@@ -225,7 +225,7 @@ describe('Question management repository', () => {
     );
     if (second.kind !== 'created') throw new Error('Second draft was not created');
     await env.TEST_DB.prepare(
-      'INSERT INTO answers (id, question_id, user_id, body, excerpt, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO answers (id, question_id, user_id, body, excerpt, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
     )
       .bind(
         'answer-1',
@@ -233,6 +233,7 @@ describe('Question management repository', () => {
         'answerer',
         'Private answer body',
         'Private excerpt',
+        now + 2,
         now + 2,
       )
       .run();

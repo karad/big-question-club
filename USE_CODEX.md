@@ -30,6 +30,10 @@
 
 ## 2026-09-02
 
+- `GPT-5.6`: SPEC 007の固定Agent依頼Prompt、Clipboard導線、指定Open Question取得、書記素制限付き投稿、本人Answer更新・Hard Delete・再投稿、本人状態確認、5 Tool限定登録、D1 Migrationと競合安全性を実装した。Node 229テスト、D1 42テスト、型検査、Lint、Format、Build、Schema検査、およびGoogle OAuth 2利用者のローカルWebMCP実機E2Eに成功し、他者Answer非露出・非変更、Draft非列挙、締切後凍結、日本語・英語のInjection耐性を確認した。
+- `GPT-5.6`: SpecKitを用いてSPEC 007「WebMCP MVP Tool群」の仕様と品質チェックリストを作成し、Question画面の英語コピペ用プロンプトを起点にHumanが指定したQuestionだけを扱う5 Toolの入出力、締切前の本人Answer更新・削除、認証、エラー、文字数、安全なdescription、非公開データ境界、Integration Test成果を定義した。
+- `GPT-5.6`: SpecKitを用いてSPEC 007の技術調査、実装計画、Answer更新時刻を含むD1データモデル、5 WebMCP Tool／HTTP／コピペ用Prompt契約、Quickstart検証ガイドを作成した。
+- `GPT-5.6`: SpecKitを用いてSPEC 007を40件の依存順タスクへ分解し、Prompt UI、指定Question取得、投稿、本人Answer更新・削除・再投稿、本人状態、安全境界を6ユーザーストーリーとして計画した。
 - `GPT-5.6`: SPEC 006のローカルD1・Google OAuth 2利用者手動検証を実施し、入力境界、Draft編集、不可逆な公開、4状態のMy Questions、所有者非列挙、Answer非露出、英語UIとキーボード導線を確認した。手動検証で発見した空の締切がUnix epoch表示になる問題を修正した。
 - `GPT-5.6`: SPEC 006のQuestion作成・Draft編集・公開確認・不可逆な公開・My Questions・所有者非列挙・CSRF保護を実装し、書記素文字数と締切境界のUnit Test、SSR／認可Integration Test、D1競合・集計Testを追加した。
 - `GPT-5.6`: SpecKitを用いてSPEC 006の技術調査、実装計画、Question管理データモデル、Human向けForm契約、検証ガイド、40件の依存順タスクを作成した。

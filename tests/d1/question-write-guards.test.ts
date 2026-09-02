@@ -49,7 +49,7 @@ describe('question write guards', () => {
   });
 
   it.each([
-    ['draft', null, 2 * hour, 'not-open'],
+    ['draft', null, 2 * hour, 'missing'],
     ['at close', hour, 3 * hour, 'not-open'],
     ['after close', hour, 3 * hour + 1, 'not-open'],
     ['revealed', hour, 4 * hour, 'not-open'],

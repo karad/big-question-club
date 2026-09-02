@@ -1,7 +1,5 @@
-import { registerVerificationQuestionTool } from './webmcp/register-tool';
-import { registerWhoAmITool } from './webmcp/register-who-am-i-tool';
-import { registerSubmitAnswerTool } from './webmcp/register-submit-answer-tool';
-import { registerMySubmissionTool } from './webmcp/register-my-submission-tool';
+import { registerProductionWebMcpTools } from './webmcp/register-production-tools';
+import { initializeAgentPromptClipboard } from './ui/agent-prompt-clipboard';
 
 const statusElement = document.getElementById('webmcp-status');
 const identityStatusElement = document.getElementById('identity-status');
@@ -90,12 +88,7 @@ function updateAuthenticationControls(isAuthenticated: boolean): void {
 }
 
 async function registerWebMcpTools(): Promise<void> {
-  const registrations = [
-    await registerVerificationQuestionTool(document, fetch),
-    await registerWhoAmITool(document, fetch),
-    await registerSubmitAnswerTool(document, fetch),
-    await registerMySubmissionTool(document, fetch),
-  ];
+  const registrations = await registerProductionWebMcpTools(document, fetch);
   const failedRegistration = registrations.find((registration) => !registration.registered);
   if (failedRegistration !== undefined && !failedRegistration.registered) {
     updateStatus(failedRegistration.message);
@@ -107,6 +100,7 @@ async function registerWebMcpTools(): Promise<void> {
 void registerWebMcpTools();
 initializeQuestionForm();
 initializeDeadlineDisplay();
+initializeAgentPromptClipboard(document);
 
 document.addEventListener('click', (event) => {
   const target = event.target;

@@ -6,6 +6,7 @@ import {
   QUESTION_LANGUAGES,
   type QuestionLanguage,
 } from './question';
+import { countGraphemes } from './text';
 
 export type QuestionDraftForm = {
   body: string;
@@ -32,10 +33,8 @@ export type ParseQuestionDraftResult =
   | { kind: 'valid'; value: ValidatedQuestionDraft; form: QuestionDraftForm }
   | { kind: 'invalid'; errors: QuestionFormErrors; form: QuestionDraftForm };
 
-const graphemeSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
-
 export function countQuestionGraphemes(value: string): number {
-  return [...graphemeSegmenter.segment(value.trim())].length;
+  return countGraphemes(value.trim());
 }
 
 export function parseQuestionDraftForm(

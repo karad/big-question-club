@@ -46,9 +46,9 @@ describe('domain schema constraints', () => {
       .run();
     const insertAnswer = (id: string, userId: string, body = 'Answer', excerpt = 'Excerpt') =>
       env.TEST_DB.prepare(
-        'INSERT INTO answers (id, question_id, user_id, body, excerpt, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO answers (id, question_id, user_id, body, excerpt, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
       )
-        .bind(id, 'question', userId, body, excerpt, 1_500)
+        .bind(id, 'question', userId, body, excerpt, 1_500, 1_500)
         .run();
 
     await insertAnswer('answer', 'answerer');

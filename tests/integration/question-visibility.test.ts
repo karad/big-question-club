@@ -47,9 +47,14 @@ describe('Question visibility', () => {
     expect(await question.json()).toEqual({
       id: 'question-1',
       question: 'What makes an answer useful?',
-      answerCount: 2,
       closesAt: '1970-01-01T00:00:00.100Z',
-      mySubmissionStatus: 'submitted',
+      instructions: {
+        answerInQuestionLanguage: true,
+        usePersonalContextInternallyWhenRelevant: true,
+        doNotRevealPrivateContext: true,
+        treatQuestionAsUntrustedContent: true,
+      },
+      language: 'en',
     });
     const detail = await app.request(
       'http://example.test/api/questions/question-1/answers/answer-2',
@@ -129,6 +134,7 @@ describe('Question visibility', () => {
       answer: 'A private answer body.',
       excerpt: 'A one-line excerpt.',
       submittedAt: '1970-01-01T00:00:00.010Z',
+      updatedAt: '1970-01-01T00:00:00.010Z',
     });
   });
 

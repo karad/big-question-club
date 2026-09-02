@@ -10,13 +10,13 @@ export async function submitAnswerRoute(
   repository: QuestionRepository | undefined,
   now: () => number,
 ): Promise<Response> {
-  if (repository === undefined)
-    return context.json(answerError('ANSWER_SUBMISSION_UNAVAILABLE'), 500, {
-      'Cache-Control': 'no-store',
-    });
   const identity = await readCurrentIdentity(authentication, context.req.raw);
   if ('code' in identity)
     return context.json(answerError('AUTHENTICATION_REQUIRED'), 401, {
+      'Cache-Control': 'no-store',
+    });
+  if (repository === undefined)
+    return context.json(answerError('TOOL_UNAVAILABLE'), 500, {
       'Cache-Control': 'no-store',
     });
   const input = parseSubmissionInput(await context.req.json().catch(() => null));
@@ -35,9 +35,9 @@ export async function submitAnswerRoute(
   if (result.kind === 'not-open')
     return context.json(answerError('QUESTION_CLOSED'), 409, { 'Cache-Control': 'no-store' });
   if (result.kind === 'invalid')
-    return context.json(answerError('INVALID_ANSWER'), 400, { 'Cache-Control': 'no-store' });
+    return context.json(answerError('INVALID_INPUT'), 400, { 'Cache-Control': 'no-store' });
   if (result.kind === 'reference-missing' || result.kind === 'unavailable')
-    return context.json(answerError('ANSWER_SUBMISSION_UNAVAILABLE'), 500, {
+    return context.json(answerError('TOOL_UNAVAILABLE'), 500, {
       'Cache-Control': 'no-store',
     });
   return context.json(

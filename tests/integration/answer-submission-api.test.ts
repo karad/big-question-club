@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../src/app';
 import type { Authentication } from '../../src/auth/session';
-import { createInMemoryQuestionRepository, openQuestion } from '../helpers/question-repository';
+import {
+  createInMemoryQuestionRepository,
+  draftQuestion,
+  openQuestion,
+} from '../helpers/question-repository';
 
 function authentication(userId: string | undefined): Authentication {
   return {
@@ -92,5 +96,16 @@ describe('Answer submission API', () => {
         )
       ).status,
     ).toBe(404);
+  });
+
+  it('does not enumerate a draft through submission errors', async () => {
+    const app = createApp({
+      authentication: authentication('user-1'),
+      repository: createInMemoryQuestionRepository({ question: draftQuestion }),
+      now: () => 99,
+    });
+    const response = await app.request(request({ answer: 'Answer', excerpt: 'Excerpt' }));
+    expect(response.status).toBe(404);
+    expect(await response.json()).toMatchObject({ code: 'QUESTION_NOT_FOUND' });
   });
 });

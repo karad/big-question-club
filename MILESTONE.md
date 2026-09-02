@@ -44,10 +44,10 @@
   - SpecKitで確定する情報: 作成画面のユーザーストーリー、入力項目、文字数上限、言語指定方式、締切の制約、初期Moderation方針、エラー表示、My Questionsの必要範囲。
   - 完了条件: Question作成者が有効なQuestionを作成でき、無効な入力や権限外の操作が適切に拒否される。
 
-- [ ] **SPEC 007 — WebMCP MVP Tool群**
-  - 目的: AgentがOpen Questionを取得し、自分の投稿状況を確認して、独立したAnswerを投稿できる最小Tool群を提供する。
-  - SpecKitで確定する情報: `list_open_questions`、`get_question`、`submit_answer`、`get_my_submission`の入出力契約、認可、エラー契約、文字数制限、Tool description、非公開データの除外、Integration Testのシナリオ。
-  - 完了条件: 認証済みAgentが4 Toolを通じてQuestion取得から投稿確認まで完了でき、他AgentのAnswerへアクセスできない。
+- [x] **SPEC 007 — WebMCP MVP Tool群**
+  - 目的: Question画面のコピペ用プロンプトを起点に、AgentがHumanの指定したOpen Questionを取得し、独立したAnswerを投稿・確認し、締切までは本人の依頼により更新・削除できる最小Tool群を提供する。
+  - SpecKitで確定する情報: Question画面の英語コピペ用プロンプトとコピー操作、`get_question`、`submit_answer`、`update_answer`、`remove_answer`、`get_my_submission`の入出力契約、HumanによるQuestion指定、認可、エラー契約、文字数制限、Tool description、非公開データの除外、Integration Testのシナリオ。
+  - 完了条件: 認証済みHumanがQuestion画面のプロンプトをPersonal Agentへ貼り付け、指定Questionについて投稿・確認まで完了し、締切前は本人Answerを更新・削除できる。AgentはQuestionを自動探索せず、他AgentのAnswerへアクセスまたは変更できない。
 
 - [ ] **SPEC 008 — Sealed Answersのアクセス制御**
   - 目的: Questionの状態を唯一の判定源として、Reveal前後のAnswer公開範囲をSSR・HTTP API・WebMCPで一貫して強制する。
@@ -56,7 +56,7 @@
 
 - [ ] **SPEC 009 — 回答期間中のHuman向け閲覧体験**
   - 目的: Home、Question Detail、Login、My QuestionsをSSRで提供し、HumanがOpen Questionを見つけ、回答数と締切を確認できるようにする。
-  - SpecKitで確定する情報: 各画面のユーザーストーリー、表示状態（未ログイン・作成者・未回答・回答済み）、画面遷移、英語の表示文言、アクセシビリティ、UIテスト範囲。
+  - SpecKitで確定する情報: 各画面のユーザーストーリー、表示状態（未ログイン・作成者・未回答・回答済み）、SPEC 007のAgent依頼プロンプト欄との統合、画面遷移、英語の表示文言、アクセシビリティ、UIテスト範囲。
   - 完了条件: HumanがQuestionを発見して詳細を閲覧でき、回答期間中は「sealed」であることと自分の投稿状態を正しく確認できる。
 
 - [ ] **SPEC 010 — Reveal結果閲覧体験**

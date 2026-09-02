@@ -44,6 +44,19 @@ export type SubmitResult =
   | { kind: 'reference-missing' }
   | { kind: 'invalid' }
   | { kind: 'unavailable' };
+export type UpdateAnswerResult =
+  | { kind: 'updated'; answer: Answer }
+  | { kind: 'missing' }
+  | { kind: 'answer-missing' }
+  | { kind: 'not-open' }
+  | { kind: 'invalid' }
+  | { kind: 'unavailable' };
+export type RemoveAnswerResult =
+  | { kind: 'removed' }
+  | { kind: 'missing' }
+  | { kind: 'answer-missing' }
+  | { kind: 'not-open' }
+  | { kind: 'unavailable' };
 
 export interface QuestionRepository {
   getQuestion(id: string): Promise<Question | null>;
@@ -63,6 +76,13 @@ export interface QuestionRepository {
     input: SubmissionInput,
     now: number,
   ): Promise<SubmitResult>;
+  updateAnswer(
+    questionId: string,
+    userId: string,
+    input: SubmissionInput,
+    now: number,
+  ): Promise<UpdateAnswerResult>;
+  removeAnswer(questionId: string, userId: string, now: number): Promise<RemoveAnswerResult>;
   getMine(questionId: string, userId: string): Promise<Answer | null>;
   countAnswers(questionId: string): Promise<number>;
   listExcerpts(questionId: string): Promise<Array<Pick<Answer, 'id' | 'excerpt'>>>;
@@ -196,9 +216,9 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
       try {
         const result = await database
           .prepare(
-            'INSERT INTO answers (id, question_id, user_id, body, excerpt, created_at) SELECT ?, q.id, ?, ?, ?, ? FROM questions q WHERE q.id = ? AND q.published_at IS NOT NULL AND q.published_at <= ? AND ? < q.closes_at',
+            'INSERT INTO answers (id, question_id, user_id, body, excerpt, created_at, updated_at) SELECT ?, q.id, ?, ?, ?, ?, ? FROM questions q WHERE q.id = ? AND q.published_at IS NOT NULL AND q.published_at <= ? AND ? < q.closes_at',
           )
-          .bind(id, userId, input.answer, input.excerpt, now, questionId, now, now)
+          .bind(id, userId, input.answer, input.excerpt, now, now, questionId, now, now)
           .run();
         if (result.meta.changes === 1) {
           return {
@@ -210,10 +230,12 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
               body: input.answer,
               excerpt: input.excerpt,
               createdAt: now,
+              updatedAt: now,
             },
           };
         }
-        return (await repository.getQuestion(questionId)) === null
+        const question = await repository.getQuestion(questionId);
+        return question === null || question.publishedAt === null
           ? { kind: 'missing' }
           : { kind: 'not-open' };
       } catch {
@@ -228,6 +250,48 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
         return 'code' in parseSubmissionInput(input)
           ? { kind: 'invalid' }
           : { kind: 'unavailable' };
+      }
+    },
+    async updateAnswer(questionId, userId, input, now) {
+      if ('code' in parseSubmissionInput(input)) return { kind: 'invalid' };
+      try {
+        const result = await database
+          .prepare(
+            'UPDATE answers SET body = ?, excerpt = ?, updated_at = ? WHERE question_id = ? AND user_id = ? AND EXISTS (SELECT 1 FROM questions q WHERE q.id = answers.question_id AND q.published_at IS NOT NULL AND q.published_at <= ? AND ? < q.closes_at)',
+          )
+          .bind(input.answer, input.excerpt, now, questionId, userId, now, now)
+          .run();
+        if (result.meta.changes === 1) {
+          const answer = await repository.getMine(questionId, userId);
+          return answer === null ? { kind: 'unavailable' } : { kind: 'updated', answer };
+        }
+        const question = await repository.getQuestion(questionId);
+        if (question === null || question.publishedAt === null) return { kind: 'missing' };
+        if (question.publishedAt > now || now >= question.closesAt) return { kind: 'not-open' };
+        return (await repository.getMine(questionId, userId)) === null
+          ? { kind: 'answer-missing' }
+          : { kind: 'unavailable' };
+      } catch {
+        return { kind: 'unavailable' };
+      }
+    },
+    async removeAnswer(questionId, userId, now) {
+      try {
+        const result = await database
+          .prepare(
+            'DELETE FROM answers WHERE question_id = ? AND user_id = ? AND EXISTS (SELECT 1 FROM questions q WHERE q.id = answers.question_id AND q.published_at IS NOT NULL AND q.published_at <= ? AND ? < q.closes_at)',
+          )
+          .bind(questionId, userId, now, now)
+          .run();
+        if (result.meta.changes === 1) return { kind: 'removed' };
+        const question = await repository.getQuestion(questionId);
+        if (question === null || question.publishedAt === null) return { kind: 'missing' };
+        if (question.publishedAt > now || now >= question.closesAt) return { kind: 'not-open' };
+        return (await repository.getMine(questionId, userId)) === null
+          ? { kind: 'answer-missing' }
+          : { kind: 'unavailable' };
+      } catch {
+        return { kind: 'unavailable' };
       }
     },
     async getMine(questionId, userId) {

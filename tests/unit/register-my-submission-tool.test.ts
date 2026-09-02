@@ -11,13 +11,13 @@ describe('get_my_submission WebMCP tool', () => {
     expect(registerTool).toHaveBeenCalledWith(
       expect.objectContaining({
         name: GET_MY_SUBMISSION_TOOL_NAME,
-        annotations: { readOnlyHint: true, untrustedContentHint: false },
+        annotations: { readOnlyHint: true, untrustedContentHint: true },
       }),
     );
   });
   it('rejects invalid input', async () => {
     await expect(executeMySubmissionTool({}, undefined, vi.fn())).resolves.toMatchObject({
-      code: 'INVALID_ANSWER',
+      code: 'INVALID_INPUT',
     });
   });
   it('requests only the caller-specific endpoint and never accepts another answer id', async () => {
@@ -35,6 +35,6 @@ describe('get_my_submission WebMCP tool', () => {
     );
     await expect(
       executeMySubmissionTool({ questionId: 'q', answerId: 'someone-else' }, undefined, fetchLike),
-    ).resolves.toMatchObject({ code: 'INVALID_ANSWER' });
+    ).resolves.toMatchObject({ code: 'INVALID_INPUT' });
   });
 });

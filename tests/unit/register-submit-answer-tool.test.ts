@@ -61,7 +61,7 @@ describe('submit_answer WebMCP tool', () => {
         cancelled.signal,
         fetchLike,
       ),
-    ).resolves.toMatchObject({ code: 'ANSWER_SUBMISSION_UNAVAILABLE' });
+    ).resolves.toMatchObject({ code: 'TOOL_UNAVAILABLE' });
     expect(fetchLike).not.toHaveBeenCalled();
     await expect(
       executeSubmitAnswerTool(
@@ -69,6 +69,6 @@ describe('submit_answer WebMCP tool', () => {
         undefined,
         vi.fn().mockRejectedValue(new Error('offline')),
       ),
-    ).resolves.toMatchObject({ code: 'ANSWER_SUBMISSION_UNAVAILABLE' });
+    ).resolves.toMatchObject({ code: 'TOOL_UNAVAILABLE' });
   });
 });

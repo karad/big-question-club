@@ -80,6 +80,7 @@ export function createInMemoryQuestionRepository({
     async submit(questionId, userId, input, now): Promise<SubmitResult> {
       const current = storedQuestions.find((item) => item.id === questionId);
       if (current === undefined) return { kind: 'missing' };
+      if (current.publishedAt === null) return { kind: 'missing' };
       if (getQuestionState(current, now) !== 'OPEN') return { kind: 'not-open' };
       if (
         storedAnswers.some((answer) => answer.questionId === questionId && answer.userId === userId)
@@ -93,9 +94,34 @@ export function createInMemoryQuestionRepository({
         body: input.answer,
         excerpt: input.excerpt,
         createdAt: now,
+        updatedAt: now,
       };
       storedAnswers.push(answer);
       return { kind: 'submitted', answer };
+    },
+    async updateAnswer(questionId, userId, input, now) {
+      const current = storedQuestions.find((item) => item.id === questionId);
+      if (current === undefined) return { kind: 'missing' };
+      if (current.publishedAt === null) return { kind: 'missing' };
+      if (getQuestionState(current, now) !== 'OPEN') return { kind: 'not-open' };
+      const answer = storedAnswers.find(
+        (item) => item.questionId === questionId && item.userId === userId,
+      );
+      if (answer === undefined) return { kind: 'answer-missing' };
+      Object.assign(answer, { body: input.answer, excerpt: input.excerpt, updatedAt: now });
+      return { kind: 'updated', answer };
+    },
+    async removeAnswer(questionId, userId, now) {
+      const current = storedQuestions.find((item) => item.id === questionId);
+      if (current === undefined) return { kind: 'missing' };
+      if (current.publishedAt === null) return { kind: 'missing' };
+      if (getQuestionState(current, now) !== 'OPEN') return { kind: 'not-open' };
+      const index = storedAnswers.findIndex(
+        (item) => item.questionId === questionId && item.userId === userId,
+      );
+      if (index < 0) return { kind: 'answer-missing' };
+      storedAnswers.splice(index, 1);
+      return { kind: 'removed' };
     },
     async getMine(questionId, userId) {
       return (
@@ -129,6 +155,7 @@ export function createAnswer(overrides: Partial<Answer> = {}): Answer {
     body: 'A private answer body.',
     excerpt: 'A one-line excerpt.',
     createdAt: 10,
+    updatedAt: 10,
     ...overrides,
   };
 }
@@ -148,3 +175,6 @@ export const openQuestion: Question = {
 export const draftQuestion: Question = { ...openQuestion, publishedAt: null };
 export const closedQuestion: Question = { ...openQuestion, revealsAt: 200 };
 export const revealedQuestion: Question = { ...openQuestion };
+export const answerDeadline = openQuestion.closesAt;
+export const primaryUserId = 'user-1';
+export const otherUserId = 'user-2';

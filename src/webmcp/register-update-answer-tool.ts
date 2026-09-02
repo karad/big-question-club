@@ -1,13 +1,11 @@
 import { answerError, parseSubmissionInput, type AnswerError } from '../domain/answer-submission';
 import { getWebMcpSupport } from './browser-support';
+import { registrationFailure } from './register-get-question-tool';
 
-export const SUBMIT_ANSWER_TOOL_NAME = 'submit_answer';
+export const UPDATE_ANSWER_TOOL_NAME = 'update_answer';
 type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
-type Result = { questionId: string; status: 'submitted'; submittedAt: string } | AnswerError;
 
-function parseInput(
-  input: unknown,
-): { questionId: string; answer: string; excerpt: string } | AnswerError {
+function parseInput(input: unknown) {
   if (typeof input !== 'object' || input === null || Array.isArray(input))
     return answerError('INVALID_INPUT');
   const value = input as Record<string, unknown>;
@@ -17,33 +15,32 @@ function parseInput(
   return 'code' in submission ? submission : { questionId: value.questionId, ...submission };
 }
 
-export async function executeSubmitAnswerTool(
+export async function executeUpdateAnswerTool(
   input: unknown,
   signal: AbortSignal | undefined,
   fetchLike: FetchLike,
   endpoint = '/api/questions',
-): Promise<Result> {
+): Promise<unknown | AnswerError> {
   const parsed = parseInput(input);
   if ('code' in parsed) return parsed;
   if (signal?.aborted) return answerError('TOOL_UNAVAILABLE');
   try {
     const response = await fetchLike(
-      `${endpoint}/${encodeURIComponent(parsed.questionId)}/answers`,
+      `${endpoint}/${encodeURIComponent(parsed.questionId)}/my-answer`,
       {
-        method: 'POST',
+        method: 'PUT',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({ answer: parsed.answer, excerpt: parsed.excerpt }),
         ...(signal === undefined ? {} : { signal }),
       },
     );
-    const payload = await response.json();
-    return response.ok ? (payload as Result) : (payload as AnswerError);
+    return await response.json();
   } catch {
     return answerError('TOOL_UNAVAILABLE');
   }
 }
 
-export async function registerSubmitAnswerTool(
+export async function registerUpdateAnswerTool(
   documentLike: Pick<Document, 'modelContext'>,
   fetchLike: FetchLike,
 ): Promise<{ registered: true } | { registered: false; message: string }> {
@@ -51,8 +48,9 @@ export async function registerSubmitAnswerTool(
   if (!support.available) return { registered: false, message: support.message };
   try {
     await support.modelContext.registerTool({
-      name: SUBMIT_ANSWER_TOOL_NAME,
-      description: 'Submit one public answer and a one-line excerpt for an open question.',
+      name: UPDATE_ANSWER_TOOL_NAME,
+      description:
+        "Only when the human explicitly asks, replace the current user's answer before its deadline.",
       inputSchema: {
         type: 'object',
         required: ['questionId', 'answer', 'excerpt'],
@@ -72,13 +70,10 @@ export async function registerSubmitAnswerTool(
         },
       },
       annotations: { readOnlyHint: false, untrustedContentHint: false },
-      execute: (input, options) => executeSubmitAnswerTool(input, options?.signal, fetchLike),
+      execute: (input, options) => executeUpdateAnswerTool(input, options?.signal, fetchLike),
     });
     return { registered: true };
   } catch {
-    return {
-      registered: false,
-      message: 'WebMCP tool registration failed. Check the browser configuration.',
-    };
+    return registrationFailure();
   }
 }

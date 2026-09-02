@@ -29,6 +29,7 @@ export type Answer = {
   body: string;
   excerpt: string;
   createdAt: number;
+  updatedAt: number;
 };
 
 export function toIsoTimestamp(timestamp: number): string {

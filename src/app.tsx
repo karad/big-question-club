@@ -3,14 +3,14 @@ import { csrf } from 'hono/csrf';
 import { HTTPException } from 'hono/http-exception';
 
 import type { Authentication } from './auth/session';
+import { answerError } from './domain/answer-submission';
 import { authenticationRoute } from './routes/auth';
 import { healthRoute } from './routes/health';
 import { verificationQuestionRoute } from './routes/verification-question';
 import { whoAmIRoute } from './routes/who-am-i';
-import { SAFETY_VERIFICATION_TOOL_NAME } from './webmcp/register-tool';
-import { WHO_AM_I_TOOL_NAME } from './webmcp/register-who-am-i-tool';
 import type { QuestionRepository } from './repositories/question-repository';
 import { submitAnswerRoute } from './routes/submit-answer';
+import { removeAnswerRoute, updateAnswerRoute } from './routes/answer-mutation';
 import {
   answerDetailRoute,
   mySubmissionRoute,
@@ -43,6 +43,8 @@ export function createApp({
   app.onError((error, context) => {
     if (error instanceof HTTPException) return error.getResponse();
     console.error(error);
+    if (context.req.path.startsWith('/api/questions/'))
+      return context.json(answerError('TOOL_UNAVAILABLE'), 500, { 'Cache-Control': 'no-store' });
     return context.json({ error: 'Internal server error' }, 500);
   });
 
@@ -53,8 +55,14 @@ export function createApp({
   app.post('/api/questions/:questionId/answers', (context) =>
     submitAnswerRoute(context, authentication, repository, now ?? Date.now),
   );
+  app.put('/api/questions/:questionId/my-answer', (context) =>
+    updateAnswerRoute(context, authentication, repository, now ?? Date.now),
+  );
+  app.delete('/api/questions/:questionId/my-answer', (context) =>
+    removeAnswerRoute(context, authentication, repository, now ?? Date.now),
+  );
   app.get('/api/questions/:questionId', (context) =>
-    questionRoute(context, authentication, repository),
+    questionRoute(context, authentication, repository, now ?? Date.now),
   );
   app.get('/api/questions/:questionId/my-submission', (context) =>
     mySubmissionRoute(context, authentication, repository),
@@ -86,31 +94,31 @@ export function createApp({
   app.get('/questions/:questionId', (context) =>
     questionPageRoute(context, authentication, repository, now ?? Date.now, clientScriptUrl),
   );
-  app.get('/', (context) => context.html(<VerificationPage clientScriptUrl={clientScriptUrl} />));
+  app.get('/', (context) => context.html(<HomePage clientScriptUrl={clientScriptUrl} />));
 
   return app;
 }
 
-function VerificationPage({ clientScriptUrl }: { clientScriptUrl: string }) {
+function HomePage({ clientScriptUrl }: { clientScriptUrl: string }) {
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Big Question Club — Personal agent safety verification</title>
+        <title>Big Question Club</title>
       </head>
       <body>
         <main>
-          <h1>Personal agent safety verification</h1>
-          <p>
-            This page registers <code>{SAFETY_VERIFICATION_TOOL_NAME}</code> for a personal agent.
-          </p>
+          <h1>Big Question Club</h1>
+          <p>Choose a question yourself, then ask your personal agent to answer it.</p>
           <p>
             <a href="/questions/new">Create a question</a> <a href="/my/questions">My Questions</a>
           </p>
+          <p>Sign in with Google to use the five answer tools with your personal agent.</p>
           <p>
-            Sign in with Google, then ask your personal agent to run{' '}
-            <code>{WHO_AM_I_TOOL_NAME}</code>.
+            Available tools: <code>get_question</code>, <code>submit_answer</code>,{' '}
+            <code>update_answer</code>, <code>remove_answer</code>, and{' '}
+            <code>get_my_submission</code>.
           </p>
           <button id="google-sign-in" type="button">
             Sign in with Google

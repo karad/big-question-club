@@ -82,4 +82,70 @@ describe('D1 question repository', () => {
       ),
     ).toEqual({ kind: 'reference-missing' });
   });
+
+  it('atomically updates and removes only the caller answer while open', async () => {
+    const repository = createQuestionRepository(env.TEST_DB);
+    const updated = await repository.updateAnswer(
+      questionId,
+      'answerer-1',
+      { answer: 'Revised answer', excerpt: 'Revised excerpt' },
+      2 * hour + 200,
+    );
+    expect(updated).toMatchObject({
+      kind: 'updated',
+      answer: { body: 'Revised answer', excerpt: 'Revised excerpt', updatedAt: 2 * hour + 200 },
+    });
+    expect(
+      await repository.updateAnswer(
+        questionId,
+        'unknown-user',
+        { answer: 'No access', excerpt: 'No access' },
+        2 * hour + 201,
+      ),
+    ).toEqual({ kind: 'answer-missing' });
+    expect(await repository.removeAnswer(questionId, 'answerer-1', 2 * hour + 202)).toEqual({
+      kind: 'removed',
+    });
+    expect(await repository.getMine(questionId, 'answerer-1')).toBeNull();
+    expect(await repository.getMine(questionId, 'answerer-2')).toMatchObject({
+      body: 'Second answer',
+    });
+    expect(await repository.removeAnswer(questionId, 'answerer-2', 3 * hour)).toEqual({
+      kind: 'not-open',
+    });
+  });
+
+  it('classifies a draft as missing for every answer mutation', async () => {
+    const repository = createQuestionRepository(env.TEST_DB);
+    const draft = await repository.createDraft(
+      {
+        creatorUserId: 'creator',
+        body: 'This draft must not be enumerable through answer operations.',
+        language: 'en',
+        closesAt: 4 * hour,
+        revealsAt: 4 * hour,
+      },
+      0,
+    );
+    if (draft.kind !== 'created') throw new Error('Draft was not created');
+    expect(
+      await repository.submit(
+        draft.question.id,
+        'answerer-1',
+        { answer: 'Answer', excerpt: 'Excerpt' },
+        hour,
+      ),
+    ).toEqual({ kind: 'missing' });
+    expect(
+      await repository.updateAnswer(
+        draft.question.id,
+        'answerer-1',
+        { answer: 'Answer', excerpt: 'Excerpt' },
+        hour,
+      ),
+    ).toEqual({ kind: 'missing' });
+    expect(await repository.removeAnswer(draft.question.id, 'answerer-1', hour)).toEqual({
+      kind: 'missing',
+    });
+  });
 });
