@@ -19,6 +19,7 @@ flowchart LR
             EditQuestion["Edit Question<br/>GET /questions/:questionId/edit"]
             ReviewQuestion["Review & Publish<br/>GET /questions/:questionId/review"]
             QuestionDetail["Question Detail<br/>GET /questions/:questionId"]
+            AdminDashboard["Admin Dashboard<br/>GET /admin"]
         end
 
         Client["Client Entry<br/>client.ts"]
@@ -41,6 +42,13 @@ flowchart LR
             PublishQuestion["Publish Question<br/>POST /questions/:questionId/publish"]
         end
 
+        subgraph AdminActions["Admin Actions"]
+            DeleteAdminQuestion["Delete Question<br/>POST /admin/questions/:id/delete"]
+            DeleteAdminAnswer["Delete Answer<br/>POST /admin/answers/:id/delete"]
+            BanAdminUser["Ban User<br/>POST /admin/users/:id/ban"]
+            UnbanAdminUser["Unban User<br/>POST /admin/users/:id/unban"]
+        end
+
         subgraph APIs["HTTP APIs"]
             AuthAPI["Authentication<br/>ALL /api/auth/*"]
             WhoAmIAPI["Current Identity<br/>GET /api/who-am-i"]
@@ -60,10 +68,11 @@ flowchart LR
         Authentication["Better Auth"]
         Domain["Domain Rules<br/>Question lifecycle<br/>Answer visibility<br/>Browsing presentation"]
         Repository["Question Repository<br/>Drizzle ORM + atomic D1 statements"]
+        AdminRepository["Admin Repository<br/>Authorization / Lists / Moderation / Audit"]
     end
 
     subgraph Storage["Storage / External Services"]
-        D1[("Cloudflare D1<br/>Users / Sessions / Questions / Answers")]
+        D1[("Cloudflare D1<br/>Users / Sessions / Questions / Answers<br/>Banned Users / Audit Logs")]
         Google["Google OAuth"]
     end
 
@@ -73,6 +82,7 @@ flowchart LR
     Human --> EditQuestion
     Human --> ReviewQuestion
     Human --> QuestionDetail
+    Human --> AdminDashboard
 
     Home --> QuestionDetail
     Home --> NewQuestion
@@ -120,6 +130,14 @@ flowchart LR
     Authentication --> Google
     Authentication --> D1
 
+    AdminDashboard --> AdminRepository
+    AdminDashboard --> DeleteAdminQuestion
+    AdminDashboard --> DeleteAdminAnswer
+    AdminDashboard --> BanAdminUser
+    AdminDashboard --> UnbanAdminUser
+    AdminActions --> AdminRepository
+    AdminRepository --> D1
+
     Screens --> Domain
     ManagementActions --> Domain
     APIs --> Domain
@@ -130,4 +148,4 @@ flowchart LR
     Repository --> D1
 ```
 
-WebMCP Toolはブラウザー上の`client.ts`から登録され、対応する既存HTTP APIを呼び出す。認証、Question状態、Answer公開範囲の判定は、画面とWebMCPで同じWorker、Domain、Repositoryを共有する。
+WebMCP Toolはブラウザー上の`client.ts`から登録され、対応する既存HTTP APIを呼び出す。認証、Question状態、Answer公開範囲の判定は、画面とWebMCPで同じWorker、Domain、Repositoryを共有する。管理画面はGoogle Sessionと設定Emailを照合し、管理者だけが一覧・削除・BAN操作を実行できる。

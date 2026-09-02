@@ -54,7 +54,7 @@
   - SpecKitで確定する情報: アクセス制御ポリシー、回答数・自分のAnswer・他者のAnswerの返却ルール、直HTTPアクセス対策、境界時刻の扱い、回帰テストマトリクス。
   - 完了条件: 全公開経路のテストで、Reveal前に他者のAnswer本文・プレビュー・要約が一切漏れない。
 
-- [ ] **SPEC 009 — Challenge Core閲覧フロー**
+- [x] **SPEC 009 — Challenge Core閲覧フロー**
   - 目的: HomeとQuestion Detailの必須機能を完成し、HumanがOpen Questionを選び、Personal Agentへ回答を依頼し、回答数の変化とsealed状態を確認できるようにする。
   - SpecKitで確定する情報: Open Question一覧、回答数・締切・sealed表示、未ログイン・作成者・未回答・回答済みの最小表示状態、SPEC 007のAgent依頼プロンプト統合、SPEC 008の非露出回帰、自動テスト範囲。
   - 完了条件: 3分デモの回答前・1件回答・複数回答・sealedを機能として再現でき、Reveal前に他者Answerが漏れない。専用Login、My Questions再設計、最終Visual Designは含めない。

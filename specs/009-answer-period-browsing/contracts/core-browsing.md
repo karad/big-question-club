@@ -12,7 +12,7 @@
 ## Home
 
 - `OPEN` Questionだけを `closesAt ASC, publishedAt ASC, id ASC` で表示する。
-- 各項目: Question本文、`English|Japanese`、`0 answers|1 answer|n answers`、`Answers are sealed`、UTC絶対締切、非負の残り時間、Detail link。
+- 各項目: Question本文、`0 answers|1 answer|n answers`、`Answers are sealed`、UTC絶対締切、非負の残り時間、Detail link。
 - 空状態: `No open questions right now.`。
 - 取得障害: 503と `Questions are temporarily unavailable. Try again.`。空状態へ変換しない。
 - Answer本文、Excerpt、ID、User、個別時刻をHTMLへ含めない。

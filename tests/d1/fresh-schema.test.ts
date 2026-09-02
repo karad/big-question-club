@@ -21,6 +21,7 @@ describe('fresh schema migrations', () => {
       '0003_add_questions_and_answers.sql',
       '0004_domain_data_lifecycle.sql',
       '0005_answer_revisions.sql',
+      '0006_admin_operations.sql',
     ]);
     expect(accountColumns.results.filter(({ name }) => name === 'issuer')).toHaveLength(1);
   });

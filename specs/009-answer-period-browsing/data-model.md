@@ -1,6 +1,6 @@
 # データモデル: Challenge Core閲覧フロー
 
-本SPECは既存D1 Schemaを変更せず、Home用投影と一時的な表示状態だけを追加する。
+本SPECは既存Entityを維持し、Home用投影、一時的な表示状態、公開運用向けのBANと監査Entityを追加する。
 
 ## 既存Entity
 
@@ -57,6 +57,45 @@ closed
 n -> n answers
 ```
 
+## BannedUser
+
+| Field | 規則 |
+| --- | --- |
+| `userId` | BAN対象Userの一意識別子。主キー。 |
+| `bannedByUserId` | 操作した管理者User ID。 |
+| `reason` | 管理者が選ぶ固定理由。初期値は `Policy violation`。 |
+| `bannedAt` | サービス側Unixミリ秒。 |
+
+- BAN時に対象Userの全Sessionを削除する。
+- BAN中はSession作成前に拒否する。
+- BAN解除は行を削除する。User、Question、Answerは削除しない。
+- 管理者自身はBAN対象にできない。
+
+## AuditLog
+
+| Field | 規則 |
+| --- | --- |
+| `id` | 一意識別子。 |
+| `actorUserId` | 操作を実施したUser ID。外部キーにせず履歴を維持する。 |
+| `action` | `LOGIN`、`LOGOUT`、`QUESTION_CREATED`、`QUESTION_UPDATED`、`QUESTION_PUBLISHED`、`ANSWER_SUBMITTED`、`ANSWER_UPDATED`、`ANSWER_REMOVED`、`ADMIN_QUESTION_DELETED`、`ADMIN_ANSWER_DELETED`、`USER_BANNED`、`USER_UNBANNED`。 |
+| `targetType` | `SESSION`、`QUESTION`、`ANSWER`、`USER`。 |
+| `targetId` | 操作対象の識別子。 |
+| `outcome` | 確定済み記録は `SUCCESS`。 |
+| `createdAt` | サービスまたはDBが確定したUnixミリ秒。 |
+
+- 追記専用で、管理画面から編集・削除しない。
+- Question本文、Answer本文、Excerpt、Email、Cookie、Token、OAuth値を含めない。
+- `createdAt DESC, id DESC` で表示する。
+
+## AdminDashboard
+
+永続化しない管理者限定投影。
+
+- `users`: User基本情報とBAN状態。
+- `questions`: 全Question、作成者、状態、時刻。
+- `answers`: 全Answer、Excerpt、本文、投稿者、Question、時刻。
+- `auditLogs`: Actor、Action、Target、Outcome、時刻。
+
 ## 不変条件
 
 - 1応答は同じ `snapshotNow` を使う。
@@ -65,4 +104,6 @@ n -> n answers
 - 作成者へReveal前の追加権限を与えない。
 - `OPEN` と `CLOSED` で他者Answer情報を取得・直列化しない。
 - Draftとmissingを公開Detailから区別できない。
-- Table、Column、Index、Migrationを変更しない。
+- 管理画面と管理操作は、設定済み管理者EmailとSession UserのDB Emailが一致する場合だけ利用できる。
+- 管理画面はprivate no-storeとし、一般画面のAnswer非露出規則を変更しない。
+- `audit_logs` は削除対象との外部キーを持たず、対象削除後も維持する。

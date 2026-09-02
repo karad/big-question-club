@@ -173,7 +173,7 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
             input.expectedUpdatedAt,
           )
           .run();
-        if (result.meta.changes === 1) {
+        if (result.meta.changes > 0) {
           const question = await repository.getOwnedQuestion(input.questionId, input.creatorUserId);
           return question === null ? { kind: 'unavailable' } : { kind: 'updated', question };
         }
@@ -203,7 +203,7 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
           )
           .bind(...bindings)
           .run();
-        if (result.meta.changes === 1) {
+        if (result.meta.changes > 0) {
           const question = await repository.getQuestion(questionId);
           return question === null ? { kind: 'unavailable' } : { kind: 'published', question };
         }
@@ -250,7 +250,7 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
           )
           .bind(id, userId, input.answer, input.excerpt, now, now, questionId, now, now)
           .run();
-        if (result.meta.changes === 1) {
+        if (result.meta.changes > 0) {
           return {
             kind: 'submitted',
             answer: {
@@ -291,7 +291,7 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
           )
           .bind(input.answer, input.excerpt, now, questionId, userId, now, now)
           .run();
-        if (result.meta.changes === 1) {
+        if (result.meta.changes > 0) {
           const answer = await repository.getMine(questionId, userId);
           return answer === null ? { kind: 'unavailable' } : { kind: 'updated', answer };
         }
@@ -307,13 +307,19 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
     },
     async removeAnswer(questionId, userId, now) {
       try {
-        const result = await database
-          .prepare(
-            'DELETE FROM answers WHERE question_id = ? AND user_id = ? AND EXISTS (SELECT 1 FROM questions q WHERE q.id = answers.question_id AND q.published_at IS NOT NULL AND q.published_at <= ? AND ? < q.closes_at)',
-          )
-          .bind(questionId, userId, now, now)
-          .run();
-        if (result.meta.changes === 1) return { kind: 'removed' };
+        const [, result] = await database.batch([
+          database
+            .prepare(
+              "INSERT INTO audit_logs (id, actor_user_id, action, target_type, target_id, outcome, created_at) SELECT lower(hex(randomblob(16))), a.user_id, 'ANSWER_REMOVED', 'ANSWER', a.id, 'SUCCESS', ? FROM answers a WHERE a.question_id = ? AND a.user_id = ? AND EXISTS (SELECT 1 FROM questions q WHERE q.id = a.question_id AND q.published_at IS NOT NULL AND q.published_at <= ? AND ? < q.closes_at)",
+            )
+            .bind(now, questionId, userId, now, now),
+          database
+            .prepare(
+              'DELETE FROM answers WHERE question_id = ? AND user_id = ? AND EXISTS (SELECT 1 FROM questions q WHERE q.id = answers.question_id AND q.published_at IS NOT NULL AND q.published_at <= ? AND ? < q.closes_at)',
+            )
+            .bind(questionId, userId, now, now),
+        ]);
+        if (result !== undefined && result.meta.changes > 0) return { kind: 'removed' };
         const question = await repository.getQuestion(questionId);
         if (question === null || question.publishedAt === null) return { kind: 'missing' };
         if (question.publishedAt > now || now >= question.closesAt) return { kind: 'not-open' };

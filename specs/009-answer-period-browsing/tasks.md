@@ -8,7 +8,7 @@
 ## 形式: `[ID] [P?] [Story] 説明`
 
 - **[P]**: 未完了タスクへの依存がなく、異なるファイルで並行実行できる
-- **[Story]**: 対応するユーザーストーリー（US1〜US3）
+- **[Story]**: 対応するユーザーストーリー（US1〜US9）
 - すべてのタスクに具体的なファイルパスを含める
 
 ## Phase 1: Setup（最小準備）
@@ -102,21 +102,171 @@
 
 ---
 
+## Phase 7: 公開運用Foundational（管理Schemaと契約）
+
+**目的**: 管理機能の全Storyが共有する監査・BAN・管理者設定の正本を先に固定する。
+
+- [X] T021 管理者Email正規化、未設定拒否、Audit actionの固定値を検証するUnit Testを先に作成する（`tests/unit/admin.test.ts`）
+- [X] T022 BAN・Audit Table、Index、Triggerのfresh／upgrade契約を検証するD1 Testを先に作成する（`tests/d1/admin-schema.test.ts`、`tests/d1/fresh-schema.test.ts`、`tests/d1/schema-contract.test.ts`）
+- [X] T023 T021を満たす管理者設定と管理型を実装する（`src/domain/admin.ts`、`src/types/env.d.ts`）
+- [X] T024 T022を満たすBAN・Audit SchemaとMigrationを実装する（`src/db/schema.ts`、`migrations/0006_admin_operations.sql`）
+- [X] T025 開発・デプロイ用の管理者環境設定例と安全な設定規則を追記する（`.dev.vars.example`、`README.md`）
+
+**Checkpoint**: 管理者設定、BAN、Audit logの永続契約が独立して検証できる。
+
+---
+
+## Phase 8: User Story 4 - 運用操作を監査する（優先度: P1）
+
+**目標**: Login／Logout、Question／Answer入力、管理操作の成功をActor・Target・時刻付きで追跡し、本文や認証秘密を複製しない。
+
+**独立テスト**: 対象操作後のAudit logが期待Actionを1件持ち、Question／Answer秘密値を含まないことをD1で確認する。
+
+### テスト
+
+- [X] T026 [US4] Session作成・削除、Question／Answer作成・更新Triggerと秘密値非記録を検証するD1 Testを先に作成する（`tests/d1/audit-log.test.ts`）
+
+### 実装
+
+- [X] T027 [US4] Session、Question、Answerの成功操作を追記するD1 Triggerを実装する（`migrations/0006_admin_operations.sql`）
+- [X] T028 [US4] Audit log一覧投影と管理操作用追記をAdmin Repositoryへ実装する（`src/repositories/admin-repository.ts`）
+
+**Checkpoint**: 既存の入力経路を変更せず、DB上の成功操作が監査される。
+
+---
+
+## Phase 9: User Story 5 - 単一管理者として管理画面へ入る（優先度: P1）
+
+**目標**: 設定EmailとSession Userが一致する1人だけが管理画面と管理操作へアクセスできる。
+
+**独立テスト**: 未ログイン、一般User、管理者、設定不備の4状態でGETとPOSTを直接実行し、管理者以外に情報が0件であることを確認する。
+
+### テスト
+
+- [X] T029 [P] [US5] DB User Emailとの管理者一致・不一致・User欠落を検証するD1 Testを先に作成する（`tests/d1/admin-repository.test.ts`）
+- [X] T030 [P] [US5] 未ログイン401、一般User403、管理者200、設定不備503、private no-storeを検証するIntegration Testを先に作成する（`tests/integration/admin.test.ts`）
+
+### 実装
+
+- [X] T031 [US5] Session由来User IDと設定Emailを照合するAdmin Repository認可を実装する（`src/repositories/admin-repository.ts`）
+- [X] T032 [US5] 全管理Routeへ共通のFail Closed認可と安全なError画面を実装する（`src/routes/admin.tsx`、`src/views/admin.tsx`）
+- [X] T033 [US5] Admin Repositoryと `/admin` RouteをWorkerへ注入・登録する（`src/index.tsx`、`src/app.tsx`）
+
+**Checkpoint**: 管理者以外は管理情報と変更操作へ到達できない。
+
+---
+
+## Phase 10: User Story 6 - 公開データを一覧する（優先度: P1）
+
+**目標**: 管理者がUser、Question、Answer、Audit logを対象確認に必要な情報だけで一覧できる。
+
+**独立テスト**: 複数Entityが新しい順に表示され、未信頼本文が実行可能なHTMLにならないことを確認する。
+
+### テスト
+
+- [X] T034 [P] [US6] User・Question・Answer・Audit logの管理者用投影、順序、BAN状態を検証するD1 Testを先に追加する（`tests/d1/admin-repository.test.ts`）
+- [X] T035 [P] [US6] 4一覧、空状態、未信頼本文escape、Repository障害を検証するIntegration Testを先に追加する（`tests/integration/admin.test.ts`）
+
+### 実装
+
+- [X] T036 [US6] 4一覧を1つの管理Dashboardへ返す最小投影を実装する（`src/repositories/admin-repository.ts`）
+- [X] T037 [US6] User・Question・Answer・Audit log Sectionと確認FormをHono JSXで実装する（`src/views/admin.tsx`）
+- [X] T038 [US6] 管理Dashboard取得と障害表示を `/admin` GETへ実装する（`src/routes/admin.tsx`）
+
+**Checkpoint**: 管理者が削除・BAN対象を一覧上で識別できる。
+
+---
+
+## Phase 11: User Story 7 - 不適切なQuestionを削除する（優先度: P1）
+
+**目標**: 管理者がQuestionと配下Answerだけを削除し、管理者Actorの監査記録を残す。
+
+**独立テスト**: Answerを持つQuestion削除で対象と配下だけが消え、別QuestionとAudit logが残ることを確認する。
+
+### テスト
+
+- [X] T039 [P] [US7] Question Cascade削除、missing、監査Actor、Batch原子性を検証するD1 Testを先に追加する（`tests/d1/admin-repository.test.ts`）
+- [X] T040 [P] [US7] 管理者削除303、確認不足400、missing404、一般User403を検証するIntegration Testを先に追加する（`tests/integration/admin.test.ts`）
+
+### 実装
+
+- [X] T041 [US7] Question削除と管理者Audit追記を同一Batchで実装する（`src/repositories/admin-repository.ts`）
+- [X] T042 [US7] Question削除POST Routeと明示確認Formを実装する（`src/routes/admin.tsx`、`src/views/admin.tsx`、`src/app.tsx`）
+
+**Checkpoint**: 不適切なQuestionを配下Answerごと安全に除去できる。
+
+---
+
+## Phase 12: User Story 8 - 不適切なAnswerを削除する（優先度: P1）
+
+**目標**: 管理者が指定Answerだけを削除し、Questionと他Answerを維持する。
+
+**独立テスト**: 同一Questionの2件中1件だけが消え、回答数とAudit logへ反映されることを確認する。
+
+### テスト
+
+- [X] T043 [P] [US8] Answer単独削除、missing、他Answer維持、監査Actorを検証するD1 Testを先に追加する（`tests/d1/admin-repository.test.ts`）
+- [X] T044 [P] [US8] 管理者削除303、確認不足400、missing404、一般User403を検証するIntegration Testを先に追加する（`tests/integration/admin.test.ts`）
+
+### 実装
+
+- [X] T045 [US8] Answer削除と管理者Audit追記を同一Batchで実装する（`src/repositories/admin-repository.ts`）
+- [X] T046 [US8] Answer削除POST Routeと明示確認Formを実装する（`src/routes/admin.tsx`、`src/views/admin.tsx`、`src/app.tsx`）
+
+**Checkpoint**: Questionを維持したまま不適切なAnswerだけを除去できる。
+
+---
+
+## Phase 13: User Story 9 - UserをBANする（優先度: P1）
+
+**目標**: 管理者が一般UserをBANして既存・新規Sessionを停止し、必要時に解除できる。
+
+**独立テスト**: BANで全Sessionが消え、新規Session作成が拒否され、解除後に作成でき、管理者自身はBANできないことを確認する。
+
+### テスト
+
+- [X] T047 [P] [US9] BAN／解除、全Session失効、自己BAN拒否、管理Auditを検証するD1 Testを先に追加する（`tests/d1/admin-repository.test.ts`）
+- [X] T048 [P] [US9] BAN／解除Route、自己BAN409、一般User403を検証するIntegration Testを先に追加する（`tests/integration/admin.test.ts`）
+- [X] T049 [P] [US9] BAN中UserのSession作成拒否とLogin監査を検証する認証Integration Testを先に追加する（`tests/integration/auth-ban.test.ts`）
+
+### 実装
+
+- [X] T050 [US9] BAN登録・全Session削除・Audit追記と解除を原子的に実装する（`src/repositories/admin-repository.ts`）
+- [X] T051 [US9] Better AuthのSession作成前BAN拒否を実装する（`src/auth/auth.ts`）
+- [X] T052 [US9] BAN／解除POST Routeと自己BAN拒否、管理画面操作を実装する（`src/routes/admin.tsx`、`src/views/admin.tsx`、`src/app.tsx`）
+
+**Checkpoint**: BAN中Userは既存Sessionでも再Loginでもアプリを利用できない。
+
+---
+
+## Phase 14: 公開運用回帰と文書
+
+- [X] T053 管理マニュアル、構成図、データモデル、契約、Quickstartを実装結果へ同期する（`specs/009-answer-period-browsing/admin-manual.md`、`specs/009-answer-period-browsing/architecture.md`、`specs/009-answer-period-browsing/data-model.md`、`specs/009-answer-period-browsing/contracts/admin-operations.md`、`specs/009-answer-period-browsing/quickstart.md`）
+- [X] T054 全Unit／Integration／D1 Test、typecheck、lint、format、build、schema checkを実行し結果を記録する（`specs/009-answer-period-browsing/validation-record.md`、`USE_CODEX.md`）
+
+---
+
 ## 依存関係と実行順序
 
 ```text
-Setup -> Foundational -> US1 -> US2 -> US3 -> Core回帰
+Setup -> Foundational -> US1 -> US2 -> US3 -> Core回帰 -> 管理Foundational -> US4 -> US5 -> US6 -> US7 -> US8 -> US9 -> 公開運用回帰
 ```
 
 - US1はHomeからDetailへ進む入口を作る。
 - US2は既存Detailを未ログイン公開とsealed説明へ拡張する。
 - US3はUS2のDetailへ既存Agent Promptと本人状態を統合する。
+- US4は管理操作全体の監査基盤を作る。
+- US5はUS6〜US9が共有する管理認可を確立する。
+- US6はUS7〜US9の対象確認画面を作る。
+- US7とUS8はUS6後に独立して実装できる。
+- US9は管理認可と監査基盤に依存するが、コンテンツ削除とは独立する。
 - Manual TestとVisual確認はSPEC 010の全画面実装後にまとめて行う。
 
 ### 並行実行機会
 
 - T004とT005はD1／HTTPの異なる先行Testとして並行可能。
 - T009とT010は新規Detail契約／既存認可回帰として並行可能。
+- T029とT030、T034とT035、T039とT040、T043とT044、T047〜T049はRepository／HTTP／認証の異なる先行Testとして並行可能。
 
 ## 実装戦略
 
@@ -125,10 +275,14 @@ Setup -> Foundational -> US1 -> US2 -> US3 -> Core回帰
 3. T009〜T014で公開Detailとsealedを完成する。
 4. T015〜T018で回答後の状態変化を完成する。
 5. T019〜T020で全自動回帰を通し、本日中にSPEC 010へ移る。
+6. T021〜T025で公開運用のSchemaと設定を固定する。
+7. T026〜T038で監査、管理認可、4一覧を完成する。
+8. T039〜T052でQuestion／Answer削除とUser BANを順に完成する。
+9. T053〜T054で文書同期と全自動回帰を行う。
 
 ## 注記
 
-- 新規Dependency、Migration、専用Login、My Questions再設計を追加しない。
+- 新規Dependency、専用Login、My Questions再設計を追加しない。公開運用に必要なMigrationは1件だけ追加する。
 - 既存SPEC 007・008のToolとAnswer認可を変更しない。
 - 見た目を暫定実装して作り直さず、SPEC 010で一貫したVisual Directionを適用する。
 - テストは実装前に作成し、期待した理由で失敗することを確認する。

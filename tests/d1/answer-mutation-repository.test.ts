@@ -64,6 +64,16 @@ describe('D1 Answer mutation concurrency', () => {
     ]);
     expect(results.some(({ kind }) => kind === 'removed')).toBe(true);
     expect(await repository.getMine('question', 'user-1')).toBeNull();
+    expect(
+      await env.TEST_DB.prepare(
+        "SELECT actor_user_id AS actorUserId, action, target_type AS targetType, outcome FROM audit_logs WHERE action = 'ANSWER_REMOVED' ORDER BY created_at DESC LIMIT 1",
+      ).first(),
+    ).toEqual({
+      actorUserId: 'user-1',
+      action: 'ANSWER_REMOVED',
+      targetType: 'ANSWER',
+      outcome: 'SUCCESS',
+    });
   });
 
   it('keeps at most one answer when delete and ten resubmissions race', async () => {

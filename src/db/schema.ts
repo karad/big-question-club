@@ -119,3 +119,33 @@ export const answers = sqliteTable(
     index('answers_question_id_created_at').on(table.questionId, table.createdAt),
   ],
 );
+
+export const bannedUsers = sqliteTable(
+  'banned_users',
+  {
+    userId: text('user_id')
+      .primaryKey()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    bannedByUserId: text('banned_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    reason: text('reason').notNull(),
+    bannedAt: integer('banned_at').notNull(),
+  },
+  (table) => [index('banned_users_banned_at').on(table.bannedAt)],
+);
+
+export const auditLogs = sqliteTable(
+  'audit_logs',
+  {
+    id: text('id').primaryKey().notNull(),
+    actorUserId: text('actor_user_id').notNull(),
+    action: text('action').notNull(),
+    targetType: text('target_type').notNull(),
+    targetId: text('target_id').notNull(),
+    outcome: text('outcome').notNull(),
+    createdAt: integer('created_at').notNull(),
+  },
+  (table) => [index('audit_logs_created_at').on(table.createdAt)],
+);

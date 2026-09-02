@@ -30,6 +30,11 @@
 
 ## 2026-09-02
 
+- `GPT-5.6`: Cloudflare DashboardのProduction環境に必要な5項目が設定済みなら`wrangler secret put`は不要であることと、Secret／通常Variableの使い分けを開発者向けマニュアルへ追記した。
+- `GPT-5.6`: 開発者向けマニュアルのCloudflare環境設定を明確化し、`.dev.vars`はデプロイされず、`wrangler secret put`で入力した値がCloudflareへ直接保存されることとDashboardからの代替設定を追記した。
+- `GPT-5.6`: SPEC 009へ、ローカル開発モード、ビルド、全自動テスト、Cloudflare環境設定、D1 Migration、デプロイのコマンドをまとめた日本語の開発者向けマニュアルを追加した。
+- `GPT-5.6`: SPEC 009の管理機能をローカルD1および公開D1へ適用するため、事前の台帳確認、バックアップ、適用、追加Table確認だけに絞った日本語マイグレーションマニュアルを追加した。
+- `GPT-5.6`: SPEC 009へ公開運用に必要な単一管理者認可、User／Question／Answer／Audit log一覧、Question／Answer削除、User BAN／解除、Session失効、Login／Logout／入力／管理操作の監査記録を追加し、仕様・計画・54件のタスク・管理マニュアル・構成図を同期した。Node 605テスト、D1 56テスト、型検査、Lint、Format、Build、Schema検査に成功した。
 - `GPT-5.6`: Questionの主言語を英語・日本語から選択する仕様を廃止し、任意言語のQuestion本文からPersonal Agentが回答言語を裁量で判断する方針へ、企画・MVP・技術文書、SPEC 005〜009、Question管理UI、WebMCP契約、固定Agent依頼Prompt、テストを更新した。既存D1列は互換性のため保持し、新規Questionには内部値`auto`を保存する。
 - `GPT-5.6`: SPEC 009完了時点の一般ユーザー向け操作マニュアルと、専用管理者権限が未実装であることを明示した管理ユーザー向けマニュアルを作成した。
 - `GPT-5.6`: SPEC 009完了時点の画面、HTTP API、WebMCP Tool、認証、Domain、Repository、D1の依存関係をMermaid構成図として記録した。

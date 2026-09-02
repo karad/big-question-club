@@ -37,10 +37,28 @@ npm run db:schema:check
 6. `REVEALED` でSPEC 008の最小閲覧が後退しないことを確認する。
 7. 締切直前・同時刻・直後で状態、残り時間、Prompt可否が一致することを確認する。
 
+## 管理画面
+
+1. `ADMIN_EMAIL`を管理用GoogleアカウントのEmailへ設定する。
+2. 未ログイン、一般User、管理者で `/admin` を開き、管理者だけがUser、Question、Answer、Audit logを閲覧できることを確認する。
+3. Questionを削除し、配下Answerも消え、他QuestionとAudit logが残ることを確認する。
+4. 複数Answerから1件を削除し、Questionと他Answerが残り、回答数が減ることを確認する。
+5. 一般UserをBANし、既存Sessionが失効して再Loginも拒否されることを確認する。
+6. BANを解除し、次回Loginが成功することを確認する。
+7. 管理者自身のBAN、一般Userからの管理POST、存在しない対象の削除が安全に拒否されることを確認する。
+
+## 監査記録
+
+1. Login、Logout、Question作成・更新・公開、Answer投稿・更新・削除を実行する。
+2. 各成功操作についてActor、Action、Target、Outcome、時刻が1件記録されることを確認する。
+3. Question本文とAnswer本文へ秘密値を入れ、Audit logの全列に秘密値、Excerpt、Cookie、Token、OAuth値が含まれないことを確認する。
+4. 管理者削除、BAN、BAN解除の記録が操作した管理者をActorとして残ることを確認する。
+
 ## 完了判定
 
 - HomeのOpen絞り込み、順序、回答数が100%一致する。
 - 閲覧者別表示とPrompt／本人Answerの排他性が100%一致する。
 - `OPEN`／`CLOSED` の他者秘密値露出が0件である。
 - 既存Question管理、Google認証、5 WebMCP Tool、Answer更新・削除、Reveal最小閲覧の全回帰Testが成功する。
+- 管理画面の認可、一覧、削除、BAN／解除、監査記録の全Testが成功する。
 - 自動品質Gateの結果を `validation-record.md` に記録する。

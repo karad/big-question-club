@@ -3,6 +3,7 @@ import { csrf } from 'hono/csrf';
 import { HTTPException } from 'hono/http-exception';
 
 import type { Authentication } from './auth/session';
+import type { AdminRepository } from './repositories/admin-repository';
 import { answerError } from './domain/answer-submission';
 import { authenticationRoute } from './routes/auth';
 import { homeRoute } from './routes/home';
@@ -28,14 +29,23 @@ import {
   reviewQuestionRoute,
   updateQuestionRoute,
 } from './routes/question-management';
+import {
+  adminDashboardRoute,
+  banAdminUserRoute,
+  deleteAdminAnswerRoute,
+  deleteAdminQuestionRoute,
+  unbanAdminUserRoute,
+} from './routes/admin';
 
 export function createApp({
   authentication,
+  adminRepository,
   clientScriptUrl = '/client.js',
   repository,
   now,
 }: {
   authentication?: Authentication;
+  adminRepository?: AdminRepository;
   clientScriptUrl?: string;
   repository?: QuestionRepository;
   now?: () => number;
@@ -51,6 +61,21 @@ export function createApp({
   });
 
   app.get('/health', healthRoute);
+  app.get('/admin', (context) =>
+    adminDashboardRoute(context, authentication, adminRepository, now ?? Date.now),
+  );
+  app.post('/admin/questions/:targetId/delete', csrf(), (context) =>
+    deleteAdminQuestionRoute(context, authentication, adminRepository, now ?? Date.now),
+  );
+  app.post('/admin/answers/:targetId/delete', csrf(), (context) =>
+    deleteAdminAnswerRoute(context, authentication, adminRepository, now ?? Date.now),
+  );
+  app.post('/admin/users/:targetId/ban', csrf(), (context) =>
+    banAdminUserRoute(context, authentication, adminRepository, now ?? Date.now),
+  );
+  app.post('/admin/users/:targetId/unban', csrf(), (context) =>
+    unbanAdminUserRoute(context, authentication, adminRepository, now ?? Date.now),
+  );
   app.get('/api/agent-safety-verification-questions/:caseId', verificationQuestionRoute);
   app.all('/api/auth/*', (context) => authenticationRoute(context, authentication));
   app.get('/api/who-am-i', (context) => whoAmIRoute(context, authentication));

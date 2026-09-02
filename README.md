@@ -17,6 +17,8 @@ npm run dev
 
 Open the local URL shown by Vite in a top-level Chrome tab. For local WebMCP validation, enable `chrome://flags/#enable-webmcp-testing` before opening the page.
 
+See the compact [developer manual](specs/009-answer-period-browsing/developer-manual.md) for setup, build, test, and deployment commands.
+
 ## Validation commands
 
 ```sh
@@ -46,6 +48,8 @@ SPEC 002 adds Google OAuth and a `who_am_i` WebMCP validation tool. Before runni
 
 Copy `.dev.vars.example` to `.dev.vars` for local development. Keep `BETTER_AUTH_SECRET` and `GOOGLE_CLIENT_SECRET` outside version control; set their deployed values with Cloudflare Workers Secrets. The `db:migrate:auth` script is reserved for the authentication migration after the D1 database has been created and bound.
 
+Set `ADMIN_EMAIL` to the one Google account allowed to use `/admin`. The comparison is case-insensitive after trimming. Leave no placeholder value in a deployed environment: a missing or invalid value keeps all administration routes unavailable. Do not store the administrator's password or OAuth tokens in this setting.
+
 ## D1 migrations
 
 The authentication and Question/Answer bindings refer to the same D1 database so Answer foreign keys can reference authenticated users. Apply migrations locally before validating Answer features with `npm run db:migrate:local`. Apply them to the shared database only after review with `npm run db:migrate:remote`.
@@ -59,6 +63,8 @@ npx wrangler d1 export big-question-club-auth --remote --output ./big-question-c
 ```
 
 Stop before applying the migration if the ledger cannot be read, if Question/Answer rows contain anything other than disposable validation data, if the export fails, or if any fresh, legacy-upgrade, rollback, schema-contract, or quality-gate test fails. SPEC 005 does not automatically apply remote migrations. See [the SPEC 005 quickstart](specs/005-domain-data-lifecycle/quickstart.md) for the complete preflight and validation procedure.
+
+For the compact SPEC 009 administration migration procedure, see [the D1 migration manual](specs/009-answer-period-browsing/migration-manual.md).
 
 ## Sealed Answers manual validation
 

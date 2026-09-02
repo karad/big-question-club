@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:test';
 import { getTableColumns, getTableName } from 'drizzle-orm';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { answers, questions } from '../../src/db/schema';
+import { answers, auditLogs, bannedUsers, questions } from '../../src/db/schema';
 import { applyMigrations } from './apply-migrations';
 
 describe('Drizzle and D1 schema contract', () => {
@@ -9,7 +9,7 @@ describe('Drizzle and D1 schema contract', () => {
     await applyMigrations(env.TEST_DB, env.TEST_MIGRATIONS);
   });
 
-  it.each([questions, answers])('matches columns for $', async (table) => {
+  it.each([questions, answers, bannedUsers, auditLogs])('matches columns for $', async (table) => {
     const tableName = getTableName(table);
     const expected = Object.values(getTableColumns(table)).map((column) => column.name);
     const actual = await env.TEST_DB.prepare(`PRAGMA table_info(${tableName})`).all<{

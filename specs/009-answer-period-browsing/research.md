@@ -63,3 +63,35 @@
 **理由**: 本日中に自動回帰を保った機能完成へ到達し、明日のVisual作業後に同じ導線を二重に手動確認しないため。
 
 **検討した代替案**: SPEC 009単独の包括的Browser確認は、SPEC 010でDOMと見た目が変わるため不採用。
+
+## 9. 単一管理者の識別
+
+**決定**: `ADMIN_EMAIL` で1つの正規化済みEmailを設定し、Session由来User IDでDBのUserを取得してEmailが完全一致する場合だけ管理権限を与える。設定不備はFail Closedとする。
+
+**理由**: Google Loginで確認済みの既存Emailを利用でき、User IDの事前調査や別Passwordを不要にしつつ、入力値による権限昇格を防げる。
+
+**検討した代替案**: User ID指定は安定するが事前取得が必要、DB Roleは複数管理者と権限管理を追加するため不採用。
+
+## 10. 監査記録
+
+**決定**: Login／LogoutはSession、Question／Answer入力は各TableのD1 Triggerで追記型 `audit_logs` へ記録する。Actor、Action、Target、Outcome、時刻だけを保存し、本文・Excerpt・認証秘密を複製しない。
+
+**理由**: RouteやWebMCPなど入口が複数あっても記録漏れを防ぎ、削除後の運用経緯を残しながら機密値と不適切コンテンツの重複保管を避けられる。
+
+**検討した代替案**: Route単位の記録は実装漏れと部分成功が起こりやすく、本文Snapshot保存は削除の意味と情報最小化に反するため不採用。
+
+## 11. 管理削除
+
+**決定**: Question削除は既存外部キーのCascadeで配下Answerを削除し、Answer削除は指定1件だけを削除する。管理者Actorを持つ専用監査記録と変更を同一D1 Batchで確定し、編集機能は設けない。
+
+**理由**: 対象範囲が明確で、部分成功を避け、一般User操作のTrigger記録と管理者操作を区別できる。
+
+**検討した代替案**: Soft Deleteは一般Queryすべての除外変更と復元権限を必要とし、期限内の最低限運用を超えるため不採用。
+
+## 12. BAN強制
+
+**決定**: `banned_users` を正本とし、BAN時に対象の全Sessionを削除する。Better AuthのSession作成前HookでもBANを照会して新規Sessionを拒否し、解除はBAN行を削除する。管理者自身のBANは拒否する。
+
+**理由**: 既存Sessionと再Loginの両経路を閉じ、BAN解除をUser削除なしで安全に行える。
+
+**検討した代替案**: User削除はQuestion／Answerの参照整合性と監査追跡を壊し、Session削除だけでは再Loginできるため不採用。
