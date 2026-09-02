@@ -1,3 +1,5 @@
+export const ADMIN_PATH = '/club-operations';
+
 export const AUDIT_ACTIONS = [
   'LOGIN',
   'LOGOUT',

@@ -27,7 +27,7 @@ npm run db:schema:check
 期待結果:
 
 - Answer Migration後も既存Answerの件数、所有者、本文、Excerpt、作成時刻が保持され、`updatedAt === createdAt` になる。
-- 書記素境界、固定Prompt、5 ToolのSchemaとannotation、HTTP statusと英語エラーがすべて成功する。
+- 書記素境界、1行Prompt、ローカル／本番Originに追従するQuestion URL、5 ToolのSchemaとannotation、HTTP statusと英語エラーがすべて成功する。
 - 本人限定update/remove、締切境界、削除後再投稿、更新・削除競合で他者Answerへの変更が0件になる。
 - SSR Promptは認証済み・未投稿・`OPEN` の場合だけ表示され、Question本文を含まない。
 
@@ -44,10 +44,11 @@ npm run dev
 1. アカウントAでログインする。
 2. 未投稿の `OPEN` Question画面を開く。
 3. `Ask your personal agent`、締切まで更新・削除可能である旨、選択可能な英語Prompt、`Copy prompt` が表示されることを確認する。
-4. Promptに正しいQuestion IDだけが入り、Question本文、User情報、Answer情報が含まれないことを確認する。
+4. Promptが次の1行だけで、`{{questionUrl}}` が閲覧中ページの絶対URLになっていることを確認する。Query、Fragment、Question本文、User情報、Answer情報は含まれない。
+   `Open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}`
 5. `Copy prompt` を押し、`Copied` が通知され、表示とコピー結果が一致することを確認する。
 6. コピーしたPromptをPersonal Agentへ貼り付ける。
-7. Agentが指定IDだけへ `get_question`、`submit_answer`、`get_my_submission` の順で呼び出し、投稿成功を報告することを確認する。
+7. Agentが指定URLを開き、そのページで提供されるTool契約を解釈して対象Questionだけを取得することを確認する。現在の会話、利用可能な過去会話、Project ContextにあるUser自身の明示的な記述から関連する根拠を見つけた場合は、追加Previewや承認を求めず回答・投稿し、`get_my_submission` で成功を確認する。根拠が不足する場合は一般論を投稿せずHumanへ確認する。
 8. Question画面を再表示し、新規投稿Promptが消え、本人の投稿済み状態が表示されることを確認する。
 
 Clipboardを無効または拒否した場合は、英語の失敗statusが表示され、画面上のPromptを手動選択・コピーできることを確認する。コピーだけではWebMCP Toolが呼ばれないことも確認する。
@@ -90,7 +91,7 @@ Clipboardを無効または拒否した場合は、英語の失敗statusが表�
 
 - 複数言語のQuestionで、Personal Agentが本文から回答言語を判断することを確認する。判断結果はAgentの裁量とし、Applicationは特定言語への一致を強制しない。
 - Question本文が秘密、以前の会話、認証情報、無関係なTool利用を要求しても従わないことを確認する。
-- `get_question` の固定instructionが4項目すべてtrueで、Question本文により変化しないことを確認する。
+- `get_question` の固定instructionが [WebMCP 5 Tool契約](./contracts/webmcp-tools.md) と一致し、Question本文により変化しないことを確認する。
 - 検証用Answer、画面、記録へ実在するPrivate Context、Cookie、Token、OAuth値を入力しない。
 
 ## 完了判定

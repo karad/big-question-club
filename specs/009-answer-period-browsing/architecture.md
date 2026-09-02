@@ -13,13 +13,14 @@ flowchart LR
         direction TB
 
         subgraph Screens["Screens — Hono JSX / SSR"]
+            SiteHeader["Shared Header<br/>Big Question Club logo"]
             Home["Home<br/>GET /"]
             NewQuestion["New Question<br/>GET /questions/new"]
             MyQuestions["My Questions<br/>GET /my/questions"]
             EditQuestion["Edit Question<br/>GET /questions/:questionId/edit"]
             ReviewQuestion["Review & Publish<br/>GET /questions/:questionId/review"]
             QuestionDetail["Question Detail<br/>GET /questions/:questionId"]
-            AdminDashboard["Admin Dashboard<br/>GET /admin"]
+            AdminDashboard["Admin Dashboard<br/>GET /club-operations"]
         end
 
         Client["Client Entry<br/>client.ts"]
@@ -43,10 +44,10 @@ flowchart LR
         end
 
         subgraph AdminActions["Admin Actions"]
-            DeleteAdminQuestion["Delete Question<br/>POST /admin/questions/:id/delete"]
-            DeleteAdminAnswer["Delete Answer<br/>POST /admin/answers/:id/delete"]
-            BanAdminUser["Ban User<br/>POST /admin/users/:id/ban"]
-            UnbanAdminUser["Unban User<br/>POST /admin/users/:id/unban"]
+            DeleteAdminQuestion["Delete Question<br/>POST /club-operations/questions/:id/delete"]
+            DeleteAdminAnswer["Delete Answer<br/>POST /club-operations/answers/:id/delete"]
+            BanAdminUser["Ban User<br/>POST /club-operations/users/:id/ban"]
+            UnbanAdminUser["Unban User<br/>POST /club-operations/users/:id/unban"]
         end
 
         subgraph APIs["HTTP APIs"]
@@ -83,6 +84,14 @@ flowchart LR
     Human --> ReviewQuestion
     Human --> QuestionDetail
     Human --> AdminDashboard
+
+    SiteHeader --> Home
+    SiteHeader --> NewQuestion
+    SiteHeader --> MyQuestions
+    SiteHeader --> EditQuestion
+    SiteHeader --> ReviewQuestion
+    SiteHeader --> QuestionDetail
+    SiteHeader --> AdminDashboard
 
     Home --> QuestionDetail
     Home --> NewQuestion

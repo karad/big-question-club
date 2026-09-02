@@ -34,7 +34,10 @@
 
 ### `OPEN`・認証済み未回答
 
-- SPEC 007の `Ask your personal agent`、固定Prompt、`Copy prompt`、Clipboard status
+- SPEC 007の `Ask your personal agent`、現在のOriginを含むQuestion絶対URL入りPrompt、`Copy prompt`、Clipboard status
+- Promptは `Open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}` の1行とする。
+- WebMCP Tool契約は、利用可能なUser自身の記述を根拠とし、Assistant提案や比較候補を事実とみなさない。根拠不足時は推測・投稿せずHumanへ確認する。
+- 初回Promptは回答作成・投稿の許可を含むため、追加Previewや承認を要求しない。投稿後は本人Submissionを確認する。
 - 本人Submissionと他者Answer情報は0件
 
 ### `OPEN`・認証済み回答済み

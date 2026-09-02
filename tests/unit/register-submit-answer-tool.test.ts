@@ -16,6 +16,12 @@ describe('submit_answer WebMCP tool', () => {
         annotations: { readOnlyHint: false, untrustedContentHint: false },
       }),
     );
+    const registration = registerTool.mock.calls[0]?.[0] as { description?: string };
+    expect(registration.description).toContain('context-grounded public answer');
+    expect(registration.description).toContain('no additional preview or approval is required');
+    expect(registration.description).toContain(
+      'Do not submit when relevant user context is insufficient',
+    );
   });
   it('posts valid input and preserves API errors', async () => {
     await expect(

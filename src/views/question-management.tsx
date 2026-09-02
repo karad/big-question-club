@@ -3,6 +3,7 @@ import { toIsoTimestamp } from '../domain/question';
 import type { QuestionDraftForm, QuestionFormErrors } from '../domain/question-input';
 import { getQuestionState } from '../domain/question-lifecycle';
 import type { OwnedQuestionSummary } from '../repositories/question-repository';
+import { SiteHeader } from './site-header';
 
 type LayoutProps = {
   title: string;
@@ -19,11 +20,9 @@ export function QuestionManagementLayout({ title, clientScriptUrl, children }: L
         <title>{title} — Big Question Club</title>
       </head>
       <body>
-        <header>
-          <nav aria-label="Question management">
-            <a href="/questions/new">Create a question</a> <a href="/my/questions">My Questions</a>
-          </nav>
-        </header>
+        <SiteHeader navigationLabel="Question management">
+          <a href="/questions/new">Create a question</a> <a href="/my/questions">My Questions</a>
+        </SiteHeader>
         <main>{children}</main>
         <script type="module" src={clientScriptUrl} />
       </body>

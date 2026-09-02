@@ -4,18 +4,19 @@
 
 - `ADMIN_EMAIL`に単一の管理者Emailを設定する。前後空白を除去し、小文字化した有効なEmailだけを受理する。
 - 管理者判定はSession由来User IDでDB Userを取得し、正規化済みEmailが設定値と完全一致する場合だけ成功する。
-- 未ログインは401、一般Userは403、設定・Repository障害は503とする。
-- すべての管理Responseは `Cache-Control: private, no-store` と `Vary: Cookie` を返す。
+- 未ログイン、一般User、設定不備、認可時のRepository障害は、管理画面の存在を示さない通常の404と同じ本文を返す。
+- 認可成功後の管理Responseは `Cache-Control: private, no-store` と `Vary: Cookie` を返す。
+- 管理画面は `noindex, nofollow` とし、一般画面からリンクしない。旧 `/admin` はRedirectせず404とする。
 
 ## Route
 
 | Method | Path | 目的 | 成功 |
 | --- | --- | --- | --- |
-| `GET` | `/admin` | User、Question、Answer、Audit log一覧 | 200 HTML |
-| `POST` | `/admin/questions/{id}/delete` | Questionと配下Answerの削除 | 303 `/admin` |
-| `POST` | `/admin/answers/{id}/delete` | Answer 1件の削除 | 303 `/admin` |
-| `POST` | `/admin/users/{id}/ban` | User BANと全Session失効 | 303 `/admin` |
-| `POST` | `/admin/users/{id}/unban` | User BAN解除 | 303 `/admin` |
+| `GET` | `/club-operations` | User、Question、Answer、Audit log一覧 | 200 HTML |
+| `POST` | `/club-operations/questions/{id}/delete` | Questionと配下Answerの削除 | 303 `/club-operations` |
+| `POST` | `/club-operations/answers/{id}/delete` | Answer 1件の削除 | 303 `/club-operations` |
+| `POST` | `/club-operations/users/{id}/ban` | User BANと全Session失効 | 303 `/club-operations` |
+| `POST` | `/club-operations/users/{id}/unban` | User BAN解除 | 303 `/club-operations` |
 
 - POSTは同一OriginのCSRF検証と明示確認値 `confirm=on` を必須とする。
 - missing対象は404、管理者自身のBANは409、確認不足は400とする。

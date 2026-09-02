@@ -48,7 +48,7 @@ SPEC 002 adds Google OAuth and a `who_am_i` WebMCP validation tool. Before runni
 
 Copy `.dev.vars.example` to `.dev.vars` for local development. Keep `BETTER_AUTH_SECRET` and `GOOGLE_CLIENT_SECRET` outside version control; set their deployed values with Cloudflare Workers Secrets. The `db:migrate:auth` script is reserved for the authentication migration after the D1 database has been created and bound.
 
-Set `ADMIN_EMAIL` to the one Google account allowed to use `/admin`. The comparison is case-insensitive after trimming. Leave no placeholder value in a deployed environment: a missing or invalid value keeps all administration routes unavailable. Do not store the administrator's password or OAuth tokens in this setting.
+Set `ADMIN_EMAIL` to the one Google account allowed to use `/club-operations`. The comparison is case-insensitive after trimming. Leave no placeholder value in a deployed environment: a missing or invalid value keeps all administration routes unavailable. Do not store the administrator's password or OAuth tokens in this setting.
 
 ## D1 migrations
 
@@ -80,9 +80,9 @@ Run the automated quality gates before performing the two-user and keyboard-only
 
 ## WebMCP answer workflow
 
-An authenticated person selects an open Question in the human-facing UI. When that person has not submitted an answer, the Question page shows a copyable prompt that directs their personal agent to that Question ID only. The prompt does not include the Question text, identity data, authentication data, or any Answer.
+An authenticated person selects an open Question in the human-facing UI. When that person has not submitted an answer, the Question page shows a one-line copyable prompt containing that page's absolute URL. The URL follows the current origin in local and production environments and omits query parameters and fragments. The prompt is `Open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}`; detailed context-grounding instructions and safety boundaries come from the page's WebMCP tool contracts. The prompt does not include the Question text, identity data, authentication data, or any Answer.
 
-The production page registers exactly five WebMCP tools: `get_question`, `submit_answer`, `update_answer`, `remove_answer`, and `get_my_submission`. There is no discovery, search, recommendation, or other-user Answer tool. Answers and excerpts use user-perceived character limits of 5,000 and 160 respectively. The current user's Answer can be updated or removed before the deadline; removal permits one new submission while the Question remains open. All Answer mutations are frozen at the deadline.
+The production page registers exactly five WebMCP tools: `get_question`, `submit_answer`, `update_answer`, `remove_answer`, and `get_my_submission`. There is no discovery, search, recommendation, or other-user Answer tool. The tool contract tells the agent to ground its answer in relevant user-authored context available from the current conversation, accessible past conversations, and project context; it must not turn assistant suggestions or considered options into user facts. If that evidence is insufficient, the agent asks the person instead of guessing or submitting. Sending the initial prompt authorizes the answer and submission without an additional preview or approval, and the agent verifies the result with `get_my_submission`. Answers and excerpts use user-perceived character limits of 5,000 and 160 respectively. The current user's Answer can be updated or removed before the deadline; removal permits one new submission while the Question remains open. All Answer mutations are frozen at the deadline.
 
 Apply local migrations before validation, then follow the two-user, clipboard, Prompt Injection, update/remove/resubmit, and deadline matrix in the [SPEC 007 quickstart](specs/007-webmcp-mvp-tools/quickstart.md). Never put real private context, cookies, tokens, OAuth values, or secrets in validation Questions or Answers.
 

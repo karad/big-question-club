@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import { readCurrentIdentity, type Authentication } from '../auth/session';
+import { ADMIN_PATH } from '../domain/admin';
 import type {
   AdminRepository,
   BanUserResult,
@@ -111,7 +112,7 @@ async function runAdminMutation(
   try {
     const result = await operation(authorized.repository, targetId, authorized.userId, now());
     if (result === 'deleted' || result === 'banned' || result === 'unbanned') {
-      return context.redirect('/admin', 303);
+      return context.redirect(ADMIN_PATH, 303);
     }
     if (result === 'missing' || result === 'not-banned')
       return adminError(context, 404, 'Administration target not found.');
@@ -129,20 +130,18 @@ async function authorizeAdmin(
   repository: AdminRepository | undefined,
 ): Promise<AuthorizedAdmin | Response> {
   const identity = await readCurrentIdentity(authentication, context.req.raw);
-  if ('code' in identity) {
-    return identity.code === 'AUTHENTICATION_REQUIRED'
-      ? adminError(context, 401, 'Sign in to administer Big Question Club.')
-      : adminError(context, 503, 'Administration is unavailable. Try again.');
-  }
-  if (repository === undefined)
-    return adminError(context, 503, 'Administration is unavailable. Try again.');
+  if ('code' in identity || repository === undefined) return hiddenAdministrationRoute(context);
   try {
     return (await repository.isAdmin(identity.userId))
       ? { userId: identity.userId, repository }
-      : adminError(context, 403, 'Administrator access required.');
+      : hiddenAdministrationRoute(context);
   } catch {
-    return adminError(context, 503, 'Administration is unavailable. Try again.');
+    return hiddenAdministrationRoute(context);
   }
+}
+
+function hiddenAdministrationRoute(context: Context): Response {
+  return context.text('Not Found', 404);
 }
 
 function adminError(context: Context, status: 400 | 401 | 403 | 404 | 409 | 503, message: string) {

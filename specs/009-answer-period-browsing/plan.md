@@ -6,7 +6,7 @@
 
 ## 概要
 
-WebMCP ChallengeのCore Demoと公開運用の最低限を完成させるため、既存の単一Worker構成を維持し、HomeのOpen Question一覧、Question Detailの回答期間中状態、単一管理者向け管理画面、監査記録、コンテンツ削除、User BANを追加・整理する。SPEC 007のAgent依頼PromptとSPEC 008のAnswer認可・Reveal最小表示を再利用し、管理者Emailは環境設定、認可はSession由来User、監査とBANはD1を正本としてUnit・HTTP・D1 Testで固定する。最終Visual DesignとReveal比較表現は必須のSPEC 010へ移す。
+WebMCP ChallengeのCore Demoと公開運用の最低限を完成させるため、既存の単一Worker構成を維持し、HomeのOpen Question一覧、Question Detailの回答期間中状態、単一管理者向け管理画面、監査記録、コンテンツ削除、User BANを追加・整理する。SPEC 007の現在のOriginへ追従するQuestion絶対URL入り確定済み1行Agent依頼Promptと、User自身の記述を根拠にし根拠不足時は投稿せず質問するWebMCP instruction、SPEC 008のAnswer認可・Reveal最小表示を再利用する。初回Promptは投稿許可を含み追加Previewや承認は不要とする。管理者Emailは環境設定、認可はSession由来User、監査とBANはD1を正本としてUnit・HTTP・D1 Testで固定する。最終Visual DesignとReveal比較表現は必須のSPEC 010へ移す。
 
 ## 技術コンテキスト
 
@@ -17,7 +17,7 @@ WebMCP ChallengeのCore Demoと公開運用の最低限を完成させるため�
 **対象プラットフォーム**: Cloudflare Workers、Cloudflare D1、WebMCP対応Chrome、モダンブラウザー、ローカルMiniflare／workerd。
 **プロジェクト種別**: SSR、HTTP API、WebMCPを同一Workerで提供する単一Webアプリケーション。
 **性能目標**: ローカル検証でHomeとQuestion Detailの初期HTMLを各2秒以内に返し、Home一覧を1回の集計Queryで取得する。
-**制約**: 1要求でサービス時刻を1回だけ取得する。`OPEN` と `CLOSED` では一般画面へ他者Answerを取得・表示・埋め込みしない。管理画面と操作は環境設定Emailに一致する1人だけへ許可し、private no-storeにする。監査記録へ本文・Excerpt・認証秘密を複製しない。BAN時はSessionを失効し、Session作成HookでもBANを拒否する。`REVEALED` はSPEC 008を後退させない。アプリ表示文言・コメント・識別子は英語、SpecKit文書は日本語とする。
+**制約**: 1要求でサービス時刻を1回だけ取得する。`OPEN` と `CLOSED` では一般画面へ他者Answerを取得・表示・埋め込みしない。管理画面と操作は環境設定Emailに一致する1人だけへ許可し、認可後はprivate no-storeにする。一般画面から管理画面へLinkせず、未認証・権限外・設定不備には通常の404を返す。監査記録へ本文・Excerpt・認証秘密を複製しない。BAN時はSessionを失効し、Session作成HookでもBANを拒否する。`REVEALED` はSPEC 008を後退させない。アプリ表示文言・コメント・識別子は英語、SpecKit文書は日本語とする。
 **規模/範囲**: 9ユーザーストーリー、Home、Question Detail、管理画面、4管理一覧、Question／Answer削除、User BAN／解除、監査記録、認可・障害状態。Visual Design、専用Login、My Questions再設計、複数Role、包括的Accessibilityは対象外。
 
 ## 構成原則チェック

@@ -77,6 +77,8 @@ describe('Question management', () => {
     const response = await appFor().request('http://example.test/questions/new');
     const html = await response.text();
     expect(response.status).toBe(200);
+    expect(html).toContain('data-site-header');
+    expect(html).toContain('big-question-club-logo.svg');
     expect(html).toContain('Create a question');
     expect(html).not.toContain('Primary language');
     expect(html).not.toContain('name="language"');

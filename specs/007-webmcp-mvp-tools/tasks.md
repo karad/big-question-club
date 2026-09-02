@@ -3,7 +3,7 @@
 **入力**: `specs/007-webmcp-mvp-tools/` の設計文書  
 **前提**: [plan.md](./plan.md)、[spec.md](./spec.md)、[research.md](./research.md)、[data-model.md](./data-model.md)、[contracts/](./contracts/)、[quickstart.md](./quickstart.md)
 
-**テスト方針**: 固定Prompt、書記素境界、Tool SchemaはUnit Test、認証・HTTP・SSR・WebMCP導線はIntegration Test、D1 Migration・本人限定更新削除・競合はWorkers D1 Integration Testで失敗先行にする。最後に実ブラウザーとPersonal AgentでQuickstartを確認する。
+**テスト方針**: 1行Prompt、環境追従URL、書記素境界、Tool SchemaはUnit Test、認証・HTTP・SSR・WebMCP導線はIntegration Test、D1 Migration・本人限定更新削除・競合はWorkers D1 Integration Testで失敗先行にする。最後に実ブラウザーとPersonal AgentでQuickstartを確認する。
 
 **構成**: 6つのユーザーストーリーを独立検証可能なPhaseに分け、全40タスクを依存順に実行する。
 
@@ -37,12 +37,12 @@
 
 ## Phase 3: ユーザーストーリー1 — Question画面からAgentへの依頼文をコピーする (P1) 🎯
 
-**目標**: 認証済み・未投稿・`OPEN` のQuestion画面だけに安全な固定Promptを表示し、コピー成功・失敗を英語で通知する。
+**目標**: 認証済み・未投稿・`OPEN` のQuestion画面だけに、現在のOriginへ追従するQuestion絶対URLを含む1行Promptを表示し、コピー成功・失敗を英語で通知する。
 
-**独立テスト**: Question本文にInjectionを含めてもPromptにはQuestion IDだけが入り、コピー結果が表示と一致し、失敗時も手動コピーでき、コピーだけではToolを実行しない。
+**独立テスト**: Question本文にInjectionを含めてもPromptにはQueryとFragmentを除いたQuestion絶対URLだけが可変値として入り、コピー結果が表示と一致し、失敗時も手動コピーでき、コピーだけではToolを実行しない。
 
-- [X] T011 [P] [US1] 固定英語Prompt、Question IDだけの埋め込み、Question本文非混入、特殊文字IDを検証する失敗先行Unit Testを `tests/unit/agent-request-prompt.test.ts` に追加する
-- [X] T012 [US1] 固定Prompt生成と表示可否判定の純粋関数を `src/domain/agent-request-prompt.ts` に実装する
+- [X] T011 [P] [US1] 1行の確定英語Prompt、現在のOriginを含むQuestion絶対URL、Query／Fragment／Question本文の非混入、HTML escapingを検証する失敗先行Unit Testを `tests/unit/agent-request-prompt.test.ts` に追加する
+- [X] T012 [US1] 環境追従するQuestion絶対URLと1行Promptの生成、および表示可否判定の純粋関数を `src/domain/agent-request-prompt.ts` に実装する
 - [X] T013 [P] [US1] 認証済み未投稿Open／未認証／投稿済み／Draft／Closed／RevealedのSSR表示分岐を `tests/integration/agent-request-prompt.test.ts` に失敗先行で追加する
 - [X] T014 [US1] `Ask your personal agent`、注意文、選択可能Prompt、`Copy prompt`、status領域を `src/views/question-detail.tsx` に実装し `src/routes/question.ts` から状態別に描画する
 - [X] T015 [P] [US1] Clipboard成功・API不在・拒否と副作用なしを検証する失敗先行Unit Testを `tests/unit/agent-request-prompt-client.test.ts` に追加する
@@ -59,10 +59,10 @@
 **独立テスト**: 指定IDのOpen Questionだけが返り、Draft／Closed／Revealedは拒否され、作成者・回答数・本人状態・他者Answerは出力されない。
 
 - [X] T017 [P] [US2] `get_question` の入力Schema、固定description、`readOnlyHint: true`、`untrustedContentHint: true`、AbortSignalを検証する失敗先行Unit Testを `tests/unit/register-get-question-tool.test.ts` に追加する
-- [X] T018 [P] [US2] Question DTO、4つの固定instruction、認証・状態・非公開フィールドを検証する失敗先行Integration Testを `tests/integration/webmcp-question-api.test.ts` に追加する
+- [X] T018 [P] [US2] Question DTO、固定instruction契約、認証・状態・非公開フィールドを検証する失敗先行Integration Testを `tests/integration/webmcp-question-api.test.ts` に追加する
 - [X] T019 [US2] `GET /api/questions/:questionId` をWebMCP Question契約へ更新し認証・`OPEN`・非列挙・no-storeを `src/routes/question.ts` と `src/app.tsx` に実装する
 - [X] T020 [US2] `get_question` の厳密入力、同一Origin fetch、キャンセル、共通エラー保持を `src/webmcp/register-get-question-tool.ts` に実装する
-- [X] T021 [US2] `get_question` を `src/client.ts` の本番Tool登録列へ追加し、US1のコピーPromptから指定IDを取得できる導線を `tests/integration/agent-request-prompt.test.ts` で確認する
+- [X] T021 [US2] `get_question` を `src/client.ts` の本番Tool登録列へ追加し、US1のコピーPromptに含まれるQuestion URLを開いたページから指定IDを取得できる導線を `tests/integration/agent-request-prompt.test.ts` で確認する
 
 **チェックポイント**: AgentはHuman指定Questionだけを読み、探索Capabilityを持たない。
 
@@ -138,6 +138,14 @@
 
 ---
 
+## Phase 10: Context根拠付き回答契約
+
+- [X] T041 [P] 確定した1行Promptと `get_question` の固定Context instructionをUnit／Integration Testで固定する
+- [X] T042 User自身の記述を優先し、Assistant提案・検討候補を事実とみなさず、根拠不足時はHumanへ質問して投稿しない汎用規則をTool description、Schema、返却データへ実装する。初回Promptは投稿許可を含み、追加Previewや承認は要求せず、投稿後は本人状態を確認する
+- [X] T043 SPEC 007・009、README、MILESTONE、検証記録を確定契約へ同期し、全自動品質Gateを実行する
+
+---
+
 ## 依存関係と実行順
 
 ### Phase依存関係
@@ -151,6 +159,7 @@
 - **US5 (Phase 7)**: Phase 2完了後に開始できるが、更新後・削除後ケースはUS4に依存する。
 - **US6 (Phase 8)**: US2〜US5完了後。5 Toolの横断面を固定する。
 - **Phase 9**: 実装対象の全Story完了後。
+- **Phase 10**: Phase 9完了後。確定したPromptとContext根拠契約を既存5 Toolへ反映する。
 
 ### ユーザーストーリー依存グラフ
 
@@ -218,6 +227,7 @@ HumanがQuestionを選んでAgentへ回答させる最小価値は、Phase 1〜2
 4. US4で締切前の訂正・撤回・再投稿を追加する。
 5. US6でTool面とSealed境界を横断固定する。
 6. Phase 9で全品質ゲートと実機E2Eを完了する。
+7. Phase 10でPrompt、Context根拠、根拠不足時の投稿停止、追加承認不要、投稿結果確認を同期する。
 
 ## タスク集計
 
@@ -232,4 +242,5 @@ HumanがQuestionを選んでAgentへ回答させる最小価値は、Phase 1〜2
 | US5 | 3 |
 | US6 | 3 |
 | Polish | 2 |
-| **合計** | **40** |
+| Context契約 | 3 |
+| **合計** | **43** |

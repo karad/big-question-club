@@ -6,18 +6,18 @@
 
 ## 概要
 
-Question画面にHumanが明示的にAgent回答を開始する英語のコピペ用プロンプトを表示し、Personal Agentへ `get_question`、`submit_answer`、`update_answer`、`remove_answer`、`get_my_submission` の5 Toolだけを公開する。既存のBetter Auth Session、Questionライフサイクル、D1 Repositoryを継続利用し、Toolは同一Originの専用HTTP契約を呼び出す。Answerの更新・削除は本人・`OPEN`・対象存在をD1の条件付き単一Statementで確定し、締切後は不変、他者Answerは全Toolから非公開・変更不可とする。
+Question画面にHumanが明示的にAgent回答を開始する、現在のOriginに追従したQuestion絶対URLを含む確定済み1行の英語コピペ用プロンプトを表示し、Personal Agentへ `get_question`、`submit_answer`、`update_answer`、`remove_answer`、`get_my_submission` の5 Toolだけを公開する。詳細なContext根拠規則と安全境界はPromptへ重複させず、各Toolのdescription、Schema、annotation、返却データから提供する。Agentは利用可能なUser自身の記述を根拠とし、根拠不足時は推測・投稿せずHumanへ確認する。初回Promptは投稿許可を含み、追加Previewや承認を要求しない。既存のBetter Auth Session、Questionライフサイクル、D1 Repositoryを継続利用し、Toolは同一Originの専用HTTP契約を呼び出す。Answerの更新・削除は本人・`OPEN`・対象存在をD1の条件付き単一Statementで確定し、締切後は不変、他者Answerは全Toolから非公開・変更不可とする。
 
 ## 技術コンテキスト
 
 **言語/バージョン**: TypeScript 6、Node.js 22.13以上または24以上（開発時）、ES2022  
 **主要依存関係**: Cloudflare Workers、Hono、Hono JSX、Vite、Better Auth 1.7、Drizzle ORM 0.45系、Wrangler、Cloudflare Workers Vitest Plugin 1系、Vitest 4、WebMCP Imperative API、標準Clipboard API  
 **保存先**: Cloudflare D1。既存 `questions`、`answers`、`user` を利用し、`answers.updated_at` と表示文字契約に合わせる差分Migrationを1件追加する。  
-**テスト**: VitestによるPrompt生成・書記素境界・エラー・WebMCP SchemaのUnit Test、Hono Appによる認証・HTTP契約・SSR Prompt UI Integration Test、Workers Vitest Pluginと分離D1によるMigration・本人限定更新削除・競合Integration Test、WebMCP対応ChromeとPersonal Agentによる手動E2E。  
+**テスト**: Vitestによる1行Prompt・環境追従URL生成・書記素境界・エラー・WebMCP SchemaのUnit Test、Hono Appによる認証・HTTP契約・SSR Prompt UI Integration Test、Workers Vitest Pluginと分離D1によるMigration・本人限定更新削除・競合Integration Test、WebMCP対応ChromeとPersonal Agentによる手動E2E。
 **対象プラットフォーム**: Cloudflare Workers、Cloudflare D1、WebMCP対応Chrome、標準Clipboard APIを持つモダンブラウザー、ローカルMiniflare／workerd。  
 **プロジェクト種別**: SSR、HTTP API、WebMCPを同一Workerで提供する単一Webアプリケーション。  
 **性能目標**: ローカル検証環境で各Toolの成功・業務エラー応答を2秒以内、Question画面のPrompt表示を2秒以内、コピー結果通知を利用者操作から1秒以内に完了する。  
-**制約**: アプリ表示、Tool名、description、エラー、識別子、コメントは英語、SpecKit文書は日本語。AgentはQuestionを一覧・検索・推薦せずHuman指定IDだけを扱う。Question本文と本人Answerは未信頼コンテンツ。Answer本文は1〜5,000表示文字、Excerptは改行なし1〜160表示文字。同時点の本人Answerは最大1件。更新・削除・再投稿は `OPEN` の間だけ。Session、Cookie、Token、Private Context、他者AnswerをToolへ入出力しない。  
+**制約**: アプリ表示、Tool名、description、エラー、識別子、コメントは英語、SpecKit文書は日本語。Promptは現在のOriginを含むQuestion絶対URLを埋め込んだ1行とし、QueryとFragmentを除外する。AgentはQuestionを一覧・検索・推薦せずHuman指定Questionだけを扱う。Question本文と本人Answerは未信頼コンテンツ。Answer本文は1〜5,000表示文字、Excerptは改行なし1〜160表示文字。同時点の本人Answerは最大1件。更新・削除・再投稿は `OPEN` の間だけ。Session、Cookie、Token、Private Context、他者AnswerをToolへ入出力しない。
 **規模/範囲**: 6ユーザーストーリー、5 WebMCP Tool、5 HTTP契約、1 SSR Prompt欄、2 Repository変更操作、1 D1 Migration、Prompt／Domain／Tool Unit Test、HTTP／SSR／D1 Integration Test、実Agent手動E2E。Question探索、他者Answer Tool、Human向け一覧・Reveal UIの全面更新は対象外。
 
 ## 構成原則チェック

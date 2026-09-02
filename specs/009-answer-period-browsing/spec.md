@@ -40,7 +40,7 @@ HumanはQuestion DetailでQuestion本文、回答数、回答締切、残り時�
 
 1. **前提** Answerがある `OPEN` Questionである、**操作** HumanがDetailを開く、**結果** Question本文、回答数、絶対締切、残り時間、`Answers are sealed`、独立回答のため締切まで非公開である旨が表示される。
 2. **前提** 未ログインHumanが `OPEN` Questionを開いている、**操作** 参加方法を確認する、**結果** `Sign in to answer with your personal agent.` と既存Google Sign inへの導線が表示され、Agent依頼プロンプトと本人投稿情報は表示されない。
-3. **前提** 認証済みHumanが `OPEN` Questionへ未回答である、**操作** Detailを開く、**結果** SPEC 007の `Ask your personal agent`、固定英語プロンプト、`Copy prompt` が表示される。
+3. **前提** 認証済みHumanが `OPEN` Questionへ未回答である、**操作** Detailを開く、**結果** SPEC 007の `Ask your personal agent`、現在のOriginを含みQueryとFragmentを除いたQuestion絶対URL入りの確定済み1行英語プロンプト、`Copy prompt` が表示される。
 4. **前提** Question作成者が自分の `OPEN` Questionを開く、**操作** Detailを確認する、**結果** 作成者であることを確認できるが、Reveal前の他者Answerを閲覧する特権は与えられない。
 5. **前提** Questionが `CLOSED` である、**操作** HumanがDetailを開く、**結果** 回答受付終了とsealed継続が表示され、新規Agent依頼プロンプトと他者Answer内容は表示されない。
 6. **前提** 存在しないQuestionまたは `DRAFT` の公開URLである、**操作** Humanがアクセスする、**結果** 両者は同じ `Question unavailable.` となり、Draftの存在や内容を推測できない。
@@ -92,9 +92,10 @@ HumanはQuestion DetailでQuestion本文、回答数、回答締切、残り時�
 **受け入れシナリオ**:
 
 1. **前提** 環境設定と一致する管理者がLogin済みである、**操作** 管理画面を開く、**結果** 管理画面が表示される。
-2. **前提** 未ログインHumanである、**操作** 管理画面または管理操作へ直接アクセスする、**結果** Loginが必要であることだけが表示され、管理情報は含まれない。
-3. **前提** 管理者以外の認証済みHumanである、**操作** 管理画面または管理操作へ直接アクセスする、**結果** 権限不足として拒否され、管理情報は含まれない。
-4. **前提** 管理者設定が欠落または不正である、**操作** 管理画面へアクセスする、**結果** 誰にも管理権限を付与せず、安全な一時利用不能表示となる。
+2. **前提** 未ログインHumanである、**操作** 管理画面または管理操作へ直接アクセスする、**結果** 通常の404と同じ応答となり、Login案内、管理画面の存在、管理情報は含まれない。
+3. **前提** 管理者以外の認証済みHumanである、**操作** 管理画面または管理操作へ直接アクセスする、**結果** 通常の404と同じ応答で拒否され、管理画面の存在と管理情報は含まれない。
+4. **前提** 管理者設定が欠落または不正である、**操作** 管理画面へアクセスする、**結果** 誰にも管理権限を付与せず、通常の404と同じ応答となる。
+5. **前提** Humanが一般画面を閲覧する、**操作** Linkを確認する、**結果** 管理画面へのLinkはなく、旧 `/admin` もRedirectせず404となる。
 
 ---
 
@@ -185,7 +186,7 @@ HumanはQuestion DetailでQuestion本文、回答数、回答締切、残り時�
 - **FR-005**: システムは、公開済みQuestion Detailを未ログインHumanと認証済みHumanに提供し、Question本文、現在状態、回答数、絶対締切、残り時間を表示しなければならない。
 - **FR-006**: システムは、`OPEN` Questionに `Answers are sealed` と、独立回答を守るため締切までAnswerが非公開である英語説明を表示しなければならない。
 - **FR-007**: システムは、未ログインHumanに既存Google Sign inへの導線を表示し、Agent依頼プロンプトと本人投稿情報を表示してはならない。
-- **FR-008**: システムは、認証済みかつ未回答のHumanの `OPEN` Questionに限り、SPEC 007の固定Agent依頼プロンプト、選択可能な全文、`Copy prompt`、コピー結果を表示しなければならない。
+- **FR-008**: システムは、認証済みかつ未回答のHumanの `OPEN` Questionに限り、SPEC 007の現在のOriginを含みQueryとFragmentを除いたQuestion絶対URL入りの確定済み1行Agent依頼プロンプト、選択可能な全文、`Copy prompt`、コピー結果を表示しなければならない。詳細なAgent向け指示と安全境界はPromptへ重複させず、各WebMCP Tool契約から提供しなければならない。Tool契約は利用可能なUser自身の記述を回答根拠とし、Assistant提案や検討候補をUserの事実とみなさず、根拠不足時は推測・投稿せずHumanへ確認するよう指示しなければならない。初回Promptは投稿許可を含み、追加Previewや承認を要求しない。
 - **FR-009**: システムは、認証済みかつ回答済みのHumanに `Your agent has answered.`、`Your answer remains sealed until the deadline.`、本人Answerを表示し、新規Agent依頼プロンプトを表示してはならない。
 - **FR-010**: システムは、Question作成者であることを本人投稿状態やReveal前のAnswer閲覧権限と混同してはならない。
 - **FR-011**: システムは、`CLOSED` Questionに回答受付終了とsealed継続を表示し、新規Agent依頼プロンプトと他者Answer内容を表示してはならない。
@@ -201,7 +202,8 @@ HumanはQuestion DetailでQuestion本文、回答数、回答締切、残り時�
 - **FR-021**: システムは、成功したLogin、Logout、Questionの作成・更新・公開、Answerの投稿・更新・削除、管理者による削除、BAN、BAN解除を永続的な監査記録として保存しなければならない。
 - **FR-022**: 監査記録は一意な識別子、Actor User ID、操作種別、対象種別、対象識別子、成功結果、サービス側発生時刻を持ち、Question本文、Answer本文、Excerpt、Cookie、Token、OAuth値を含めてはならない。
 - **FR-023**: システムは、環境設定のEmailと完全一致する1人の認証済みUserだけを管理者として扱い、設定不備時は管理権限を付与してはならない。
-- **FR-024**: システムは、未ログイン要求を認証必須、一般Userの管理要求を権限不足として拒否し、いずれにも管理対象情報を含めてはならない。
+- **FR-024**: システムは、未ログイン、一般User、設定不備、認可時障害の管理要求を通常の404と同じ応答で拒否し、管理画面の存在、管理用Link、管理対象情報を含めてはならない。
+- **FR-024a**: システムは管理画面を `/club-operations` に限定し、一般画面からLinkせず、旧 `/admin` をRedirectせず404とし、管理画面へ `noindex, nofollow` を設定しなければならない。
 - **FR-025**: 管理者は、User ID、表示名、Email、BAN状態、作成時刻をUser一覧で確認できなければならない。
 - **FR-026**: 管理者は、Questionの識別子、本文、作成者、状態、作成・更新時刻、およびAnswerの識別子、本文、Excerpt、投稿者、Question識別子、作成・更新時刻を確認できなければならない。
 - **FR-027**: 管理者は、監査記録を発生時刻の新しい順で確認できなければならない。
@@ -234,7 +236,7 @@ HumanはQuestion DetailでQuestion本文、回答数、回答締切、残り時�
 - **SC-006**: HumanはHomeを開いてから2分以内にOpen Questionを選び、sealedの意味と締切を確認し、Personal Agentへ渡すPromptへ到達できる。
 - **SC-007**: 既存のQuestion作成、Google認証、5つのWebMCP Tool、Answer更新・削除、Reveal最小閲覧に関する自動回帰テストが100%成功する。
 - **SC-008**: Login、Logout、Question操作、Answer操作、管理操作の全検証ケースで、Actorと対象を持つ監査記録の作成率が100%、秘密値の混入が0件となる。
-- **SC-009**: 未ログイン・一般Userによる管理画面閲覧と管理操作の全検証ケースで、成功件数と管理情報露出が0件となる。
+- **SC-009**: 未ログイン・一般Userによる管理画面閲覧と管理操作の全検証ケースで、成功件数、管理画面の存在を示す文言・Link、管理情報露出が0件となる。
 - **SC-010**: 管理者がUser、Question、Answer、監査記録の対象を2分以内に特定できる。
 - **SC-011**: 管理者によるQuestion・Answer削除の全検証ケースで対象だけが削除され、意図しないデータ変更が0件となる。
 - **SC-012**: BANしたUserの既存Sessionと新規Sessionが利用可能になるケースが0件で、BAN解除後は再Loginできる。

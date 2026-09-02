@@ -41,8 +41,8 @@ Questionの状態はSPEC 005の共通判定で `DRAFT`、`OPEN`、`CLOSED`、`RE
 
 | フィールド | 型 | 規則 |
 | --- | --- | --- |
-| `questionId` | string | Question画面が表示中のID。HTMLとPromptで安全なテキストとして扱う。 |
-| `prompt` | string | 固定英語テンプレートへ `questionId` だけを埋め込んだ全文。Question本文を含めない。 |
+| `questionUrl` | string | リクエスト元のOriginとQuestion Pathから生成した絶対URL。QueryとFragmentを除外し、HTMLとPromptで安全なテキストとして扱う。 |
+| `prompt` | string | 短い英語テンプレートへ `questionUrl` だけを埋め込んだ全文。Question本文を含めない。 |
 | `visible` | boolean | 認証済み、Questionが `OPEN`、本人Answerなしの全条件を満たす場合だけtrue。 |
 | `statusMessage` | string | コピー成功、失敗、非表示理由を示す英語文言。 |
 
@@ -55,7 +55,7 @@ Questionの状態はSPEC 005の共通判定で `DRAFT`、`OPEN`、`CLOSED`、`RE
 | `id` | string | Humanが指定したQuestion IDと一致。 |
 | `question` | string | 未信頼本文。 |
 | `closesAt` | ISO timestamp | 絶対時刻。 |
-| `instructions` | object | 4つの固定booleanをすべてtrueで返す。 |
+| `instructions` | object | 利用可能なUser Context参照元、根拠の優先順位、事実と検討の区別、根拠不足時の確認、Private Context非開示、投稿許可、投稿確認を示す固定契約。 |
 
 作成者、回答数、本人状態、他者Answer、Session情報は含めない。
 

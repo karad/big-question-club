@@ -30,6 +30,12 @@
 
 ## 2026-09-02
 
+- `GPT-5.6`: 確定した1行Agent依頼Promptを実装し、カメラ固有の成功Promptから抽出した汎用Context根拠規則を `get_question` の固定instructionとWebMCP Tool description／Schemaへ分離した。User自身の明示的・反復された記述の優先、事実と検討候補の区別、Assistant提案の除外、根拠不足時の質問・投稿停止、初回Promptによる投稿許可と追加承認不要、`get_my_submission`による投稿確認をSPEC 007・009、README、MILESTONE、Unit／Integration Testへ反映した。Node 610テスト、D1 56テスト、型検査、Lint、Format、Build、Schema検査に成功した。
+- `GPT-5.6`: ローカル開発ターミナルへ反復出力された参照ID付き`internal error`を調査し、アプリ固有文言ではなくWrangler／workerdの不透明な内部エラーであること、開発環境が2つのD1 Bindingを`remote: true`で共有Remote D1へ接続していることを確認した。Remote D1への読み取りは成功しており、永続的なSchema・認証障害よりRemote Binding経路の一時障害またはRuntime不具合が有力と判断した。
+- `GPT-5.6`: 確定した1行Agent依頼Prompt、閲覧中Originに追従するQuestion絶対URL、Query／Fragment除外、詳細指示をPromptではなくWebMCP Tool契約から渡す責務分担について、MILESTONE、README、SPEC 007・009の仕様・計画・調査・契約・タスク・Quickstart・検証記録を監査して同期した。
+- `GPT-5.6`: Agent依頼Promptを確定した1行の英語文面へ整理し、閲覧中リクエストのOriginを使ったQuestion絶対URLを自動挿入するよう変更した。ローカル／本番Originへの追従、Query・Fragment除外、HTML escapingをテストで固定した。
+- `GPT-5.6`: `big-question-club-logo.svg`をVite Assetとして取り込む共通Headerを作成し、Home、Question Detail、Question管理画面、認可済み管理画面へ適用した。各画面のIntegration TestとProduction BuildでLogoの描画・Asset出力を確認した。
+- `GPT-5.6`: 管理画面を推測されやすい `/admin` から `/club-operations` へ変更し、旧Pathを404とした。未ログイン・一般User・設定不備では管理画面の文言やLinkを含まない通常の404を返し、認可済み管理画面だけに管理Navigationを表示して `noindex, nofollow` を設定する回帰Testと文書更新を追加した。
 - `GPT-5.6`: Cloudflare DashboardのProduction環境に必要な5項目が設定済みなら`wrangler secret put`は不要であることと、Secret／通常Variableの使い分けを開発者向けマニュアルへ追記した。
 - `GPT-5.6`: 開発者向けマニュアルのCloudflare環境設定を明確化し、`.dev.vars`はデプロイされず、`wrangler secret put`で入力した値がCloudflareへ直接保存されることとDashboardからの代替設定を追記した。
 - `GPT-5.6`: SPEC 009へ、ローカル開発モード、ビルド、全自動テスト、Cloudflare環境設定、D1 Migration、デプロイのコマンドをまとめた日本語の開発者向けマニュアルを追加した。

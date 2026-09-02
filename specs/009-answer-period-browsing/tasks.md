@@ -144,13 +144,13 @@
 ### テスト
 
 - [X] T029 [P] [US5] DB User Emailとの管理者一致・不一致・User欠落を検証するD1 Testを先に作成する（`tests/d1/admin-repository.test.ts`）
-- [X] T030 [P] [US5] 未ログイン401、一般User403、管理者200、設定不備503、private no-storeを検証するIntegration Testを先に作成する（`tests/integration/admin.test.ts`）
+- [X] T030 [P] [US5] 未ログイン・一般User・設定不備の通常404、管理者200、private no-storeを検証するIntegration Testを先に作成する（`tests/integration/admin.test.ts`）
 
 ### 実装
 
 - [X] T031 [US5] Session由来User IDと設定Emailを照合するAdmin Repository認可を実装する（`src/repositories/admin-repository.ts`）
 - [X] T032 [US5] 全管理Routeへ共通のFail Closed認可と安全なError画面を実装する（`src/routes/admin.tsx`、`src/views/admin.tsx`）
-- [X] T033 [US5] Admin Repositoryと `/admin` RouteをWorkerへ注入・登録する（`src/index.tsx`、`src/app.tsx`）
+- [X] T033 [US5] Admin Repositoryと `/club-operations` RouteをWorkerへ注入・登録する（`src/index.tsx`、`src/app.tsx`）
 
 **Checkpoint**: 管理者以外は管理情報と変更操作へ到達できない。
 
@@ -171,7 +171,7 @@
 
 - [X] T036 [US6] 4一覧を1つの管理Dashboardへ返す最小投影を実装する（`src/repositories/admin-repository.ts`）
 - [X] T037 [US6] User・Question・Answer・Audit log Sectionと確認FormをHono JSXで実装する（`src/views/admin.tsx`）
-- [X] T038 [US6] 管理Dashboard取得と障害表示を `/admin` GETへ実装する（`src/routes/admin.tsx`）
+- [X] T038 [US6] 管理Dashboard取得と障害表示を `/club-operations` GETへ実装する（`src/routes/admin.tsx`）
 
 **Checkpoint**: 管理者が削除・BAN対象を一覧上で識別できる。
 
@@ -186,7 +186,7 @@
 ### テスト
 
 - [X] T039 [P] [US7] Question Cascade削除、missing、監査Actor、Batch原子性を検証するD1 Testを先に追加する（`tests/d1/admin-repository.test.ts`）
-- [X] T040 [P] [US7] 管理者削除303、確認不足400、missing404、一般User403を検証するIntegration Testを先に追加する（`tests/integration/admin.test.ts`）
+- [X] T040 [P] [US7] 管理者削除303、確認不足400、missing404、一般Userの通常404を検証するIntegration Testを先に追加する（`tests/integration/admin.test.ts`）
 
 ### 実装
 
@@ -206,7 +206,7 @@
 ### テスト
 
 - [X] T043 [P] [US8] Answer単独削除、missing、他Answer維持、監査Actorを検証するD1 Testを先に追加する（`tests/d1/admin-repository.test.ts`）
-- [X] T044 [P] [US8] 管理者削除303、確認不足400、missing404、一般User403を検証するIntegration Testを先に追加する（`tests/integration/admin.test.ts`）
+- [X] T044 [P] [US8] 管理者削除303、確認不足400、missing404、一般Userの通常404を検証するIntegration Testを先に追加する（`tests/integration/admin.test.ts`）
 
 ### 実装
 
@@ -226,7 +226,7 @@
 ### テスト
 
 - [X] T047 [P] [US9] BAN／解除、全Session失効、自己BAN拒否、管理Auditを検証するD1 Testを先に追加する（`tests/d1/admin-repository.test.ts`）
-- [X] T048 [P] [US9] BAN／解除Route、自己BAN409、一般User403を検証するIntegration Testを先に追加する（`tests/integration/admin.test.ts`）
+- [X] T048 [P] [US9] BAN／解除Route、自己BAN409、一般Userの通常404を検証するIntegration Testを先に追加する（`tests/integration/admin.test.ts`）
 - [X] T049 [P] [US9] BAN中UserのSession作成拒否とLogin監査を検証する認証Integration Testを先に追加する（`tests/integration/auth-ban.test.ts`）
 
 ### 実装
@@ -246,10 +246,37 @@
 
 ---
 
+## Phase 15: 管理画面Pathと存在の非開示
+
+- [X] T055 [US5] 管理画面を `/club-operations` へ変更し、旧 `/admin`、未ログイン、一般User、設定不備を通常の404と同じ応答にする（`src/domain/admin.ts`、`src/app.tsx`、`src/routes/admin.tsx`、`src/views/admin.tsx`）
+- [X] T056 [US5] 一般画面の管理Link非表示、旧Path非Redirect、認可前の管理文言非露出、`noindex, nofollow`を回帰Testと文書で固定する（`tests/integration/admin.test.ts`、`specs/009-answer-period-browsing/`、`README.md`）
+
+---
+
+## Phase 16: 共通Header
+
+- [X] T057 Home、Question Detail、Question管理、認可済み管理画面へ共通のLogo Headerを実装し、Vite AssetとしてBuild・配信されることを検証する（`src/views/site-header.tsx`、`src/views/*.tsx`、`tests/integration/*.test.ts`）
+
+---
+
+## Phase 17: Agent依頼PromptのQuestion URL対応
+
+- [X] T058 [US3] コピー用Promptを確定済みの1行文面とし、リクエスト元のOriginを含むQuestion絶対URLを埋め込み、QueryとFragmentを除外する。詳細なAgent向け指示はWebMCP Tool契約へ分離し、ローカル／本番OriginとHTML escapingをUnit／Integration Testで固定する（`src/domain/agent-request-prompt.ts`、`src/routes/question.ts`、`src/views/question-detail.tsx`、`tests/unit/agent-request-prompt.test.ts`、`tests/integration/agent-request-prompt.test.ts`）
+
+---
+
+## Phase 18: Personal Context根拠付き回答契約
+
+- [X] T059 [US3] 確定した1行Prompt、User Context参照元、User自身の記述の優先、事実と検討の区別、Assistant提案の除外、根拠不足時の質問・投稿停止、追加承認不要、投稿結果確認を先行Unit／Integration Testで固定する（`tests/unit/agent-request-prompt.test.ts`、`tests/unit/register-five-tools.test.ts`、`tests/unit/register-submit-answer-tool.test.ts`、`tests/unit/register-my-submission-tool.test.ts`、`tests/integration/agent-request-prompt.test.ts`、`tests/integration/webmcp-question-api.test.ts`、`tests/integration/question-visibility.test.ts`）
+- [X] T060 [US3] 確定した1行Promptを表示し、詳細な汎用Context根拠規則を `get_question` の固定instructionとTool description／Schemaへ実装する。初回Prompt自体を投稿許可とし追加Previewや承認を要求せず、根拠不足時はHumanへ質問して投稿しない契約と、投稿後の本人状態確認を実装する（`src/domain/agent-request-prompt.ts`、`src/routes/question.ts`、`src/webmcp/register-get-question-tool.ts`、`src/webmcp/register-submit-answer-tool.ts`、`src/webmcp/register-my-submission-tool.ts`）
+- [X] T061 [US3] SPEC 007・009、README、MILESTONE、検証記録を確定契約へ同期し、全自動品質Gateを実行する（`specs/007-webmcp-mvp-tools/`、`specs/009-answer-period-browsing/`、`README.md`、`MILESTONE.md`、`USE_CODEX.md`）
+
+---
+
 ## 依存関係と実行順序
 
 ```text
-Setup -> Foundational -> US1 -> US2 -> US3 -> Core回帰 -> 管理Foundational -> US4 -> US5 -> US6 -> US7 -> US8 -> US9 -> 公開運用回帰
+Setup -> Foundational -> US1 -> US2 -> US3 -> Core回帰 -> 管理Foundational -> US4 -> US5 -> US6 -> US7 -> US8 -> US9 -> 公開運用回帰 -> 管理画面非開示 -> 共通Header -> Question URL Prompt -> Context根拠付き回答契約
 ```
 
 - US1はHomeからDetailへ進む入口を作る。
@@ -279,6 +306,10 @@ Setup -> Foundational -> US1 -> US2 -> US3 -> Core回帰 -> 管理Foundational -
 7. T026〜T038で監査、管理認可、4一覧を完成する。
 8. T039〜T052でQuestion／Answer削除とUser BANを順に完成する。
 9. T053〜T054で文書同期と全自動回帰を行う。
+10. T055〜T056で管理画面Pathと認可前の存在非開示を固定する。
+11. T057で全HTML画面の共通Logo Headerを固定する。
+12. T058でコピー用Promptに環境追従するQuestion絶対URLを埋め込む。
+13. T059〜T061で確定Promptと汎用Context根拠規則、追加承認不要、根拠不足時の投稿停止、投稿結果確認をTool契約へ反映する。
 
 ## 注記
 

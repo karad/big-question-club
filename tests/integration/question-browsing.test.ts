@@ -80,7 +80,7 @@ describe('Question browsing detail', () => {
     ).text();
 
     expect(html).toContain('Ask your personal agent');
-    expect(html).toContain('Question ID: question-1');
+    expect(html).toContain('http://example.test/questions/question-1');
     expect(html).toContain('Copy prompt');
   });
 
@@ -225,6 +225,8 @@ describe('Question browsing detail', () => {
     ).text();
 
     expect(html).toContain('data-page="question-detail"');
+    expect(html).toContain('data-site-header');
+    expect(html).toContain('big-question-club-logo.svg');
     expect(html).toContain('data-question-state="OPEN"');
     expect(html).toContain('data-question-detail');
     expect(html).toContain('data-answer-count');

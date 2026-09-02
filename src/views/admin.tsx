@@ -1,6 +1,8 @@
 import { toIsoTimestamp, type Question } from '../domain/question';
 import { getQuestionState } from '../domain/question-lifecycle';
+import { ADMIN_PATH } from '../domain/admin';
 import type { AdminDashboard } from '../repositories/admin-repository';
+import { SiteHeader } from './site-header';
 
 export const ADMIN_RESPONSE_HEADERS = {
   'Cache-Control': 'private, no-store',
@@ -43,14 +45,13 @@ function AdminLayout({ title, children }: { title: string; children: unknown }) 
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="robots" content="noindex, nofollow" />
         <title>{title} — Big Question Club</title>
       </head>
       <body>
-        <header>
-          <nav aria-label="Administration">
-            <a href="/">Big Question Club</a> <a href="/admin">Administration</a>
-          </nav>
-        </header>
+        <SiteHeader navigationLabel="Administration">
+          <a href={ADMIN_PATH}>Administration</a>
+        </SiteHeader>
         <main>{children}</main>
       </body>
     </html>
@@ -94,12 +95,12 @@ function UserSection({
                     'Administrator'
                   ) : user.bannedAt === null ? (
                     <ConfirmForm
-                      action={`/admin/users/${encodeURIComponent(user.id)}/ban`}
+                      action={`${ADMIN_PATH}/users/${encodeURIComponent(user.id)}/ban`}
                       label="Ban user"
                     />
                   ) : (
                     <ConfirmForm
-                      action={`/admin/users/${encodeURIComponent(user.id)}/unban`}
+                      action={`${ADMIN_PATH}/users/${encodeURIComponent(user.id)}/unban`}
                       label="Unban user"
                     />
                   )}
@@ -130,7 +131,7 @@ function QuestionSection({ questions, now }: { questions: Question[]; now: numbe
                 Updated: {formatTime(question.updatedAt)}.
               </p>
               <ConfirmForm
-                action={`/admin/questions/${encodeURIComponent(question.id)}/delete`}
+                action={`${ADMIN_PATH}/questions/${encodeURIComponent(question.id)}/delete`}
                 label="Delete question"
               />
             </li>
@@ -158,7 +159,7 @@ function AnswerSection({ answers }: { answers: AdminDashboard['answers'] }) {
                 {formatTime(answer.createdAt)}. Updated: {formatTime(answer.updatedAt)}.
               </p>
               <ConfirmForm
-                action={`/admin/answers/${encodeURIComponent(answer.id)}/delete`}
+                action={`${ADMIN_PATH}/answers/${encodeURIComponent(answer.id)}/delete`}
                 label="Delete answer"
               />
             </li>

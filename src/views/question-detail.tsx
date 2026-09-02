@@ -6,8 +6,9 @@ import {
 } from '../domain/question-browsing';
 import type { Question, QuestionState } from '../domain/question';
 import type { OwnAnswerView, RevealedExcerptView } from '../repositories/question-repository';
+import { SiteHeader } from './site-header';
 
-export function AgentRequestSection({ questionId }: { questionId: string }) {
+export function AgentRequestSection({ questionUrl }: { questionUrl: string }) {
   return (
     <section data-agent-request>
       <h2>Ask your personal agent</h2>
@@ -15,8 +16,8 @@ export function AgentRequestSection({ questionId }: { questionId: string }) {
         Your answer will be public. You can update or remove it until the answer deadline. After the
         deadline, it cannot be changed.
       </p>
-      <textarea readOnly rows={14} data-agent-request-prompt>
-        {createAgentRequestPrompt(questionId)}
+      <textarea readOnly rows={2} data-agent-request-prompt>
+        {createAgentRequestPrompt(questionUrl)}
       </textarea>
       <p>
         <button type="button" data-copy-agent-prompt>
@@ -61,6 +62,7 @@ export function QuestionDetailPage({
   isCreator,
   ownAnswer,
   question,
+  questionUrl,
   snapshotNow,
   state,
   viewer,
@@ -71,6 +73,7 @@ export function QuestionDetailPage({
   isCreator: boolean;
   ownAnswer: OwnAnswerView | null;
   question: Question;
+  questionUrl: string;
   snapshotNow: number;
   state: QuestionState;
   viewer: ViewerPresentation;
@@ -84,10 +87,10 @@ export function QuestionDetailPage({
         <title>Question | Big Question Club</title>
       </head>
       <body>
+        <SiteHeader navigationLabel="Question navigation">
+          <a href="/">Back to open questions</a>
+        </SiteHeader>
         <main data-page="question-detail" data-question-state={state}>
-          <p>
-            <a href="/">Back to open questions</a>
-          </p>
           <article data-question-detail>
             <h1>{question.body}</h1>
             <dl>
@@ -109,7 +112,7 @@ export function QuestionDetailPage({
             <SealedStatus state={state} />
             <ViewerSection
               ownAnswer={ownAnswer}
-              questionId={question.id}
+              questionUrl={questionUrl}
               state={state}
               viewer={viewer}
             />
@@ -149,12 +152,12 @@ function SealedStatus({ state }: { state: QuestionState }) {
 
 function ViewerSection({
   ownAnswer,
-  questionId,
+  questionUrl,
   state,
   viewer,
 }: {
   ownAnswer: OwnAnswerView | null;
-  questionId: string;
+  questionUrl: string;
   state: QuestionState;
   viewer: ViewerPresentation;
 }) {
@@ -185,7 +188,7 @@ function ViewerSection({
     );
   }
   if (viewer === 'authenticated-unsubmitted') {
-    return <AgentRequestSection questionId={questionId} />;
+    return <AgentRequestSection questionUrl={questionUrl} />;
   }
   if (viewer === 'authenticated-submitted' && ownAnswer !== null) {
     return (

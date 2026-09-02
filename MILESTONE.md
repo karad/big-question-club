@@ -46,7 +46,7 @@
 
 - [x] **SPEC 007 — WebMCP MVP Tool群**
   - 目的: Question画面のコピペ用プロンプトを起点に、AgentがHumanの指定したOpen Questionを取得し、独立したAnswerを投稿・確認し、締切までは本人の依頼により更新・削除できる最小Tool群を提供する。
-  - SpecKitで確定する情報: Question画面の英語コピペ用プロンプトとコピー操作、`get_question`、`submit_answer`、`update_answer`、`remove_answer`、`get_my_submission`の入出力契約、HumanによるQuestion指定、認可、エラー契約、文字数制限、Tool description、非公開データの除外、Integration Testのシナリオ。
+  - SpecKitで確定する情報: 現在のOriginに追従するQuestion絶対URLを含む1行の英語コピペ用プロンプトとコピー操作、プロンプトから分離して各ToolからAgentへ渡すUser自身の記述を優先するContext根拠規則、根拠不足時の質問・投稿停止、初回Promptによる投稿許可と追加承認不要、投稿結果確認、`get_question`、`submit_answer`、`update_answer`、`remove_answer`、`get_my_submission`の入出力契約、HumanによるQuestion指定、認可、エラー契約、文字数制限、Tool description、非公開データの除外、Integration Testのシナリオ。
   - 完了条件: 認証済みHumanがQuestion画面のプロンプトをPersonal Agentへ貼り付け、指定Questionについて投稿・確認まで完了し、締切前は本人Answerを更新・削除できる。AgentはQuestionを自動探索せず、他AgentのAnswerへアクセスまたは変更できない。
 
 - [x] **SPEC 008 — Sealed Answersのアクセス制御**
@@ -56,7 +56,7 @@
 
 - [x] **SPEC 009 — Challenge Core閲覧フロー**
   - 目的: HomeとQuestion Detailの必須機能を完成し、HumanがOpen Questionを選び、Personal Agentへ回答を依頼し、回答数の変化とsealed状態を確認できるようにする。
-  - SpecKitで確定する情報: Open Question一覧、回答数・締切・sealed表示、未ログイン・作成者・未回答・回答済みの最小表示状態、SPEC 007のAgent依頼プロンプト統合、SPEC 008の非露出回帰、自動テスト範囲。
+  - SpecKitで確定する情報: Open Question一覧、回答数・締切・sealed表示、未ログイン・作成者・未回答・回答済みの最小表示状態、SPEC 007のAgent依頼プロンプト統合、User自身の記述を優先するContext根拠規則、根拠不足時の質問・投稿停止、初回Promptによる投稿許可と追加承認不要、SPEC 008の非露出回帰、自動テスト範囲。
   - 完了条件: 3分デモの回答前・1件回答・複数回答・sealedを機能として再現でき、Reveal前に他者Answerが漏れない。専用Login、My Questions再設計、最終Visual Designは含めない。
   - 追加SPEC : 理由 → Webアプリはインターネットに公開され、審査員の他誰でもアクセス可能になるため
     - ログイン、ログアウト、質問入力、回答入力を実施アカウントとともにDBにログとして記録する
@@ -80,9 +80,11 @@
 
 ## P3 — 未確定アイデア
 
-- ログは何かしらの方法で記録する。ベストプラクティスに従う
-- 開発／検証用D1を用意し、利用ドキュメントを整備する
-
+- Signed in as TFym9cJ4Sp81IJaZJD6sT1SD81KWUCeU.の表示は不要
+- Open Questions の一覧にもプロンプトをコピーのエリアを用意。ただしプロンプトのフィールドをみせるために、一度押すとプロンプトのフィールドとコピーボタンがあるようにする。GitHubのCloneの部分と同様な感じ
+- 一覧の質問はAnswers、remainingを1行で質問の下に出すこと。アイコンでシンプルに
+- remainingを押すとDeadlineに切り変わる。切り替わるときは全部の日付が切り替わるようにする
+- Answers are sealedは、アイコンなどを使い視覚的にわかるようにし、テキスト情報はアイコンに設定する
 
 ## 対象外
 

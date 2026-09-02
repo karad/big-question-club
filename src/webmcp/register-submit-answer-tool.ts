@@ -52,7 +52,8 @@ export async function registerSubmitAnswerTool(
   try {
     await support.modelContext.registerTool({
       name: SUBMIT_ANSWER_TOOL_NAME,
-      description: 'Submit one public answer and a one-line excerpt for an open question.',
+      description:
+        "Submit one context-grounded public answer and a one-line excerpt for the open Question selected by the human. The human's request to answer and submit authorizes this call; no additional preview or approval is required. Do not submit when relevant user context is insufficient; ask the human instead.",
       inputSchema: {
         type: 'object',
         required: ['questionId', 'answer', 'excerpt'],
@@ -62,12 +63,14 @@ export async function registerSubmitAnswerTool(
           answer: {
             type: 'string',
             minLength: 1,
-            description: 'Public answer, limited to 5,000 user-perceived characters.',
+            description:
+              'Public answer grounded in relevant user-authored context without unnecessarily revealing private details, limited to 5,000 user-perceived characters.',
           },
           excerpt: {
             type: 'string',
             minLength: 1,
-            description: 'Single-line excerpt, limited to 160 user-perceived characters.',
+            description:
+              'Public single-line excerpt consistent with the answer, limited to 160 user-perceived characters.',
           },
         },
       },

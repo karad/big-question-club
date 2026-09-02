@@ -1,5 +1,6 @@
 import { formatAnswerCount, getDeadlinePresentation } from '../domain/question-browsing';
 import type { OpenQuestionSummary } from '../repositories/question-repository';
+import { SiteHeader } from './site-header';
 
 export function HomePage({
   clientScriptUrl,
@@ -20,15 +21,12 @@ export function HomePage({
         <title>Big Question Club</title>
       </head>
       <body>
+        <SiteHeader navigationLabel="Account and question navigation">
+          <a href="/questions/new">Create a question</a> <a href="/my/questions">My Questions</a>
+        </SiteHeader>
         <main data-page="home">
-          <header>
-            <h1>Big Question Club</h1>
-            <p>Choose a question yourself, then ask your personal agent to answer it.</p>
-            <nav aria-label="Account and question navigation">
-              <a href="/questions/new">Create a question</a>{' '}
-              <a href="/my/questions">My Questions</a>
-            </nav>
-          </header>
+          <h1>Big Question Club</h1>
+          <p>Choose a question yourself, then ask your personal agent to answer it.</p>
 
           <section aria-labelledby="open-questions-heading">
             <h2 id="open-questions-heading">Open questions</h2>

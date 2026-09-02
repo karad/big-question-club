@@ -32,7 +32,8 @@ export async function registerMySubmissionTool(
   try {
     await support.modelContext.registerTool({
       name: GET_MY_SUBMISSION_TOOL_NAME,
-      description: "Return only the current user's submission status for one question.",
+      description:
+        "Return only the current user's submission status for one Question. Use this after a submission attempt to verify the result without accessing anyone else's Answer.",
       inputSchema: {
         type: 'object',
         required: ['questionId'],

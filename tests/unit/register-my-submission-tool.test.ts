@@ -14,6 +14,8 @@ describe('get_my_submission WebMCP tool', () => {
         annotations: { readOnlyHint: true, untrustedContentHint: true },
       }),
     );
+    const registration = registerTool.mock.calls[0]?.[0] as { description?: string };
+    expect(registration.description).toContain('after a submission attempt to verify');
   });
   it('rejects invalid input', async () => {
     await expect(executeMySubmissionTool({}, undefined, vi.fn())).resolves.toMatchObject({

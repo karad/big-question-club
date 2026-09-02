@@ -40,11 +40,11 @@
 - **根拠**: SQLiteの `length()` は書記素クラスタを数えず、絵文字や結合文字で画面上の文字数と不一致になる。SPEC 006で採用済みの `Intl.Segmenter` と同じ規則をAnswerにも適用すればUIとToolの契約が一致する。更新時刻を保存することで `get_my_submission` と競合検証が最新変更を追跡できる。
 - **検討した代替案**: `created_at`だけを維持する案は更新後の時刻を再取得できないため不採用。SQL `length()`を表示文字数とみなす案はUnicode境界ケースで仕様と一致しないため不採用。
 
-## 判断 7: コピペ用プロンプトはサーバー生成しClipboard APIを段階的に使う
+## 判断 7: コピペ用プロンプトは環境追従する1行としてサーバー生成しClipboard APIを段階的に使う
 
-- **決定**: 純粋関数が固定英語テンプレートへQuestion IDだけを埋め込み、Question本文を含めない。SSRは未投稿の認証済みUserかつ `OPEN` の場合だけ、選択可能な読み取り専用テキストと `Copy prompt` ボタンを表示する。クリック時に `navigator.clipboard.writeText()`を呼び、成功は `Copied`、失敗は英語のstatusで通知する。失敗してもテキストは残す。
-- **根拠**: サーバー生成なら表示とコピー元を同一文字列にでき、Question本文のPrompt Injectionがテンプレートへ混入しない。Clipboard APIの `writeText()` はPromiseを返しSecure Contextを必要とするため、ユーザー操作から呼び出し、失敗時の手動コピーを常に残す必要がある。
-- **検討した代替案**: Question本文をプロンプトへ埋め込む案は内容重複とInjection面を増やすため不採用。コピー専用で表示テキストを隠す案は権限拒否時に利用不能になるため不採用。
+- **決定**: 純粋関数が、対象ページを開いて関連するPersonal Contextから回答しWebMCPで投稿するよう依頼する確定済み1行の英語テンプレートへ、閲覧中リクエストのOriginとQuestion Pathから生成した絶対URLだけを埋め込む。Query、Fragment、Question本文は含めない。Tool名、呼出順、Context根拠、安全上の詳細はPromptへ列挙せず、ページを開いた後のTool description、Schema、annotation、返却データからAgentへ渡す。Tool側ではUser自身の明示的・反復された記述を優先し、Assistant提案、比較候補、仮定と区別する。根拠不足時は推測・投稿せずHumanへ確認する。初回Promptは投稿許可を含み、追加Previewや承認を要求しない。SSRは未投稿の認証済みUserかつ `OPEN` の場合だけ、選択可能な読み取り専用テキストと `Copy prompt` ボタンを表示する。クリック時に `navigator.clipboard.writeText()`を呼び、成功は `Copied`、失敗は英語のstatusで通知する。失敗してもテキストは残す。
+- **根拠**: Question URLを含めることで、Personal Agentが事前にページを開いていない場合にも対象ページを明示でき、Originを固定しないためローカルと本番の両方で機能する。人間の開始指示は極限まで短くし、Agent向け詳細を実行時のTool契約へ置くことで、重複する長い説明を避けられる。サーバー生成なら表示とコピー元を同一文字列にでき、Question本文のPrompt Injectionもテンプレートへ混入しない。Clipboard APIの `writeText()` はPromiseを返しSecure Contextを必要とするため、ユーザー操作から呼び出し、失敗時の手動コピーを常に残す必要がある。
+- **検討した代替案**: Question IDだけを渡す案は、Agentが対象ページを開いておらずWebMCP Toolを利用できない場合があるため不採用。Tool手順と安全説明をPromptへ列挙する案は、Tool側から提供できる情報を重複させPromptを長くするため不採用。Question本文をプロンプトへ埋め込む案は内容重複とInjection面を増やすため不採用。コピー専用で表示テキストを隠す案は権限拒否時に利用不能になるため不採用。
 - **参照**: [MDN Clipboard.writeText](https://developer.mozilla.org/docs/Web/API/Clipboard/writeText)、[MDN Clipboard API security](https://developer.mozilla.org/docs/Web/API/Clipboard_API)
 
 ## 判断 8: 自動テストと実ブラウザーWebMCP確認を分担する
@@ -52,4 +52,3 @@
 - **決定**: Domainの書記素境界・Prompt生成・エラー分類・Tool SchemaはUnit Test、D1のMigration・条件付き更新削除・競合はWorkers D1 Integration Test、HTTP認証・DTO・SSR表示・非露出はHono Integration Testで保証する。実際のPersonal AgentによるTool選択、Clipboard、5 ToolのE2EはQuickstartで確認する。
 - **根拠**: 外部AgentのTool解釈と実ブラウザーSessionはVitestだけでは保証できない。一方、所有者条件や締切競合を手動確認だけにすると回帰原因を切り分けられない。
 - **検討した代替案**: すべてを手動E2Eに寄せる案は再現性が低いため不採用。自動テストだけでWebMCP成立を判定する案は実AgentのTool解釈を確認できないため不採用。
-

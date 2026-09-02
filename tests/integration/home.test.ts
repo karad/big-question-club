@@ -98,6 +98,8 @@ describe('Home question browsing', () => {
     const html = await response.text();
 
     expect(html).toContain('data-page="home"');
+    expect(html).toContain('data-site-header');
+    expect(html).toContain('big-question-club-logo.svg');
     expect(html).toContain('data-question-list');
     expect(html).toContain('data-question-card');
     expect(html).toContain('data-answer-count');

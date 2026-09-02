@@ -47,6 +47,15 @@ describe('SPEC 007 WebMCP tools', () => {
     ]);
   });
 
+  it('tells the agent to ground the answer in user-authored context without guessing', async () => {
+    const registerTool = vi.fn();
+    await registerGetQuestionTool({ modelContext: { registerTool } }, vi.fn());
+    const registration = registerTool.mock.calls[0]?.[0] as { description?: string };
+    expect(registration.description).toContain('relevant available user-authored context');
+    expect(registration.description).toContain('never infer user facts from assistant suggestions');
+    expect(registration.description).toContain('ask the human instead of guessing or submitting');
+  });
+
   it('rejects extra identity fields and honors cancellation', async () => {
     const fetchLike = vi.fn();
     await expect(

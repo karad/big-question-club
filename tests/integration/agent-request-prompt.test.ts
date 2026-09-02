@@ -26,12 +26,27 @@ function page(userId: string | undefined, now: number, submitted = false) {
 }
 
 describe('Agent request prompt display', () => {
-  it('shows the fixed prompt only for an authenticated, unsubmitted, open question', async () => {
+  it('shows a short prompt with the current server URL only for an authenticated open question', async () => {
     const response = await page('user-1', 99);
     const html = await response.text();
     expect(html).toContain('data-agent-request-prompt');
-    expect(html).toContain('Question ID: question-1');
-    expect(html).not.toContain('Question ID: What makes an answer useful?');
+    expect(html).toContain('http://example.test/questions/question-1');
+    expect(html).toContain(
+      'Open this question, answer it using my relevant personal context, and submit via WebMCP: http://example.test/questions/question-1',
+    );
+    expect(html).not.toContain('Call get_question');
+    expect(html).not.toContain('Question ID:');
+  });
+
+  it('uses the production request origin and omits query parameters', async () => {
+    const response = await createApp({
+      authentication: authentication('user-1'),
+      repository: createInMemoryQuestionRepository({ question: openQuestion }),
+      now: () => 99,
+    }).request('https://club.example/questions/question-1?tracking=private');
+    const html = await response.text();
+    expect(html).toContain('https://club.example/questions/question-1');
+    expect(html).not.toContain('tracking=private');
   });
 
   it('does not show the prompt to unauthenticated, submitted, or closed viewers', async () => {
