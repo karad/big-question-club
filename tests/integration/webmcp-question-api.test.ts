@@ -18,6 +18,11 @@ function authentication(userId: string | undefined): Authentication {
 }
 
 describe('WebMCP Question APIs', () => {
+  function expectPrivate(response: Response): void {
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(response.headers.get('Vary')).toBe('Cookie');
+  }
+
   it('returns only the untrusted open-question DTO with no-store', async () => {
     const app = createApp({
       authentication: authentication('user-1'),
@@ -29,7 +34,7 @@ describe('WebMCP Question APIs', () => {
     });
     const response = await app.request('http://example.test/api/questions/question-1');
     const payload = await response.json();
-    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expectPrivate(response);
     expect(payload).toEqual({
       id: 'question-1',
       question: 'What makes an answer useful?',
@@ -60,7 +65,7 @@ describe('WebMCP Question APIs', () => {
       });
       const response = await app.request('http://example.test/api/questions/question-1');
       expect(response.status).toBe(status);
-      expect(response.headers.get('Cache-Control')).toBe('no-store');
+      expectPrivate(response);
       expect(await response.json()).toMatchObject({ code });
     },
   );
@@ -85,6 +90,7 @@ describe('WebMCP Question APIs', () => {
       const response = await app.request(
         'http://example.test/api/questions/question-1/my-submission',
       );
+      expectPrivate(response);
       expect(await response.json()).toMatchObject({
         status: 'submitted',
         answer: 'Latest',
@@ -113,7 +119,7 @@ describe('WebMCP Question APIs', () => {
     const app = createApp({ authentication: authentication('user-1'), repository, now: () => 99 });
     const response = await app.request('http://example.test/api/questions/question-1');
     expect(response.status).toBe(500);
-    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expectPrivate(response);
     expect(await response.json()).toEqual({
       code: 'TOOL_UNAVAILABLE',
       message: 'The requested operation is temporarily unavailable.',

@@ -30,6 +30,10 @@
 
 ## 2026-09-02
 
+- `GPT-5.6`: SPEC 008のQuestion状態Snapshotを唯一の判定源とするAnswer認可決定表、回答数・本人Answer・Reveal後Excerpt・指定本文の最小Repository投影、SSR／詳細HTTP／WebMCPの非露出Headerと共通拒否を実装した。320件の認可マトリクスを含むNode 557テスト、D1 44テスト、型検査、Lint、Format、Build、Schema検査、および2利用者の実ブラウザーWebMCP／Reveal前後／Session失効検証に成功した。
+- `GPT-5.6`: SpecKitを用いてSPEC 008の技術調査、実装計画、アクセス制御データモデル、SSR／HTTP／WebMCP契約、Quickstart検証ガイドを作成した。
+- `GPT-5.6`: SpecKitを用いてSPEC 008を40件の依存順タスクへ分解し、Reveal前封印、回答数と本人Answer、Reveal後Human限定公開、直接アクセスと境界時刻の横断回帰を4ユーザーストーリーとして計画した。
+- `GPT-5.6`: SpecKitを用いてSPEC 008「Sealed Answersのアクセス制御」の仕様と品質チェックリストを作成し、Question状態を唯一の判定源とする回答数・本人Answer・他者Answerの返却規則、SSR・HTTP API・WebMCPの経路別認可、直接アクセス対策、境界時刻、回帰テストマトリクスを定義した。
 - `GPT-5.6`: SPEC 007の固定Agent依頼Prompt、Clipboard導線、指定Open Question取得、書記素制限付き投稿、本人Answer更新・Hard Delete・再投稿、本人状態確認、5 Tool限定登録、D1 Migrationと競合安全性を実装した。Node 229テスト、D1 42テスト、型検査、Lint、Format、Build、Schema検査、およびGoogle OAuth 2利用者のローカルWebMCP実機E2Eに成功し、他者Answer非露出・非変更、Draft非列挙、締切後凍結、日本語・英語のInjection耐性を確認した。
 - `GPT-5.6`: SpecKitを用いてSPEC 007「WebMCP MVP Tool群」の仕様と品質チェックリストを作成し、Question画面の英語コピペ用プロンプトを起点にHumanが指定したQuestionだけを扱う5 Toolの入出力、締切前の本人Answer更新・削除、認証、エラー、文字数、安全なdescription、非公開データ境界、Integration Test成果を定義した。
 - `GPT-5.6`: SpecKitを用いてSPEC 007の技術調査、実装計画、Answer更新時刻を含むD1データモデル、5 WebMCP Tool／HTTP／コピペ用Prompt契約、Quickstart検証ガイドを作成した。

@@ -49,7 +49,7 @@
   - SpecKitで確定する情報: Question画面の英語コピペ用プロンプトとコピー操作、`get_question`、`submit_answer`、`update_answer`、`remove_answer`、`get_my_submission`の入出力契約、HumanによるQuestion指定、認可、エラー契約、文字数制限、Tool description、非公開データの除外、Integration Testのシナリオ。
   - 完了条件: 認証済みHumanがQuestion画面のプロンプトをPersonal Agentへ貼り付け、指定Questionについて投稿・確認まで完了し、締切前は本人Answerを更新・削除できる。AgentはQuestionを自動探索せず、他AgentのAnswerへアクセスまたは変更できない。
 
-- [ ] **SPEC 008 — Sealed Answersのアクセス制御**
+- [x] **SPEC 008 — Sealed Answersのアクセス制御**
   - 目的: Questionの状態を唯一の判定源として、Reveal前後のAnswer公開範囲をSSR・HTTP API・WebMCPで一貫して強制する。
   - SpecKitで確定する情報: アクセス制御ポリシー、回答数・自分のAnswer・他者のAnswerの返却ルール、直HTTPアクセス対策、境界時刻の扱い、回帰テストマトリクス。
   - 完了条件: 全公開経路のテストで、Reveal前に他者のAnswer本文・プレビュー・要約が一切漏れない。

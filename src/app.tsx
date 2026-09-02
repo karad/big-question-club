@@ -14,6 +14,7 @@ import { removeAnswerRoute, updateAnswerRoute } from './routes/answer-mutation';
 import {
   answerDetailRoute,
   mySubmissionRoute,
+  PRIVATE_RESPONSE_HEADERS,
   questionPageRoute,
   questionRoute,
 } from './routes/question';
@@ -44,7 +45,7 @@ export function createApp({
     if (error instanceof HTTPException) return error.getResponse();
     console.error(error);
     if (context.req.path.startsWith('/api/questions/'))
-      return context.json(answerError('TOOL_UNAVAILABLE'), 500, { 'Cache-Control': 'no-store' });
+      return context.json(answerError('TOOL_UNAVAILABLE'), 500, PRIVATE_RESPONSE_HEADERS);
     return context.json({ error: 'Internal server error' }, 500);
   });
 
@@ -95,6 +96,12 @@ export function createApp({
     questionPageRoute(context, authentication, repository, now ?? Date.now, clientScriptUrl),
   );
   app.get('/', (context) => context.html(<HomePage clientScriptUrl={clientScriptUrl} />));
+
+  app.notFound((context) =>
+    context.req.path.startsWith('/api/questions/')
+      ? context.json(answerError('ANSWER_UNAVAILABLE'), 404, PRIVATE_RESPONSE_HEADERS)
+      : context.text('Not Found', 404),
+  );
 
   return app;
 }

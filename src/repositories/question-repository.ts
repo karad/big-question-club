@@ -36,6 +36,13 @@ export type UpdateDraftResult =
   | { kind: 'invalid' }
   | { kind: 'unavailable' };
 export type OwnedQuestionSummary = { question: Question; answerCount: number };
+export type AnswerCountView = { answerCount: number };
+export type OwnAnswerView = Pick<
+  Answer,
+  'body' | 'createdAt' | 'excerpt' | 'questionId' | 'updatedAt'
+>;
+export type RevealedExcerptView = Pick<Answer, 'excerpt' | 'id'>;
+export type RevealedBodyView = Pick<Answer, 'body' | 'id'>;
 export type SubmitResult =
   | { kind: 'submitted'; answer: Answer }
   | { kind: 'duplicate' }
@@ -87,6 +94,10 @@ export interface QuestionRepository {
   countAnswers(questionId: string): Promise<number>;
   listExcerpts(questionId: string): Promise<Array<Pick<Answer, 'id' | 'excerpt'>>>;
   getAnswerBody(questionId: string, answerId: string): Promise<string | null>;
+  getAnswerCount(questionId: string): Promise<AnswerCountView>;
+  getOwnAnswer(questionId: string, userId: string): Promise<OwnAnswerView | null>;
+  listRevealedExcerpts(questionId: string): Promise<RevealedExcerptView[]>;
+  getRevealedAnswerBody(questionId: string, answerId: string): Promise<RevealedBodyView | null>;
 }
 
 export function createQuestionRepository(database: D1Database): QuestionRepository {
@@ -314,7 +325,7 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
         .select({ id: answers.id, excerpt: answers.excerpt })
         .from(answers)
         .where(eq(answers.questionId, questionId))
-        .orderBy(asc(answers.createdAt));
+        .orderBy(asc(answers.createdAt), asc(answers.id));
     },
     async getAnswerBody(questionId, answerId) {
       const [answer] = await db
@@ -323,6 +334,22 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
         .where(and(eq(answers.questionId, questionId), eq(answers.id, answerId)))
         .limit(1);
       return answer?.body ?? null;
+    },
+    async getAnswerCount(questionId) {
+      return { answerCount: await repository.countAnswers(questionId) };
+    },
+    async getOwnAnswer(questionId, userId) {
+      const answer = await repository.getMine(questionId, userId);
+      if (answer === null) return null;
+      const { body, createdAt, excerpt, questionId: ownedQuestionId, updatedAt } = answer;
+      return { body, createdAt, excerpt, questionId: ownedQuestionId, updatedAt };
+    },
+    async listRevealedExcerpts(questionId) {
+      return repository.listExcerpts(questionId);
+    },
+    async getRevealedAnswerBody(questionId, answerId) {
+      const body = await repository.getAnswerBody(questionId, answerId);
+      return body === null ? null : { body, id: answerId };
     },
   };
   return repository;

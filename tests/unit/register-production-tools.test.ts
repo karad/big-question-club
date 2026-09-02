@@ -21,5 +21,6 @@ describe('production WebMCP surface', () => {
       'remove_answer',
       'get_my_submission',
     ]);
+    expect(names.join(' ')).not.toMatch(/list|search|summary|compare|other|count|detail/);
   });
 });

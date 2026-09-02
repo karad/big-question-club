@@ -144,6 +144,31 @@ export function createInMemoryQuestionRepository({
           ?.body ?? null
       );
     },
+    async getAnswerCount(questionId) {
+      return {
+        answerCount: storedAnswers.filter((answer) => answer.questionId === questionId).length,
+      };
+    },
+    async getOwnAnswer(questionId, userId) {
+      const answer = storedAnswers.find(
+        (item) => item.questionId === questionId && item.userId === userId,
+      );
+      if (answer === undefined) return null;
+      const { body, createdAt, excerpt, questionId: ownedQuestionId, updatedAt } = answer;
+      return { body, createdAt, excerpt, questionId: ownedQuestionId, updatedAt };
+    },
+    async listRevealedExcerpts(questionId) {
+      return storedAnswers
+        .filter((answer) => answer.questionId === questionId)
+        .sort((left, right) => left.createdAt - right.createdAt || left.id.localeCompare(right.id))
+        .map(({ id, excerpt }) => ({ id, excerpt }));
+    },
+    async getRevealedAnswerBody(questionId, answerId) {
+      const answer = storedAnswers.find(
+        (item) => item.questionId === questionId && item.id === answerId,
+      );
+      return answer === undefined ? null : { id: answer.id, body: answer.body };
+    },
   };
 }
 
@@ -175,6 +200,11 @@ export const openQuestion: Question = {
 export const draftQuestion: Question = { ...openQuestion, publishedAt: null };
 export const closedQuestion: Question = { ...openQuestion, revealsAt: 200 };
 export const revealedQuestion: Question = { ...openQuestion };
+export const otherQuestion: Question = {
+  ...openQuestion,
+  id: 'question-2',
+  body: 'How should a second question stay isolated?',
+};
 export const answerDeadline = openQuestion.closesAt;
 export const primaryUserId = 'user-1';
 export const otherUserId = 'user-2';

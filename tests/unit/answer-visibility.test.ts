@@ -1,7 +1,43 @@
 import { describe, expect, it } from 'vitest';
-import { canListAnswerExcerpts, canReadOtherAnswerBody } from '../../src/domain/answer-visibility';
+import {
+  canAccessAnswerResource,
+  canListAnswerExcerpts,
+  canReadOtherAnswerBody,
+} from '../../src/domain/answer-visibility';
+import { visibilityCases } from '../helpers/visibility-matrix';
 
 describe('Answer visibility', () => {
+  it.each(visibilityCases)('$label', ({ authenticated, expected, path, resource, state }) => {
+    expect(canAccessAnswerResource({ authenticated, path, resource, state })).toBe(expected);
+  });
+
+  it('keeps creator status out of the access decision and exposes own bodies through self-submission after reveal', () => {
+    expect(
+      canAccessAnswerResource({
+        authenticated: true,
+        path: 'human-ssr',
+        resource: 'other-body',
+        state: 'OPEN',
+      }),
+    ).toBe(false);
+    expect(
+      canAccessAnswerResource({
+        authenticated: true,
+        path: 'self-submission',
+        resource: 'own-answer',
+        state: 'REVEALED',
+      }),
+    ).toBe(true);
+    expect(
+      canAccessAnswerResource({
+        authenticated: true,
+        path: 'human-ssr',
+        resource: 'own-answer',
+        state: 'REVEALED',
+      }),
+    ).toBe(false);
+  });
+
   it('lists excerpts only for authenticated Humans in REVEALED', () => {
     expect(canListAnswerExcerpts(true, 'REVEALED')).toBe(true);
     expect(canListAnswerExcerpts(true, 'CLOSED')).toBe(false);
