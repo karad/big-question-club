@@ -5,6 +5,7 @@ import { applyMigrations } from './apply-migrations';
 import { insertUser, userFixture } from './fixtures';
 
 describe('question write guards', () => {
+  const hour = 60 * 60 * 1000;
   beforeEach(async () => {
     await applyMigrations(env.TEST_DB, env.TEST_MIGRATIONS);
     await env.TEST_DB.batch([
@@ -18,46 +19,46 @@ describe('question write guards', () => {
     await insertUser(env.TEST_DB, userFixture('answerer'));
   });
 
-  async function draft(closesAt = 5_000, revealsAt = 6_000) {
+  async function draft(closesAt = 3 * hour, revealsAt = 3 * hour) {
     const repository = createQuestionRepository(env.TEST_DB);
-    await repository.createDraft(
+    const created = await repository.createDraft(
       {
-        id: 'question',
         creatorUserId: 'creator',
-        body: 'Question',
+        body: 'Question body',
         language: 'en',
         closesAt,
         revealsAt,
       },
-      1_000,
+      0,
     );
-    return repository;
+    if (created.kind !== 'created') throw new Error('Question was not created');
+    return { repository, questionId: created.question.id };
   }
 
   it('publishes only once for the creator before close', async () => {
-    const repository = await draft();
-    expect(await repository.publish('question', 'answerer', 2_000)).toEqual({
+    const { repository, questionId } = await draft();
+    expect(await repository.publish(questionId, 'answerer', hour)).toEqual({
       kind: 'creator-mismatch',
     });
-    expect(await repository.publish('question', 'creator', 2_000)).toMatchObject({
+    expect(await repository.publish(questionId, 'creator', hour)).toMatchObject({
       kind: 'published',
     });
-    expect(await repository.publish('question', 'creator', 2_001)).toEqual({
+    expect(await repository.publish(questionId, 'creator', hour + 1)).toEqual({
       kind: 'invalid-transition',
     });
   });
 
   it.each([
-    ['draft', null, 2_000, 'not-open'],
-    ['at close', 1_000, 5_000, 'not-open'],
-    ['closed', 1_000, 5_500, 'not-open'],
-    ['revealed', 1_000, 6_000, 'not-open'],
+    ['draft', null, 2 * hour, 'not-open'],
+    ['at close', hour, 3 * hour, 'not-open'],
+    ['after close', hour, 3 * hour + 1, 'not-open'],
+    ['revealed', hour, 4 * hour, 'not-open'],
   ] as const)('rejects submission when %s', async (_label, publishedAt, now, expected) => {
-    const repository = await draft();
-    if (publishedAt !== null) await repository.publish('question', 'creator', publishedAt);
+    const { repository, questionId } = await draft();
+    if (publishedAt !== null) await repository.publish(questionId, 'creator', publishedAt);
     expect(
       await repository.submit(
-        'question',
+        questionId,
         'answerer',
         { answer: 'Answer', excerpt: 'Excerpt' },
         now,
@@ -66,16 +67,16 @@ describe('question write guards', () => {
   });
 
   it('keeps one answer across sequential and concurrent duplicate attempts', async () => {
-    const repository = await draft();
-    await repository.publish('question', 'creator', 2_000);
+    const { repository, questionId } = await draft();
+    await repository.publish(questionId, 'creator', hour);
     const sequential = [];
     for (let index = 0; index < 10; index += 1) {
       sequential.push(
         await repository.submit(
-          'question',
+          questionId,
           'answerer',
           { answer: `Answer ${index}`, excerpt: `Excerpt ${index}` },
-          3_000,
+          2 * hour,
         ),
       );
     }
@@ -86,32 +87,37 @@ describe('question write guards', () => {
     const concurrent = await Promise.all(
       Array.from({ length: 10 }, (_, index) =>
         repository.submit(
-          'question',
+          questionId,
           'concurrent',
           { answer: `Concurrent ${index}`, excerpt: `Concurrent ${index}` },
-          3_100,
+          2 * hour + 100,
         ),
       ),
     );
     expect(concurrent.filter(({ kind }) => kind === 'submitted')).toHaveLength(1);
     expect(concurrent.filter(({ kind }) => kind === 'duplicate')).toHaveLength(9);
-    expect(await repository.countAnswers('question')).toBe(2);
+    expect(await repository.countAnswers(questionId)).toBe(2);
   });
 
   it('classifies invalid content and missing references without writes', async () => {
-    const repository = await draft();
-    await repository.publish('question', 'creator', 2_000);
+    const { repository, questionId } = await draft();
+    await repository.publish(questionId, 'creator', hour);
     expect(
-      await repository.submit('question', 'answerer', { answer: ' ', excerpt: 'Excerpt' }, 3_000),
+      await repository.submit(
+        questionId,
+        'answerer',
+        { answer: ' ', excerpt: 'Excerpt' },
+        2 * hour,
+      ),
     ).toEqual({ kind: 'invalid' });
     expect(
       await repository.submit(
-        'question',
+        questionId,
         'missing-user',
         { answer: 'Answer', excerpt: 'Excerpt' },
-        3_000,
+        2 * hour,
       ),
     ).toEqual({ kind: 'reference-missing' });
-    expect(await repository.countAnswers('question')).toBe(0);
+    expect(await repository.countAnswers(questionId)).toBe(0);
   });
 });

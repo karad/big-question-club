@@ -8,6 +8,70 @@ const identityStatusElement = document.getElementById('identity-status');
 const signInButton = document.getElementById('google-sign-in');
 const signOutButton = document.getElementById('sign-out');
 
+function initializeQuestionForm(): void {
+  const form = document.querySelector<HTMLFormElement>('[data-question-form]');
+  if (form === null) return;
+  const body = form.querySelector<HTMLTextAreaElement>('#question-body');
+  const count = form.querySelector<HTMLElement>('[data-question-count]');
+  const deadline = form.querySelector<HTMLInputElement>('#question-deadline');
+  const deadlineValue = form.querySelector<HTMLInputElement>('[data-closes-at-value]');
+  const timeZoneValue = form.querySelector<HTMLInputElement>('[data-time-zone-value]');
+  const timeZoneDisplay = form.querySelector<HTMLElement>('[data-time-zone]');
+  const utcDisplay = form.querySelector<HTMLElement>('[data-utc-deadline]');
+  const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+  const updateCount = (): void => {
+    if (body !== null && count !== null) {
+      count.textContent = `${[...segmenter.segment(body.value.trim())].length.toLocaleString('en-US')} / 1,000 characters`;
+    }
+  };
+  const updateDeadline = (): void => {
+    if (deadline === null || deadlineValue === null || timeZoneValue === null) return;
+    const timestamp = new Date(deadline.value).getTime();
+    deadlineValue.value = Number.isFinite(timestamp) ? String(timestamp) : '';
+    timeZoneValue.value = timeZone;
+    if (timeZoneDisplay !== null) timeZoneDisplay.textContent = timeZone;
+    if (utcDisplay !== null) {
+      utcDisplay.textContent = Number.isFinite(timestamp)
+        ? new Date(timestamp).toISOString()
+        : 'Choose a deadline';
+    }
+  };
+
+  const existingTimestampText = deadline?.dataset.closesAt ?? '';
+  const existingTimestamp = Number(existingTimestampText);
+  if (
+    deadline !== null &&
+    deadline.value.length === 0 &&
+    existingTimestampText.length > 0 &&
+    Number.isSafeInteger(existingTimestamp)
+  ) {
+    const local = new Date(existingTimestamp);
+    const offsetAdjusted = new Date(local.getTime() - local.getTimezoneOffset() * 60_000);
+    deadline.value = offsetAdjusted.toISOString().slice(0, 16);
+  }
+  body?.addEventListener('input', updateCount);
+  deadline?.addEventListener('input', updateDeadline);
+  updateCount();
+  updateDeadline();
+}
+
+function initializeDeadlineDisplay(): void {
+  const deadline = document.querySelector<HTMLTimeElement>('[data-deadline-display]');
+  const timeZoneDisplay = document.querySelector<HTMLElement>('[data-review-time-zone]');
+  if (deadline === null || timeZoneDisplay === null) return;
+  const timestamp = Date.parse(deadline.dateTime);
+  if (!Number.isFinite(timestamp)) return;
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  deadline.textContent = new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone,
+  }).format(timestamp);
+  timeZoneDisplay.textContent = timeZone;
+}
+
 function updateStatus(message: string): void {
   if (statusElement !== null) {
     statusElement.textContent = message;
@@ -41,6 +105,8 @@ async function registerWebMcpTools(): Promise<void> {
 }
 
 void registerWebMcpTools();
+initializeQuestionForm();
+initializeDeadlineDisplay();
 
 document.addEventListener('click', (event) => {
   const target = event.target;

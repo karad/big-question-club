@@ -30,6 +30,10 @@
 
 ## 2026-09-02
 
+- `GPT-5.6`: SPEC 006のローカルD1・Google OAuth 2利用者手動検証を実施し、入力境界、Draft編集、不可逆な公開、4状態のMy Questions、所有者非列挙、Answer非露出、英語UIとキーボード導線を確認した。手動検証で発見した空の締切がUnix epoch表示になる問題を修正した。
+- `GPT-5.6`: SPEC 006のQuestion作成・Draft編集・公開確認・不可逆な公開・My Questions・所有者非列挙・CSRF保護を実装し、書記素文字数と締切境界のUnit Test、SSR／認可Integration Test、D1競合・集計Testを追加した。
+- `GPT-5.6`: SpecKitを用いてSPEC 006の技術調査、実装計画、Question管理データモデル、Human向けForm契約、検証ガイド、40件の依存順タスクを作成した。
+- `GPT-5.6`: SpecKitを用いてSPEC 006「Question作成・公開フロー」の仕様と品質チェックリストを作成し、入力制約、英語・日本語の主言語、締切境界、初期Moderation、不可逆な公開、`My Questions`、権限外操作の拒否を定義した。
 - `GPT-5.6`: SPEC 005の全40タスクを実装し、4状態のDomain契約、Drizzle全表Schema、fresh／legacy対応D1 Migration、条件付き公開と原子的Answer投稿、Remote適用前の安全手順を追加した。Node 118テスト、D1 21テスト、Migration系10回反復、型検査、Lint、Format、Build、Schema検査の成功を確認した。
 - `GPT-5.6`: SpecKitを用いてSPEC 005「ドメインデータモデルとQuestionライフサイクル」の仕様と品質チェックリストを作成した。
 - `GPT-5.6`: SpecKitを用いてSPEC 005の技術調査、実装計画、Drizzle／D1データモデル、内部永続化契約、Migration検証ガイドを作成した。

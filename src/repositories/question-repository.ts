@@ -1,11 +1,17 @@
-import { and, asc, count, eq } from 'drizzle-orm';
+import { and, asc, count, desc, eq } from 'drizzle-orm';
 import { parseSubmissionInput, type SubmissionInput } from '../domain/answer-submission';
-import type { Answer, Question } from '../domain/question';
+import {
+  MAX_QUESTION_CLOSE_OFFSET_MS,
+  MIN_QUESTION_CLOSE_OFFSET_MS,
+  type Answer,
+  type Question,
+} from '../domain/question';
+import { isPublishableQuestion, type ValidatedQuestionDraft } from '../domain/question-input';
 import { validateQuestionSchedule } from '../domain/question-lifecycle';
 import { createDatabase } from '../db/client';
 import { answers, questions, users } from '../db/schema';
 
-export type CreateDraftInput = Omit<Question, 'publishedAt' | 'createdAt' | 'updatedAt'>;
+export type CreateDraftInput = ValidatedQuestionDraft & { creatorUserId: string };
 export type CreateDraftResult =
   | { kind: 'created'; question: Question }
   | { kind: 'creator-missing' }
@@ -17,6 +23,19 @@ export type PublishResult =
   | { kind: 'creator-mismatch' }
   | { kind: 'invalid-transition' }
   | { kind: 'unavailable' };
+export type UpdateDraftInput = ValidatedQuestionDraft & {
+  questionId: string;
+  creatorUserId: string;
+  expectedUpdatedAt: number;
+};
+export type UpdateDraftResult =
+  | { kind: 'updated'; question: Question }
+  | { kind: 'unavailable-to-owner' }
+  | { kind: 'already-published' }
+  | { kind: 'conflict' }
+  | { kind: 'invalid' }
+  | { kind: 'unavailable' };
+export type OwnedQuestionSummary = { question: Question; answerCount: number };
 export type SubmitResult =
   | { kind: 'submitted'; answer: Answer }
   | { kind: 'duplicate' }
@@ -28,8 +47,16 @@ export type SubmitResult =
 
 export interface QuestionRepository {
   getQuestion(id: string): Promise<Question | null>;
+  getOwnedQuestion(id: string, creatorUserId: string): Promise<Question | null>;
   createDraft(input: CreateDraftInput, now: number): Promise<CreateDraftResult>;
-  publish(questionId: string, creatorUserId: string, now: number): Promise<PublishResult>;
+  updateDraft(input: UpdateDraftInput, now: number): Promise<UpdateDraftResult>;
+  publish(
+    questionId: string,
+    creatorUserId: string,
+    now: number,
+    expectedUpdatedAt?: number,
+  ): Promise<PublishResult>;
+  listByCreator(creatorUserId: string): Promise<OwnedQuestionSummary[]>;
   submit(
     questionId: string,
     userId: string,
@@ -49,10 +76,17 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
       const [question] = await db.select().from(questions).where(eq(questions.id, id)).limit(1);
       return question ?? null;
     },
+    async getOwnedQuestion(id, creatorUserId) {
+      const [question] = await db
+        .select()
+        .from(questions)
+        .where(and(eq(questions.id, id), eq(questions.creatorUserId, creatorUserId)))
+        .limit(1);
+      return question ?? null;
+    },
     async createDraft(input, now) {
       if (
-        !input.body.trim() ||
-        !input.language.trim() ||
+        !isPublishableQuestion(input, now) ||
         validateQuestionSchedule(
           { publishedAt: null, closesAt: input.closesAt, revealsAt: input.revealsAt },
           now,
@@ -60,7 +94,13 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
       ) {
         return { kind: 'invalid' };
       }
-      const question: Question = { ...input, publishedAt: null, createdAt: now, updatedAt: now };
+      const question: Question = {
+        id: crypto.randomUUID(),
+        ...input,
+        publishedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      };
       try {
         await db.insert(questions).values(question);
         return { kind: 'created', question };
@@ -73,13 +113,61 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
         return creator === undefined ? { kind: 'creator-missing' } : { kind: 'unavailable' };
       }
     },
-    async publish(questionId, creatorUserId, now) {
+    async updateDraft(input, now) {
+      if (
+        !isPublishableQuestion(input, now) ||
+        validateQuestionSchedule(
+          { publishedAt: null, closesAt: input.closesAt, revealsAt: input.revealsAt },
+          now,
+        ) !== null
+      ) {
+        return { kind: 'invalid' };
+      }
       try {
         const result = await database
           .prepare(
-            'UPDATE questions SET published_at = ?, updated_at = ? WHERE id = ? AND creator_user_id = ? AND published_at IS NULL AND ? < closes_at AND closes_at <= reveals_at',
+            'UPDATE questions SET body = ?, language = ?, closes_at = ?, reveals_at = ?, updated_at = ? WHERE id = ? AND creator_user_id = ? AND published_at IS NULL AND updated_at = ?',
           )
-          .bind(now, now, questionId, creatorUserId, now)
+          .bind(
+            input.body,
+            input.language,
+            input.closesAt,
+            input.revealsAt,
+            now,
+            input.questionId,
+            input.creatorUserId,
+            input.expectedUpdatedAt,
+          )
+          .run();
+        if (result.meta.changes === 1) {
+          const question = await repository.getOwnedQuestion(input.questionId, input.creatorUserId);
+          return question === null ? { kind: 'unavailable' } : { kind: 'updated', question };
+        }
+        const current = await repository.getOwnedQuestion(input.questionId, input.creatorUserId);
+        if (current === null) return { kind: 'unavailable-to-owner' };
+        if (current.publishedAt !== null) return { kind: 'already-published' };
+        return { kind: 'conflict' };
+      } catch {
+        return { kind: 'unavailable' };
+      }
+    },
+    async publish(questionId, creatorUserId, now, expectedUpdatedAt) {
+      try {
+        const updatedAtCondition = expectedUpdatedAt === undefined ? '' : ' AND updated_at = ?';
+        const bindings: unknown[] = [
+          now,
+          now,
+          questionId,
+          creatorUserId,
+          now + MIN_QUESTION_CLOSE_OFFSET_MS,
+          now + MAX_QUESTION_CLOSE_OFFSET_MS,
+        ];
+        if (expectedUpdatedAt !== undefined) bindings.push(expectedUpdatedAt);
+        const result = await database
+          .prepare(
+            `UPDATE questions SET published_at = ?, updated_at = ? WHERE id = ? AND creator_user_id = ? AND published_at IS NULL AND ? <= closes_at AND closes_at <= ? AND reveals_at = closes_at${updatedAtCondition}`,
+          )
+          .bind(...bindings)
           .run();
         if (result.meta.changes === 1) {
           const question = await repository.getQuestion(questionId);
@@ -92,6 +180,16 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
       } catch {
         return { kind: 'unavailable' };
       }
+    },
+    async listByCreator(creatorUserId) {
+      const rows = await db
+        .select({ question: questions, answerCount: count(answers.id) })
+        .from(questions)
+        .leftJoin(answers, eq(answers.questionId, questions.id))
+        .where(eq(questions.creatorUserId, creatorUserId))
+        .groupBy(questions.id)
+        .orderBy(desc(questions.createdAt), desc(questions.id));
+      return rows.map(({ question, answerCount }) => ({ question, answerCount }));
     },
     async submit(questionId, userId, input, now) {
       const id = crypto.randomUUID();

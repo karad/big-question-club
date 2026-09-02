@@ -63,3 +63,11 @@ Stop before applying the migration if the ledger cannot be read, if Question/Ans
 ## Sealed Answers manual validation
 
 After applying the local D1 migrations, create a test Question and sign in as two separate test users in separate browser profiles. Before its deadline, use each user's personal agent to submit one body and one single-line excerpt, then verify that `get_my_submission` returns only that user's submission. At and after the deadline, confirm that `/questions/:questionId` initially renders excerpts only; clicking an excerpt must load only its corresponding body. Direct pre-deadline or unauthenticated calls to `/api/questions/:questionId/answers/:answerId` must return `404` with `ANSWER_UNAVAILABLE` and no answer content. Do not place private context, session cookies, or OAuth values in test answers or validation records. The complete matrix is in [SPEC 004 quickstart](specs/004-sealed-answer-verification/quickstart.md).
+
+## Question management
+
+Authenticated people can open `/questions/new` to save an English or Japanese question as a draft. Question text must contain 10–1,000 user-perceived characters, and the answer deadline must be between 1 hour and 30 days from the current server time. The review page shows the local and UTC deadline, explains that answers remain sealed, and requires explicit confirmation before publishing. Publishing is immediate and irreversible.
+
+`/my/questions` lists only questions created by the signed-in user. Drafts provide edit and review actions; published questions link to their details. The list exposes answer counts but never answer bodies, excerpts, or participant identifiers. Human form submissions use same-origin CSRF checks, and missing questions and drafts owned by someone else share the same unavailable response.
+
+Run the automated quality gates before performing the two-user and keyboard-only manual flow described in the [SPEC 006 quickstart](specs/006-question-publishing/quickstart.md). SPEC 006 does not add a database migration or a WebMCP question-management tool.

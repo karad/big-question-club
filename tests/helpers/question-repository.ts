@@ -1,37 +1,91 @@
-import type { Answer, Question } from '../../src/domain/question';
+import {
+  MAX_QUESTION_CLOSE_OFFSET_MS,
+  MIN_QUESTION_CLOSE_OFFSET_MS,
+  type Answer,
+  type Question,
+} from '../../src/domain/question';
 import { getQuestionState } from '../../src/domain/question-lifecycle';
 import type { QuestionRepository, SubmitResult } from '../../src/repositories/question-repository';
 
 export function createInMemoryQuestionRepository({
   question,
+  questions,
   answers = [],
 }: {
-  question: Question;
+  question?: Question;
+  questions?: Question[];
   answers?: Answer[];
-}): QuestionRepository {
-  const storedAnswers = [...answers];
+} = {}): QuestionRepository {
+  const storedQuestions = (questions ?? (question === undefined ? [] : [question])).map((item) => ({
+    ...item,
+  }));
+  const storedAnswers = answers.map((answer) => ({ ...answer }));
   return {
     async getQuestion(id) {
-      return id === question.id ? question : null;
+      return storedQuestions.find((item) => item.id === id) ?? null;
+    },
+    async getOwnedQuestion(id, creatorUserId) {
+      return (
+        storedQuestions.find((item) => item.id === id && item.creatorUserId === creatorUserId) ??
+        null
+      );
     },
     async createDraft(input, now) {
-      if (input.creatorUserId !== question.creatorUserId) return { kind: 'creator-missing' };
-      Object.assign(question, input, { publishedAt: null, createdAt: now, updatedAt: now });
-      return { kind: 'created', question };
+      const created: Question = {
+        id: `question-${storedQuestions.length + 1}`,
+        ...input,
+        publishedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      storedQuestions.push(created);
+      return { kind: 'created', question: created };
     },
-    async publish(questionId, creatorUserId, now) {
-      if (questionId !== question.id) return { kind: 'missing' };
-      if (creatorUserId !== question.creatorUserId) return { kind: 'creator-mismatch' };
-      if (question.publishedAt !== null || now >= question.closesAt)
+    async updateDraft(input, now) {
+      const current = storedQuestions.find(
+        (item) => item.id === input.questionId && item.creatorUserId === input.creatorUserId,
+      );
+      if (current === undefined) return { kind: 'unavailable-to-owner' };
+      if (current.publishedAt !== null) return { kind: 'already-published' };
+      if (current.updatedAt !== input.expectedUpdatedAt) return { kind: 'conflict' };
+      Object.assign(current, input, { updatedAt: now });
+      return { kind: 'updated', question: current };
+    },
+    async publish(questionId, creatorUserId, now, expectedUpdatedAt) {
+      const current = storedQuestions.find((item) => item.id === questionId);
+      if (current === undefined) return { kind: 'missing' };
+      if (current.creatorUserId !== creatorUserId) return { kind: 'creator-mismatch' };
+      if (
+        current.publishedAt !== null ||
+        (expectedUpdatedAt !== undefined && current.updatedAt !== expectedUpdatedAt) ||
+        current.closesAt < now + MIN_QUESTION_CLOSE_OFFSET_MS ||
+        current.closesAt > now + MAX_QUESTION_CLOSE_OFFSET_MS ||
+        current.revealsAt !== current.closesAt
+      ) {
         return { kind: 'invalid-transition' };
-      question.publishedAt = now;
-      question.updatedAt = now;
-      return { kind: 'published', question };
+      }
+      current.publishedAt = now;
+      current.updatedAt = now;
+      return { kind: 'published', question: current };
+    },
+    async listByCreator(creatorUserId) {
+      return storedQuestions
+        .filter((item) => item.creatorUserId === creatorUserId)
+        .sort((left, right) => right.createdAt - left.createdAt || right.id.localeCompare(left.id))
+        .map((item) => ({
+          question: item,
+          answerCount: storedAnswers.filter((answer) => answer.questionId === item.id).length,
+        }));
     },
     async submit(questionId, userId, input, now): Promise<SubmitResult> {
-      if (questionId !== question.id) return { kind: 'missing' };
-      if (getQuestionState(question, now) !== 'OPEN') return { kind: 'not-open' };
-      if (storedAnswers.some((answer) => answer.userId === userId)) return { kind: 'duplicate' };
+      const current = storedQuestions.find((item) => item.id === questionId);
+      if (current === undefined) return { kind: 'missing' };
+      if (getQuestionState(current, now) !== 'OPEN') return { kind: 'not-open' };
+      if (
+        storedAnswers.some((answer) => answer.questionId === questionId && answer.userId === userId)
+      ) {
+        return { kind: 'duplicate' };
+      }
       const answer: Answer = {
         id: `answer-${storedAnswers.length + 1}`,
         questionId,

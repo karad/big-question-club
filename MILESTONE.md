@@ -39,7 +39,7 @@
   - SpecKitで確定する情報: Drizzle Schema・Migration、各エンティティの責務、時刻の基準とタイムゾーン、状態遷移表、Repository境界、データ整合性ルール、単体テスト対象。
   - 完了条件: Migration済みDBで状態遷移と制約がテストされ、Questionの現在状態を一意に判定できる。
 
-- [ ] **SPEC 006 — Question作成・公開フロー**
+- [x] **SPEC 006 — Question作成・公開フロー**
   - 目的: 認証済みHumanがQuestion本文・主言語・回答締切を指定して作成し、公開可能なQuestionを管理できるようにする。
   - SpecKitで確定する情報: 作成画面のユーザーストーリー、入力項目、文字数上限、言語指定方式、締切の制約、初期Moderation方針、エラー表示、My Questionsの必要範囲。
   - 完了条件: Question作成者が有効なQuestionを作成でき、無効な入力や権限外の操作が適切に拒否される。

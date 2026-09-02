@@ -5,6 +5,8 @@ import { applyMigrations } from './apply-migrations';
 import { insertUser, userFixture } from './fixtures';
 
 describe('D1 question repository', () => {
+  const hour = 60 * 60 * 1000;
+  let questionId = '';
   beforeAll(async () => {
     await applyMigrations(env.TEST_DB, env.TEST_MIGRATIONS);
     await insertUser(env.TEST_DB, userFixture('creator'));
@@ -16,50 +18,51 @@ describe('D1 question repository', () => {
     const repository = createQuestionRepository(env.TEST_DB);
     const created = await repository.createDraft(
       {
-        id: 'question',
         creatorUserId: 'creator',
         body: 'What makes an answer useful?',
         language: 'en',
-        closesAt: 5_000,
-        revealsAt: 6_000,
+        closesAt: 3 * hour,
+        revealsAt: 3 * hour,
       },
-      1_000,
+      0,
     );
     expect(created.kind).toBe('created');
-    expect(await repository.publish('question', 'creator', 2_000)).toMatchObject({
+    if (created.kind !== 'created') throw new Error('Question was not created');
+    questionId = created.question.id;
+    expect(await repository.publish(questionId, 'creator', hour)).toMatchObject({
       kind: 'published',
     });
-    expect(await repository.getQuestion('question')).toMatchObject({
+    expect(await repository.getQuestion(questionId)).toMatchObject({
       creatorUserId: 'creator',
-      publishedAt: 2_000,
+      publishedAt: hour,
     });
     expect(
       await repository.submit(
-        'question',
+        questionId,
         'answerer-1',
         { answer: 'First answer', excerpt: 'First excerpt' },
-        3_000,
+        2 * hour,
       ),
     ).toMatchObject({ kind: 'submitted' });
     expect(
       await repository.submit(
-        'question',
+        questionId,
         'answerer-2',
         { answer: 'Second answer', excerpt: 'Second excerpt' },
-        3_001,
+        2 * hour + 1,
       ),
     ).toMatchObject({ kind: 'submitted' });
-    expect(await repository.countAnswers('question')).toBe(2);
+    expect(await repository.countAnswers(questionId)).toBe(2);
   });
 
   it('classifies duplicate and missing references', async () => {
     const repository = createQuestionRepository(env.TEST_DB);
     expect(
       await repository.submit(
-        'question',
+        questionId,
         'answerer-1',
         { answer: 'Duplicate', excerpt: 'Duplicate' },
-        3_100,
+        2 * hour + 100,
       ),
     ).toEqual({ kind: 'duplicate' });
     expect(
@@ -67,15 +70,15 @@ describe('D1 question repository', () => {
         'missing',
         'answerer-1',
         { answer: 'Missing', excerpt: 'Missing' },
-        3_100,
+        2 * hour + 100,
       ),
     ).toEqual({ kind: 'missing' });
     expect(
       await repository.submit(
-        'question',
+        questionId,
         'unknown-user',
         { answer: 'Unknown', excerpt: 'Unknown' },
-        3_100,
+        2 * hour + 100,
       ),
     ).toEqual({ kind: 'reference-missing' });
   });

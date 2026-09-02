@@ -1,4 +1,6 @@
 import { Hono } from 'hono';
+import { csrf } from 'hono/csrf';
+import { HTTPException } from 'hono/http-exception';
 
 import type { Authentication } from './auth/session';
 import { authenticationRoute } from './routes/auth';
@@ -15,6 +17,15 @@ import {
   questionPageRoute,
   questionRoute,
 } from './routes/question';
+import {
+  createQuestionRoute,
+  editQuestionPageRoute,
+  myQuestionsRoute,
+  newQuestionPageRoute,
+  publishQuestionRoute,
+  reviewQuestionRoute,
+  updateQuestionRoute,
+} from './routes/question-management';
 
 export function createApp({
   authentication,
@@ -30,6 +41,7 @@ export function createApp({
   const app = new Hono();
 
   app.onError((error, context) => {
+    if (error instanceof HTTPException) return error.getResponse();
     console.error(error);
     return context.json({ error: 'Internal server error' }, 500);
   });
@@ -49,6 +61,27 @@ export function createApp({
   );
   app.get('/api/questions/:questionId/answers/:answerId', (context) =>
     answerDetailRoute(context, authentication, repository, now ?? Date.now),
+  );
+  app.get('/questions/new', (context) =>
+    newQuestionPageRoute(context, authentication, clientScriptUrl),
+  );
+  app.post('/questions', csrf(), (context) =>
+    createQuestionRoute(context, authentication, repository, now ?? Date.now, clientScriptUrl),
+  );
+  app.get('/my/questions', (context) =>
+    myQuestionsRoute(context, authentication, repository, now ?? Date.now, clientScriptUrl),
+  );
+  app.get('/questions/:questionId/edit', (context) =>
+    editQuestionPageRoute(context, authentication, repository, clientScriptUrl),
+  );
+  app.post('/questions/:questionId/edit', csrf(), (context) =>
+    updateQuestionRoute(context, authentication, repository, now ?? Date.now, clientScriptUrl),
+  );
+  app.get('/questions/:questionId/review', (context) =>
+    reviewQuestionRoute(context, authentication, repository, clientScriptUrl),
+  );
+  app.post('/questions/:questionId/publish', csrf(), (context) =>
+    publishQuestionRoute(context, authentication, repository, now ?? Date.now, clientScriptUrl),
   );
   app.get('/questions/:questionId', (context) =>
     questionPageRoute(context, authentication, repository, now ?? Date.now, clientScriptUrl),
@@ -71,6 +104,9 @@ function VerificationPage({ clientScriptUrl }: { clientScriptUrl: string }) {
           <h1>Personal agent safety verification</h1>
           <p>
             This page registers <code>{SAFETY_VERIFICATION_TOOL_NAME}</code> for a personal agent.
+          </p>
+          <p>
+            <a href="/questions/new">Create a question</a> <a href="/my/questions">My Questions</a>
           </p>
           <p>
             Sign in with Google, then ask your personal agent to run{' '}
