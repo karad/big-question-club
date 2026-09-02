@@ -1,11 +1,13 @@
+import type { QuestionState } from './question';
+
 export type AccessPath = 'ssr' | 'api' | 'webmcp' | 'detail';
 export function canReadOtherAnswerBody(
   isAuthenticated: boolean,
   path: AccessPath,
-  isRevealed: boolean,
+  state: QuestionState,
 ): boolean {
-  return isAuthenticated && isRevealed && path === 'detail';
+  return isAuthenticated && state === 'REVEALED' && path === 'detail';
 }
-export function canListAnswerExcerpts(isAuthenticated: boolean, isRevealed: boolean): boolean {
-  return isAuthenticated && isRevealed;
+export function canListAnswerExcerpts(isAuthenticated: boolean, state: QuestionState): boolean {
+  return isAuthenticated && state === 'REVEALED';
 }

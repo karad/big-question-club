@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import { answerError, parseSubmissionInput } from '../domain/answer-submission';
-import { isOpen, toIsoTimestamp } from '../domain/question';
+import { toIsoTimestamp } from '../domain/question';
 import type { QuestionRepository } from '../repositories/question-repository';
 import { readCurrentIdentity, type Authentication } from '../auth/session';
 
@@ -24,12 +24,7 @@ export async function submitAnswerRoute(
   const questionId = context.req.param('questionId');
   if (questionId === undefined)
     return context.json(answerError('QUESTION_NOT_FOUND'), 404, { 'Cache-Control': 'no-store' });
-  const question = await repository.getQuestion(questionId);
   const timestamp = now();
-  if (question === null)
-    return context.json(answerError('QUESTION_NOT_FOUND'), 404, { 'Cache-Control': 'no-store' });
-  if (!isOpen(question, timestamp))
-    return context.json(answerError('QUESTION_CLOSED'), 409, { 'Cache-Control': 'no-store' });
   const result = await repository.submit(questionId, identity.userId, input, timestamp);
   if (result.kind === 'duplicate')
     return context.json(answerError('ANSWER_ALREADY_SUBMITTED'), 409, {
@@ -37,7 +32,11 @@ export async function submitAnswerRoute(
     });
   if (result.kind === 'missing')
     return context.json(answerError('QUESTION_NOT_FOUND'), 404, { 'Cache-Control': 'no-store' });
-  if (result.kind === 'unavailable')
+  if (result.kind === 'not-open')
+    return context.json(answerError('QUESTION_CLOSED'), 409, { 'Cache-Control': 'no-store' });
+  if (result.kind === 'invalid')
+    return context.json(answerError('INVALID_ANSWER'), 400, { 'Cache-Control': 'no-store' });
+  if (result.kind === 'reference-missing' || result.kind === 'unavailable')
     return context.json(answerError('ANSWER_SUBMISSION_UNAVAILABLE'), 500, {
       'Cache-Control': 'no-store',
     });

@@ -2,7 +2,8 @@ import type { Context } from 'hono';
 import { readCurrentIdentity, type Authentication } from '../auth/session';
 import { answerError } from '../domain/answer-submission';
 import { canListAnswerExcerpts, canReadOtherAnswerBody } from '../domain/answer-visibility';
-import { isOpen, toIsoTimestamp } from '../domain/question';
+import { toIsoTimestamp } from '../domain/question';
+import { getQuestionState } from '../domain/question-lifecycle';
 import type { QuestionRepository } from '../repositories/question-repository';
 
 function escapeHtml(value: string): string {
@@ -90,7 +91,8 @@ export async function answerDetailRoute(
   )
     return context.json(answerError('ANSWER_UNAVAILABLE'), 404, { 'Cache-Control': 'no-store' });
   const question = await repository.getQuestion(questionId);
-  if (question === null || !canReadOtherAnswerBody(true, 'detail', !isOpen(question, now())))
+  const state = question === null ? null : getQuestionState(question, now());
+  if (question === null || state === null || !canReadOtherAnswerBody(true, 'detail', state))
     return context.json(answerError('ANSWER_UNAVAILABLE'), 404, { 'Cache-Control': 'no-store' });
   const body = await repository.getAnswerBody(questionId, answerId);
   return body === null
@@ -111,9 +113,10 @@ export async function questionPageRoute(
     return context.text('Sign in to view answers.', 401);
   const question = await repository.getQuestion(questionId);
   if (question === null) return context.text('Question unavailable.', 404);
-  const revealed = !isOpen(question, now());
+  const state = getQuestionState(question, now());
+  const revealed = state === 'REVEALED';
   const mine = await repository.getMine(questionId, identity.userId);
-  const excerpts = canListAnswerExcerpts(true, revealed)
+  const excerpts = canListAnswerExcerpts(true, state)
     ? await repository.listExcerpts(questionId)
     : [];
   const items = excerpts

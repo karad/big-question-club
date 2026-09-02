@@ -30,6 +30,10 @@
 
 ## 2026-09-02
 
+- `GPT-5.6`: SPEC 005の全40タスクを実装し、4状態のDomain契約、Drizzle全表Schema、fresh／legacy対応D1 Migration、条件付き公開と原子的Answer投稿、Remote適用前の安全手順を追加した。Node 118テスト、D1 21テスト、Migration系10回反復、型検査、Lint、Format、Build、Schema検査の成功を確認した。
+- `GPT-5.6`: SpecKitを用いてSPEC 005「ドメインデータモデルとQuestionライフサイクル」の仕様と品質チェックリストを作成した。
+- `GPT-5.6`: SpecKitを用いてSPEC 005の技術調査、実装計画、Drizzle／D1データモデル、内部永続化契約、Migration検証ガイドを作成した。
+- `GPT-5.6`: SpecKitを用いてSPEC 005を40件の依存順タスクへ分解し、4状態のDomain契約、Drizzle Schema、D1 Migration、原子的書き込み、fresh／legacy検証を計画した。
 - `GPT-5.6`: SpecKitを用いてSPEC 004「Agent回答投稿の完全性・Sealed Answersの検証」の仕様と品質チェックリストを作成した。
 - `GPT-5.6`: SpecKitを用いてSPEC 004の技術調査、実装計画、D1データモデル、HTTP／SSR／WebMCP契約、検証ガイド、40件の依存順タスクを作成した。
 - `GPT-5.6`: SPEC 004のAnswerに、AIが本文と同時に投稿する必須の1行Excerptを追加し、永続化、投稿契約、公開制御、検証、実装タスクへ反映した。

@@ -5,12 +5,12 @@ import type { ApplicationDatabases } from './auth/session';
 
 export default {
   fetch(request: Request, env: Env): Promise<Response> {
-    const databases: ApplicationDatabases = { questions: env.big_question_club_data };
+    const databases: ApplicationDatabases = { data: env.big_question_club_data };
     return Promise.resolve(
       createApp({
         authentication: createAuthentication(env),
         clientScriptUrl: '/client.js',
-        repository: createQuestionRepository(databases.questions),
+        repository: createQuestionRepository(databases.data),
       }).fetch(request, env),
     );
   },

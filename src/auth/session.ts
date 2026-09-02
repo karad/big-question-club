@@ -8,7 +8,7 @@ export type Authentication = {
 };
 
 export type ApplicationDatabases = {
-  questions: D1Database;
+  data: D1Database;
 };
 
 export async function readCurrentIdentity(

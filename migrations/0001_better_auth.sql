@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS "session" (
 
 CREATE TABLE IF NOT EXISTS "account" (
   "id" TEXT PRIMARY KEY NOT NULL,
-  "issuer" TEXT NOT NULL,
   "accountId" TEXT NOT NULL,
   "providerId" TEXT NOT NULL,
   "userId" TEXT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
@@ -34,7 +33,7 @@ CREATE TABLE IF NOT EXISTS "account" (
   "password" TEXT,
   "createdAt" INTEGER NOT NULL,
   "updatedAt" INTEGER NOT NULL,
-  UNIQUE("issuer", "accountId")
+  UNIQUE("providerId", "accountId")
 );
 
 CREATE TABLE IF NOT EXISTS "verification" (

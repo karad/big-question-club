@@ -3,6 +3,7 @@ import { createApp } from '../../src/app';
 import type { Authentication } from '../../src/auth/session';
 import {
   createAnswer,
+  closedQuestion,
   createInMemoryQuestionRepository,
   openQuestion,
 } from '../helpers/question-repository';
@@ -95,6 +96,26 @@ describe('Question visibility', () => {
     expect(await detail.json()).toEqual({ id: 'answer-2', body: 'Another private body.' });
     const missing = await app.request('http://example.test/api/questions/question-1/answers/nope');
     expect(missing.status).toBe(404);
+  });
+
+  it('keeps answers sealed between close and reveal', async () => {
+    const repository = createInMemoryQuestionRepository({
+      question: closedQuestion,
+      answers: [createAnswer()],
+    });
+    const app = createApp({
+      authentication: authentication('user-1'),
+      repository,
+      now: () => 100,
+    });
+
+    const html = await (await app.request('http://example.test/questions/question-1')).text();
+    expect(html).toContain('Answers are sealed.');
+    expect(html).toContain('A private answer body.');
+    expect(html).not.toContain('A one-line excerpt.</button>');
+    expect(
+      (await app.request('http://example.test/api/questions/question-1/answers/answer-1')).status,
+    ).toBe(404);
   });
 
   it('keeps the WebMCP-compatible status endpoint free of other answers after reveal', async () => {

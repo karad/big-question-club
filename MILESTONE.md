@@ -34,7 +34,7 @@
 
 ## P1 — MVP本実装
 
-- [ ] **SPEC 005 — ドメインデータモデルとQuestionライフサイクル**
+- [x] **SPEC 005 — ドメインデータモデルとQuestionライフサイクル**
   - 目的: User、Question、Answer、Sessionを保存する本番用Schemaと、`DRAFT → OPEN → CLOSED → REVEALED`の状態遷移を実装する。
   - SpecKitで確定する情報: Drizzle Schema・Migration、各エンティティの責務、時刻の基準とタイムゾーン、状態遷移表、Repository境界、データ整合性ルール、単体テスト対象。
   - 完了条件: Migration済みDBで状態遷移と制約がテストされ、Questionの現在状態を一意に判定できる。
