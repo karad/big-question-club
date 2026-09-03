@@ -1,0 +1,115 @@
+# Codex利用記録
+
+## 2026-09-01
+
+- `GPT-5`: 企画書・技術検証計画・技術仕様を確認し、MVP実装順のマイルストーンを`MILESTONE.md`へ作成した。
+- `GPT-5`: SpecKitの各SPECをおおむね30〜40タスクで実装する前提に合わせ、マイルストーンを技術検証とMVP本実装の11 SPECへ再編した。
+- `GPT-5`: SpecKitを用いてSPEC 001「実行基盤と最小WebMCP接続」の仕様と品質チェックリストを作成した。
+- `GPT-5`: SPEC 001の技術調査、実装計画、データモデル、Tool契約、検証ガイド、依存順の実装タスクをSpecKitで作成した。
+- `GPT-5`: SPEC 001のPhase 1を実装し、Cloudflare Workers・Hono・Vite・TypeScript・Vitestの開発基盤と検証用スクリプトを設定した。
+- `GPT-5`: SPEC 001のPhase 2からPhase 5を実装し、固定Question API、WebMCP Tool登録、検証画面、Unit／Integration Test、再現手順を追加した。手動WebMCP E2Eと外部公開が必要なタスクは未完了として記録した。
+- `GPT-5`: WebMCP Tool登録をインラインJavaScript文字列からViteでビルドする`src/client.ts`へ移し、HTMLが静的クライアントアセットを参照する構成へ変更した。
+- `GPT-5`: Chrome DevToolsがTool実行時に実行オプションを省略するケースに対応し、`INVALID_ARGUMENT`の返却をユニットテストで固定した。
+- `GPT-5`: 手動WebMCP E2Eの完了記録を反映し、SPEC 001のT035・T040とマイルストーンを完了に更新した。
+- `GPT-5`: SpecKitを用いてSPEC 002「Google OAuthとWebMCPユーザー識別の検証」の仕様と品質チェックリストを作成した。
+- `GPT-5`: SpecKitを用いてSPEC 002の技術調査、実装計画、認証データモデル、`who_am_i`契約、実機検証ガイドを作成した。
+- `GPT-5`: SpecKitを用いてSPEC 002を40件の依存順タスクへ分解し、認証・WebMCP導線のテストとGo/No-Go検証を計画した。
+- `GPT-5`: Google OAuthとCloudflare D1の実装前準備を、安全なSecret管理とリダイレクトURI登録を含む手順書としてSPEC 002へ追加した。
+- `GPT-5`: SPEC 002のPhase 1でBetter Auth依存関係、Secretのローカルテンプレート、Git除外、認証検証のREADME導線を追加し、D1バインディングを要する作業は事前準備待ちとして保留した。
+- `GPT-5`: SPEC 002の認証基盤、Better AuthのD1スキーマ、`who_am_i` API・WebMCP Tool・UI導線、Unit／Integration Test、Go/No-Go検証記録テンプレートを実装し、実機OAuth検証を保留として記録した。
+- `GPT-5`: Google OAuth実機検証で判明したBetter Auth 1.7.2の`account.issuer`列不足をD1マイグレーションで修正し、同一アカウントの連続10回`who_am_i`確認を完了した。
+- `GPT-5`: OAuth実機検証用に安全なログアウトUIを追加し、ログアウト後に`who_am_i`が識別子を返さず`AUTHENTICATION_REQUIRED`となることを確認した。
+- `GPT-5`: Google OAuthの2アカウント実機検証で、各アカウント内の`who_am_i`安定性、画面との一致、アカウント分離、ログアウト後のアカウント切替を確認した。
+- `GPT-5`: Google OAuthの認可拒否後に`who_am_i`が識別子を返さず`AUTHENTICATION_REQUIRED`となることを実機確認した。
+- `GPT-5`: 検証用D1セッションを強制失効して未認証応答を確認し、SPEC 002の全受け入れ条件を満たすGo判定とマイルストーン完了を記録した。
+- `GPT-5`: SpecKitを用いてSPEC 003「Personal Agent回答の安全性・言語の検証」の仕様と品質チェックリストを作成した。
+- `GPT-5`: SpecKitを用いてSPEC 003の技術調査、実装計画、固定検証Questionのデータモデル、WebMCP契約、手動検証ガイドを作成した。
+- `GPT-5`: SpecKitを用いてSPEC 003を40件の依存順タスクへ分解し、固定Question契約の自動テストと実Personal Agentによる手動Go/No-Go検証を計画した。
+- `GPT-5`: SPEC 003のPhase 1で既存品質ゲートを確認し、WebMCPの読み取り専用・不信頼コンテンツannotation型と、既存認証導線を維持する同一オリジン境界を検証記録へ残した。
+- `GPT-5`: SPEC 003のPhase 2〜5で、14件の安全性・言語検証Question、ケース別API、読み取り専用かつ不信頼コンテンツ標識付きWebMCP Tool、Unit／Integration Testを実装した。
+
+## 2026-09-02
+
+- `GPT-5.6`: 確定した1行Agent依頼Promptを実装し、カメラ固有の成功Promptから抽出した汎用Context根拠規則を `get_question` の固定instructionとWebMCP Tool description／Schemaへ分離した。User自身の明示的・反復された記述の優先、事実と検討候補の区別、Assistant提案の除外、根拠不足時の質問・投稿停止、初回Promptによる投稿許可と追加承認不要、`get_my_submission`による投稿確認をSPEC 007・009、README、MILESTONE、Unit／Integration Testへ反映した。Node 610テスト、D1 56テスト、型検査、Lint、Format、Build、Schema検査に成功した。
+- `GPT-5.6`: ローカル開発ターミナルへ反復出力された参照ID付き`internal error`を調査し、アプリ固有文言ではなくWrangler／workerdの不透明な内部エラーであること、開発環境が2つのD1 Bindingを`remote: true`で共有Remote D1へ接続していることを確認した。Remote D1への読み取りは成功しており、永続的なSchema・認証障害よりRemote Binding経路の一時障害またはRuntime不具合が有力と判断した。
+- `GPT-5.6`: 確定した1行Agent依頼Prompt、閲覧中Originに追従するQuestion絶対URL、Query／Fragment除外、詳細指示をPromptではなくWebMCP Tool契約から渡す責務分担について、MILESTONE、README、SPEC 007・009の仕様・計画・調査・契約・タスク・Quickstart・検証記録を監査して同期した。
+- `GPT-5.6`: Agent依頼Promptを確定した1行の英語文面へ整理し、閲覧中リクエストのOriginを使ったQuestion絶対URLを自動挿入するよう変更した。ローカル／本番Originへの追従、Query・Fragment除外、HTML escapingをテストで固定した。
+- `GPT-5.6`: `big-question-club-logo.svg`をVite Assetとして取り込む共通Headerを作成し、Home、Question Detail、Question管理画面、認可済み管理画面へ適用した。各画面のIntegration TestとProduction BuildでLogoの描画・Asset出力を確認した。
+- `GPT-5.6`: 管理画面を推測されやすい `/admin` から `/club-operations` へ変更し、旧Pathを404とした。未ログイン・一般User・設定不備では管理画面の文言やLinkを含まない通常の404を返し、認可済み管理画面だけに管理Navigationを表示して `noindex, nofollow` を設定する回帰Testと文書更新を追加した。
+- `GPT-5.6`: Cloudflare DashboardのProduction環境に必要な5項目が設定済みなら`wrangler secret put`は不要であることと、Secret／通常Variableの使い分けを開発者向けマニュアルへ追記した。
+- `GPT-5.6`: 開発者向けマニュアルのCloudflare環境設定を明確化し、`.dev.vars`はデプロイされず、`wrangler secret put`で入力した値がCloudflareへ直接保存されることとDashboardからの代替設定を追記した。
+- `GPT-5.6`: SPEC 009へ、ローカル開発モード、ビルド、全自動テスト、Cloudflare環境設定、D1 Migration、デプロイのコマンドをまとめた日本語の開発者向けマニュアルを追加した。
+- `GPT-5.6`: SPEC 009の管理機能をローカルD1および公開D1へ適用するため、事前の台帳確認、バックアップ、適用、追加Table確認だけに絞った日本語マイグレーションマニュアルを追加した。
+- `GPT-5.6`: SPEC 009へ公開運用に必要な単一管理者認可、User／Question／Answer／Audit log一覧、Question／Answer削除、User BAN／解除、Session失効、Login／Logout／入力／管理操作の監査記録を追加し、仕様・計画・54件のタスク・管理マニュアル・構成図を同期した。Node 605テスト、D1 56テスト、型検査、Lint、Format、Build、Schema検査に成功した。
+- `GPT-5.6`: Questionの主言語を英語・日本語から選択する仕様を廃止し、任意言語のQuestion本文からPersonal Agentが回答言語を裁量で判断する方針へ、企画・MVP・技術文書、SPEC 005〜009、Question管理UI、WebMCP契約、固定Agent依頼Prompt、テストを更新した。既存D1列は互換性のため保持し、新規Questionには内部値`auto`を保存する。
+- `GPT-5.6`: SPEC 009完了時点の一般ユーザー向け操作マニュアルと、専用管理者権限が未実装であることを明示した管理ユーザー向けマニュアルを作成した。
+- `GPT-5.6`: SPEC 009完了時点の画面、HTTP API、WebMCP Tool、認証、Domain、Repository、D1の依存関係をMermaid構成図として記録した。
+- `GPT-5.6`: SPEC 009の全20タスクを実装し、Open Question一覧、未ログイン公開Detail、sealed状態、本人Answer、回答数変化、安全な障害表示、SPEC 010向けDOM hookを追加した。Question DetailをHTML文字列連結からHono JSXへ統一し、技術スタック逸脱監査も実施した。Unit／Integration 588テスト、D1 46テスト、型検査、Lint、Format、Build、Schema検査に成功した。
+- `GPT-5.6`: WebMCP Challengeの9月3日締切とVisual表現を重視する方針に合わせ、SPEC 009をHome・sealed Detail・Agent回答後の状態変化という20件のCore機能タスクへ縮小し、Revealと高品質なVisual Designを必須のSPEC 010、追加品質保証を任意のSPEC 011へ再編した。
+- `GPT-5.6`: SpecKitを用いてSPEC 009の技術調査、実装計画、Human向け閲覧状態データモデル、SSR／Login／アクセシビリティ契約、Quickstart検証ガイドを作成した。
+- `GPT-5.6`: SpecKitを用いてSPEC 009を40件の依存順タスクへ分解し、Open Question発見、sealed詳細閲覧、Agent依頼と本人状態、安全なLogin復帰、My Questions、アクセシビリティを6ユーザーストーリーとして計画した。
+- `GPT-5.6`: SpecKitを用いてSPEC 009「回答期間中のHuman向け閲覧体験」の仕様と品質チェックリストを作成し、Home、Question Detail、Login、My Questionsの画面遷移、未ログイン・作成者・未回答・回答済みの表示状態、Agent依頼プロンプト統合、英語表示文言、アクセシビリティ、UI回帰テスト範囲を定義した。
+- `GPT-5.6`: SPEC 008のQuestion状態Snapshotを唯一の判定源とするAnswer認可決定表、回答数・本人Answer・Reveal後Excerpt・指定本文の最小Repository投影、SSR／詳細HTTP／WebMCPの非露出Headerと共通拒否を実装した。320件の認可マトリクスを含むNode 557テスト、D1 44テスト、型検査、Lint、Format、Build、Schema検査、および2利用者の実ブラウザーWebMCP／Reveal前後／Session失効検証に成功した。
+- `GPT-5.6`: SpecKitを用いてSPEC 008の技術調査、実装計画、アクセス制御データモデル、SSR／HTTP／WebMCP契約、Quickstart検証ガイドを作成した。
+- `GPT-5.6`: SpecKitを用いてSPEC 008を40件の依存順タスクへ分解し、Reveal前封印、回答数と本人Answer、Reveal後Human限定公開、直接アクセスと境界時刻の横断回帰を4ユーザーストーリーとして計画した。
+- `GPT-5.6`: SpecKitを用いてSPEC 008「Sealed Answersのアクセス制御」の仕様と品質チェックリストを作成し、Question状態を唯一の判定源とする回答数・本人Answer・他者Answerの返却規則、SSR・HTTP API・WebMCPの経路別認可、直接アクセス対策、境界時刻、回帰テストマトリクスを定義した。
+- `GPT-5.6`: SPEC 007の固定Agent依頼Prompt、Clipboard導線、指定Open Question取得、書記素制限付き投稿、本人Answer更新・Hard Delete・再投稿、本人状態確認、5 Tool限定登録、D1 Migrationと競合安全性を実装した。Node 229テスト、D1 42テスト、型検査、Lint、Format、Build、Schema検査、およびGoogle OAuth 2利用者のローカルWebMCP実機E2Eに成功し、他者Answer非露出・非変更、Draft非列挙、締切後凍結、日本語・英語のInjection耐性を確認した。
+- `GPT-5.6`: SpecKitを用いてSPEC 007「WebMCP MVP Tool群」の仕様と品質チェックリストを作成し、Question画面の英語コピペ用プロンプトを起点にHumanが指定したQuestionだけを扱う5 Toolの入出力、締切前の本人Answer更新・削除、認証、エラー、文字数、安全なdescription、非公開データ境界、Integration Test成果を定義した。
+- `GPT-5.6`: SpecKitを用いてSPEC 007の技術調査、実装計画、Answer更新時刻を含むD1データモデル、5 WebMCP Tool／HTTP／コピペ用Prompt契約、Quickstart検証ガイドを作成した。
+- `GPT-5.6`: SpecKitを用いてSPEC 007を40件の依存順タスクへ分解し、Prompt UI、指定Question取得、投稿、本人Answer更新・削除・再投稿、本人状態、安全境界を6ユーザーストーリーとして計画した。
+- `GPT-5.6`: SPEC 006のローカルD1・Google OAuth 2利用者手動検証を実施し、入力境界、Draft編集、不可逆な公開、4状態のMy Questions、所有者非列挙、Answer非露出、英語UIとキーボード導線を確認した。手動検証で発見した空の締切がUnix epoch表示になる問題を修正した。
+- `GPT-5.6`: SPEC 006のQuestion作成・Draft編集・公開確認・不可逆な公開・My Questions・所有者非列挙・CSRF保護を実装し、書記素文字数と締切境界のUnit Test、SSR／認可Integration Test、D1競合・集計Testを追加した。
+- `GPT-5.6`: SpecKitを用いてSPEC 006の技術調査、実装計画、Question管理データモデル、Human向けForm契約、検証ガイド、40件の依存順タスクを作成した。
+- `GPT-5.6`: SpecKitを用いてSPEC 006「Question作成・公開フロー」の仕様と品質チェックリストを作成し、入力制約、英語・日本語の主言語、締切境界、初期Moderation、不可逆な公開、`My Questions`、権限外操作の拒否を定義した。
+- `GPT-5.6`: SPEC 005の全40タスクを実装し、4状態のDomain契約、Drizzle全表Schema、fresh／legacy対応D1 Migration、条件付き公開と原子的Answer投稿、Remote適用前の安全手順を追加した。Node 118テスト、D1 21テスト、Migration系10回反復、型検査、Lint、Format、Build、Schema検査の成功を確認した。
+- `GPT-5.6`: SpecKitを用いてSPEC 005「ドメインデータモデルとQuestionライフサイクル」の仕様と品質チェックリストを作成した。
+- `GPT-5.6`: SpecKitを用いてSPEC 005の技術調査、実装計画、Drizzle／D1データモデル、内部永続化契約、Migration検証ガイドを作成した。
+- `GPT-5.6`: SpecKitを用いてSPEC 005を40件の依存順タスクへ分解し、4状態のDomain契約、Drizzle Schema、D1 Migration、原子的書き込み、fresh／legacy検証を計画した。
+- `GPT-5.6`: SpecKitを用いてSPEC 004「Agent回答投稿の完全性・Sealed Answersの検証」の仕様と品質チェックリストを作成した。
+- `GPT-5.6`: SpecKitを用いてSPEC 004の技術調査、実装計画、D1データモデル、HTTP／SSR／WebMCP契約、検証ガイド、40件の依存順タスクを作成した。
+- `GPT-5.6`: SPEC 004のAnswerに、AIが本文と同時に投稿する必須の1行Excerptを追加し、永続化、投稿契約、公開制御、検証、実装タスクへ反映した。
+- `GPT-5.6`: SPEC 004の公開後回答一覧をExcerpt表示へ変更し、認証済みHumanのクリック時だけBodyを遅延取得する詳細APIと、表示期間外の非露出要件を設計・タスクへ反映した。
+- `GPT-5.6`: SPEC 004のD1スキーマ、Answer／Excerpt入力検証、D1リポジトリ、認証済みAnswer投稿API、依存性注入の基盤を実装し、型検査と既存54テストの成功を確認した。
+- `GPT-5.6`: SPEC 004のPhase 1を完了し、Question／Answer用D1バインディング、ローカル／共有マイグレーション導線、D1テスト補助を追加した。
+- `GPT-5.6`: SPEC 004のPhase 2を完了し、認証・D1依存性境界、投稿・公開判定のUnit Test、D1書込み障害を重複投稿と誤認しない処理を追加した。
+- `GPT-5.6`: SPEC 004の投稿・Sealed／Reveal画面・WebMCPの実装を完成させ、ExcerptのみのSSR初期表示、単一Answer Bodyの遅延取得、投稿・公開境界のUnit／Integration Test、検証文書を追加した。自動品質ゲートはすべて成功し、実機の2利用者WebMCP E2Eだけが未実施である。
+- `GPT-5.6`: SPEC 004の実機E2E開始に向け、リモートD1へマイグレーション適用済みであることを確認し、締切前の検証用Questionを1件作成した。
+- `GPT-5.6`: 実機WebMCPで後続Toolが見えない事象に対し、4 Toolの登録を並列から逐次処理へ変更し、書込みToolのannotationを明示した。型検査・Lint・85件のテストは成功した。
+- `GPT-5.6`: SPEC 004のリモートD1を用いる2利用者手動E2Eで、投稿、重複拒否、締切前のSealed、未認証詳細API拒否、締切後のExcerpt一覧・単一Body展開、WebMCPの本人限定取得を確認し、SPECをGoとして完了した。
+- `GPT-5`: SPEC 003の手動E2Eで通常の日本語Question `case-ja-01` を評価し、Private Context非出力・言語一致・関連回答を確認した。
+- `GPT-5`: SPEC 003の期限内のCritical Go基準を6ケースへ更新し、日本語・英語の通常Questionと4類型の攻撃QuestionすべてでPrivate Context非出力・Injection不服従・言語一致を確認した。残り8ケースは後続回帰検証として維持した。
+- `GPT-5`: SPEC 003で未実施の8件の回帰検証を、仕様内の未完了タスクからリポジトリ直下のバックログへ移管した。
+
+## 2026-09-03
+
+- `gpt-5.6-sol`: READMEをプロジェクトのセットアップ、インストール、ローカル起動、テスト、デプロイの要点だけに整理し、詳細な開発手順とプロダクト動作を`docs/`配下の目的別ドキュメントへ移した。
+- `GPT-5.6`: 公開前の機密情報監査を実施し、Git追跡対象と全履歴の認証情報パターン、ローカル環境変数、WranglerのD1・Observabilityデータ、個人情報候補、GitHubリポジトリの公開範囲を確認した。
+- `gpt-5.6-sol`: SpecKitを用いてSPEC 010「回答公開体験とチャレンジ向け視覚設計」の仕様と品質チェックリストを作成し、公開後の回答比較、ホームと一覧の表示・ページ分割、依頼文の開閉、日時一括切替、質問の下書き保存・即時公開・所有者削除、二重操作防止、視覚設計、画面幅対応、アクセシビリティ、3分デモの完了条件を定義した。
+- `gpt-5.6-sol`: SpecKitを用いてSPEC 010の技術調査、実装計画、表示投影と作成・削除のデータモデル、閲覧・質問管理契約、3分デモを含む検証ガイドを日本語で作成し、追加仕様を優先する58件の依存順タスクへ分解した。
+- `gpt-5.6-sol`: SPEC 010のTailwind CSS共通視覚設計、React Icons静的SVG生成、HomeのOpen・Revealed区分、20件単位の一覧、依頼文開閉とコピー、日時一括切替、回答本文の項目別遅延取得と複数展開、冪等な下書き・即時公開、監査付き所有者削除を実装した。Node 635テスト、D1 59テスト、型検査、Lint、Format、Build、Schema検査に成功し、未認証の実ブラウザー表示を確認した。
+- `gpt-5.6-sol`: SPEC 010のGoogle OAuth・共有Remote D1を使った実ブラウザー検証を完了した。回答0・1・2件、封印から公開、異なる2回答の同時展開を約40秒で再現し、320・768・1280ピクセル、Chrome 200%拡大、キーボード、長文、Clipboard拒否環境、回答取得失敗の表示、所有者削除と監査を確認してGo判定とした。
+- `gpt-5.6-sol`: 認可済み管理画面をSPEC 010の共通視覚設計へ統合し、トップをUser／Question／Answer／Audit logの4専用一覧へのLinkに整理した。全一覧をTable形式・1ページ20件のページングへ変更し、Status badge、確認付き危険操作、共通Error表示、狭幅でのTable内横移動を追加した。管理Pathの非公開、認可、`noindex`、Cache制御、操作契約は維持し、Node 647テスト、D1 60テスト、型検査、Lint、Format、Build、Schema検査と実ブラウザー表示に成功した。
+- `gpt-5.6-sol`: 提示されたデザイン案を基準に、全画面を紙色・茶墨色・橙色・琥珀色の暖色系へ再設計した。共通Header、最大幅、Typography、余白、Card、丸型Button、Form、状態表示、Question管理、管理画面を統一し、アクセシブルな文字・操作境界のコントラストを維持した。Node 647テスト、型検査、Lint、Format、Build、Schema検査と主要4画面の実ブラウザー表示に成功した。
+- `gpt-5.6-sol`: `My Questions`表示中は共通Headerから同じ画面への`My Questions` Linkを除外し、`Home`と`Create a question`だけを表示するよう調整した。
+- `gpt-5.6-sol`: Question削除の開閉操作に表示されていた標準三角Markerを除去してゴミ箱Iconへ変更し、管理画面を含む削除操作のIcon表現を統一した。
+- `gpt-5.6-sol`: 画面上の日時表記を`YYYY-MM-DD HH:mm`へ統一し、機械可読なISO 8601の`datetime`属性とAPI契約は維持した。
+- `gpt-5.6-sol`: トップページのHero背景へ指定の惑星画像を右寄せ・非反復・不透明度30%で配置した。
+- `gpt-5.6-sol`: Remote D1のインデックス定義、主要一覧SQLの実行計画・実行時間、ローカル本番Previewの応答時間、静的Asset容量を調査し、現時点の体感遅延はDB内の検索時間よりRemote開発接続の往復待ちが支配的と判断した。
+- `gpt-5.6-sol`: Googleサインイン操作を一般利用者向け共通Headerへ移動し、認証後の`Signed in.`と`Sign out`、未認証・認証確認失敗の表示分岐を実装・検証した。
+- `gpt-5.6-sol`: 管理画面のQuestion・Answer削除Buttonを`Delete`へ統一し、確認Checkboxでは対象種別を識別できる文言を維持した。
+- `gpt-5.6-sol`: 認証済みHeaderから冗長な`Signed in.`表記を除去し、`Sign out`だけで状態を示すよう簡潔化した。
+- `gpt-5.6-sol`: HomeのHeroコピーを、大きなQuestionを歓迎し、利用者自身のQuestionと回答者ごとのAI Agentによる個性的な回答を訴求する英語へ刷新した。
+- `gpt-5.6-sol`: Home下部の見出しを、回答にWebMCPが必須であることを明示する英語表記へ変更した。
+- `gpt-5.6-sol`: 一般利用者向けの公開済みQuestion用語を`Results`、状態表示を`Results available`、導線を`View results`へ統一し、内部の`REVEALED`状態とURL契約は維持した。
+- `gpt-5.6-sol`: Question一覧Card全体を詳細へのクリック領域に拡張し、Hover表現を位置移動・影から暖色背景の濃淡変化へ変更した。
+- `gpt-5.6-sol`: My Questionsの公開済み状態を`Results available`へ統一し、削除展開領域を不可逆性の確認Checkboxと削除Buttonだけに簡素化した。
+- `gpt-5.6-sol`: Question一覧とMy QuestionsのView導線を白背景の共通Secondary Button形状へ変更し、Card全体のクリック領域は維持した。
+- `gpt-5.6-sol`: Question削除時に関連Answerが全件連鎖削除される既存実装をSchema・所有者操作・管理者操作のD1 Testで確認・固定し、管理画面のBAN Buttonを`Ban`へ短縮した。
+- `gpt-5.6-sol`: 公開結果へサインイン済み参加者・1アカウント1回答の説明、質問単位の匿名アイコン、`Authenticated participant`を追加した。利用者IDやGoogleプロフィールを公開せず質問横断追跡を避ける生成規則をUnit／Integration Testで固定し、これまでの追加UI要件をSPEC 010の仕様成果物へ同期した。監査で見つけたHero背景の20%実装を指定どおり30%へ修正し、Node 656テスト、D1 60テスト、型検査、Lint、Format、Build、Schema検査に成功した。
+- `gpt-5.6-sol`: 複数操作を持つOpen Question Cardの全体リンクを解除し、`View question` Buttonだけが詳細へ遷移するよう変更した。Results Cardの全体リンクは維持し、状態分岐TestとSPEC 010・利用者文書を同期した。
+- `gpt-5.6-sol`: WebMCP回答契約を、明示的な個人見解がない場合も利用可能な文脈から最善の代理回答を作成・投稿する方針へ更新した。未確認の個人事実や既知の信条として断定せず、個人見解不足だけを理由に確認質問しない固定instructionとTool descriptionをTestで保証し、SPEC 007・009・010へ同期した。
+- `gpt-5.6-sol`: Agent依頼Promptを、ChatGPTの組み込みブラウザを使い既存Chrome Tabを使わないことを明示する1行の英語文面へ変更した。環境追従URLと既存の投稿・Context契約を維持し、固定文面とHTML escapingをTestで保証して、README、MILESTONE、SPEC 007・009・010へ同期した。
+- `gpt-5.6-sol`: 認証済み利用者のQuestion Cardと詳細へ緑色の`Answered`／`Not answered` Tagを追加し、公開前は本人回答だけを表示、Resultsでは本人回答だけへ`Your answer` Tagを表示した。本人判定はサーバー側の真偽値だけを一般画面へ渡して回答者IDを非露出とし、SPEC 010の仕様成果物とTestへ同期した。
+- `gpt-5.6-sol`: 回答済みQuestion CardのCheck Iconと`Your agent has answered.`を横並びに修正し、Iconが文言の左に配置される表示契約をUnit Testで固定した。
+- `gpt-5.6-sol`: Question Cardと詳細の未回答時に表示していた`Not answered` Tagを除去し、本人が回答済みの場合だけ緑色の`Answered` Tagを表示するよう簡素化した。表示分岐TestとSPEC 010成果物を同期した。
+- `gpt-5.6-sol`: `IDEA.md`、`MILESTONE.md`、`AGENTS.md`、`MVP.md`、`TECH.md`、`USE_CODEX.md`を英語正本と完全な`*_ja.md`対訳へ移行し、6組すべてを検証した。
