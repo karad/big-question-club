@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
+import { count, desc, eq } from 'drizzle-orm';
 import { createDatabase } from '../db/client';
 import { answers, auditLogs, bannedUsers, questions, users } from '../db/schema';
 import type { AuditAction, AuditTargetType } from '../domain/admin';
@@ -22,11 +22,16 @@ export type AuditLogView = {
   createdAt: number;
 };
 
-export type AdminDashboard = {
-  users: AdminUserView[];
-  questions: Question[];
-  answers: Answer[];
-  auditLogs: AuditLogView[];
+export type AdminSummary = {
+  userCount: number;
+  questionCount: number;
+  answerCount: number;
+  auditLogCount: number;
+};
+
+export type AdminListResult<T> = {
+  items: T[];
+  totalItems: number;
 };
 
 export type DeleteAdminTargetResult = 'deleted' | 'missing' | 'unavailable';
@@ -37,7 +42,11 @@ export type UnbanUserResult = 'unbanned' | 'not-banned' | 'missing' | 'unavailab
 export interface AdminRepository {
   isAdmin(userId: string): Promise<boolean>;
   isUserBanned(userId: string): Promise<boolean>;
-  getDashboard(): Promise<AdminDashboard>;
+  getSummary(): Promise<AdminSummary>;
+  listUsers(limit: number, offset: number): Promise<AdminListResult<AdminUserView>>;
+  listQuestions(limit: number, offset: number): Promise<AdminListResult<Question>>;
+  listAnswers(limit: number, offset: number): Promise<AdminListResult<Answer>>;
+  listAuditLogs(limit: number, offset: number): Promise<AdminListResult<AuditLogView>>;
   deleteQuestion(
     questionId: string,
     actorUserId: string,
@@ -75,8 +84,22 @@ export function createAdminRepository(
         .limit(1);
       return ban !== undefined;
     },
-    async getDashboard() {
-      const [userRows, questionRows, answerRows, auditRows] = await Promise.all([
+    async getSummary() {
+      const [[userTotal], [questionTotal], [answerTotal], [auditTotal]] = await Promise.all([
+        db.select({ value: count() }).from(users),
+        db.select({ value: count() }).from(questions),
+        db.select({ value: count() }).from(answers),
+        db.select({ value: count() }).from(auditLogs),
+      ]);
+      return {
+        userCount: userTotal?.value ?? 0,
+        questionCount: questionTotal?.value ?? 0,
+        answerCount: answerTotal?.value ?? 0,
+        auditLogCount: auditTotal?.value ?? 0,
+      };
+    },
+    async listUsers(limit, offset) {
+      const [items, [total]] = await Promise.all([
         db
           .select({
             id: users.id,
@@ -87,17 +110,48 @@ export function createAdminRepository(
           })
           .from(users)
           .leftJoin(bannedUsers, eq(bannedUsers.userId, users.id))
-          .orderBy(desc(users.createdAt), desc(users.id)),
-        db.select().from(questions).orderBy(desc(questions.createdAt), desc(questions.id)),
-        db.select().from(answers).orderBy(desc(answers.createdAt), desc(answers.id)),
-        db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt), desc(auditLogs.id)),
+          .orderBy(desc(users.createdAt), desc(users.id))
+          .limit(limit)
+          .offset(offset),
+        db.select({ value: count() }).from(users),
       ]);
-      return {
-        users: userRows,
-        questions: questionRows,
-        answers: answerRows,
-        auditLogs: auditRows as AuditLogView[],
-      };
+      return { items, totalItems: total?.value ?? 0 };
+    },
+    async listQuestions(limit, offset) {
+      const [items, [total]] = await Promise.all([
+        db
+          .select()
+          .from(questions)
+          .orderBy(desc(questions.createdAt), desc(questions.id))
+          .limit(limit)
+          .offset(offset),
+        db.select({ value: count() }).from(questions),
+      ]);
+      return { items, totalItems: total?.value ?? 0 };
+    },
+    async listAnswers(limit, offset) {
+      const [items, [total]] = await Promise.all([
+        db
+          .select()
+          .from(answers)
+          .orderBy(desc(answers.createdAt), desc(answers.id))
+          .limit(limit)
+          .offset(offset),
+        db.select({ value: count() }).from(answers),
+      ]);
+      return { items, totalItems: total?.value ?? 0 };
+    },
+    async listAuditLogs(limit, offset) {
+      const [items, [total]] = await Promise.all([
+        db
+          .select()
+          .from(auditLogs)
+          .orderBy(desc(auditLogs.createdAt), desc(auditLogs.id))
+          .limit(limit)
+          .offset(offset),
+        db.select({ value: count() }).from(auditLogs),
+      ]);
+      return { items: items as AuditLogView[], totalItems: total?.value ?? 0 };
     },
     async deleteQuestion(questionId, actorUserId, now) {
       return deleteTarget(database, 'questions', questionId, actorUserId, now, {

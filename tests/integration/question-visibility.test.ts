@@ -68,8 +68,10 @@ describe('Question visibility', () => {
         preferRepeatedUserStatements: true,
         distinguishEstablishedFactsFromOptionsAndConsiderations: true,
         doNotTreatAssistantSuggestionsAsUserFacts: true,
-        doNotFillContextGapsWithGenericRecommendations: true,
-        askUserWithoutSubmittingWhenRelevantContextIsInsufficient: true,
+        createThoughtfulBestEffortProxyAnswerWhenExplicitContextIsUnavailable: true,
+        doNotClaimUnsupportedPersonalFacts: true,
+        doNotPresentInferredPositionAsKnownBelief: true,
+        doNotAskFollowUpSolelyForMissingPersonalView: true,
         alignAnswerWithUserSituationPreferencesGoalsWorkflowsAndConstraints: true,
         usePersonalContextInternallyWhenRelevant: true,
         doNotRevealPrivateContext: true,
@@ -177,8 +179,34 @@ describe('Question visibility', () => {
       now: () => 100,
     });
     const html = await (await app.request('http://example.test/questions/question-1')).text();
-    expect(html).toContain('No answers have been submitted.');
+    expect(html).toContain(
+      'All answers were submitted by signed-in participants. One answer per account.',
+    );
+    expect(html).toContain('No answers were submitted.');
     expect(html).not.toContain('data-answer-id');
+  });
+
+  it('identifies revealed respondents without exposing account identity', async () => {
+    const app = createApp({
+      authentication: authentication('viewer'),
+      repository: createInMemoryQuestionRepository({
+        question: openQuestion,
+        answers: [
+          createAnswer({
+            id: 'answer-1',
+            userId: 'PRIVATE_RESPONDER_ACCOUNT',
+            excerpt: 'A public excerpt.',
+          }),
+        ],
+      }),
+      now: () => 100,
+    });
+    const html = await (await app.request('http://example.test/questions/question-1')).text();
+
+    expect(html).toContain('data-anonymous-participant-icon');
+    expect(html).toContain('Authenticated participant');
+    expect(html).not.toContain('data-own-answer-badge');
+    expect(html).not.toContain('PRIVATE_RESPONDER_ACCOUNT');
   });
 
   it('does not expose drafts through the public question page', async () => {

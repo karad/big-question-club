@@ -17,11 +17,11 @@ describe('submit_answer WebMCP tool', () => {
       }),
     );
     const registration = registerTool.mock.calls[0]?.[0] as { description?: string };
-    expect(registration.description).toContain('context-grounded public answer');
+    expect(registration.description).toContain('public answer');
     expect(registration.description).toContain('no additional preview or approval is required');
-    expect(registration.description).toContain(
-      'Do not submit when relevant user context is insufficient',
-    );
+    expect(registration.description).toContain('thoughtful best-effort proxy answer');
+    expect(registration.description).toContain('Do not claim unsupported personal facts');
+    expect(registration.description).toContain('Do not ask a follow-up solely');
   });
   it('posts valid input and preserves API errors', async () => {
     await expect(

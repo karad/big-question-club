@@ -21,6 +21,7 @@ flowchart LR
             ReviewQuestion["Review & Publish<br/>GET /questions/:questionId/review"]
             QuestionDetail["Question Detail<br/>GET /questions/:questionId"]
             AdminDashboard["Admin Dashboard<br/>GET /club-operations"]
+            AdminLists["Admin Tables<br/>GET /club-operations/{users|questions|answers|audit-log}"]
         end
 
         Client["Client Entry<br/>client.ts"]
@@ -84,6 +85,7 @@ flowchart LR
     Human --> ReviewQuestion
     Human --> QuestionDetail
     Human --> AdminDashboard
+    AdminDashboard --> AdminLists
 
     SiteHeader --> Home
     SiteHeader --> NewQuestion
@@ -92,6 +94,7 @@ flowchart LR
     SiteHeader --> ReviewQuestion
     SiteHeader --> QuestionDetail
     SiteHeader --> AdminDashboard
+    SiteHeader --> AdminLists
 
     Home --> QuestionDetail
     Home --> NewQuestion

@@ -37,11 +37,11 @@
 
 ## Phase 3: ユーザーストーリー1 — Question画面からAgentへの依頼文をコピーする (P1) 🎯
 
-**目標**: 認証済み・未投稿・`OPEN` のQuestion画面だけに、現在のOriginへ追従するQuestion絶対URLを含む1行Promptを表示し、コピー成功・失敗を英語で通知する。
+**目標**: 認証済み・未投稿・`OPEN` のQuestion画面だけに、ChatGPTの組み込みブラウザを指定して既存Chrome Tabを除外し、現在のOriginへ追従するQuestion絶対URLを含む1行Promptを表示して、コピー成功・失敗を英語で通知する。
 
 **独立テスト**: Question本文にInjectionを含めてもPromptにはQueryとFragmentを除いたQuestion絶対URLだけが可変値として入り、コピー結果が表示と一致し、失敗時も手動コピーでき、コピーだけではToolを実行しない。
 
-- [X] T011 [P] [US1] 1行の確定英語Prompt、現在のOriginを含むQuestion絶対URL、Query／Fragment／Question本文の非混入、HTML escapingを検証する失敗先行Unit Testを `tests/unit/agent-request-prompt.test.ts` に追加する
+- [X] T011 [P] [US1] ChatGPTの組み込みブラウザ指定と既存Chrome Tab除外を含む1行の確定英語Prompt、現在のOriginを含むQuestion絶対URL、Query／Fragment／Question本文の非混入、HTML escapingを検証する失敗先行Unit Testを `tests/unit/agent-request-prompt.test.ts` に追加する
 - [X] T012 [US1] 環境追従するQuestion絶対URLと1行Promptの生成、および表示可否判定の純粋関数を `src/domain/agent-request-prompt.ts` に実装する
 - [X] T013 [P] [US1] 認証済み未投稿Open／未認証／投稿済み／Draft／Closed／RevealedのSSR表示分岐を `tests/integration/agent-request-prompt.test.ts` に失敗先行で追加する
 - [X] T014 [US1] `Ask your personal agent`、注意文、選択可能Prompt、`Copy prompt`、status領域を `src/views/question-detail.tsx` に実装し `src/routes/question.ts` から状態別に描画する
@@ -141,7 +141,7 @@
 ## Phase 10: Context根拠付き回答契約
 
 - [X] T041 [P] 確定した1行Promptと `get_question` の固定Context instructionをUnit／Integration Testで固定する
-- [X] T042 User自身の記述を優先し、Assistant提案・検討候補を事実とみなさず、根拠不足時はHumanへ質問して投稿しない汎用規則をTool description、Schema、返却データへ実装する。初回Promptは投稿許可を含み、追加Previewや承認は要求せず、投稿後は本人状態を確認する
+- [X] T042 User自身の記述を優先し、Assistant提案・検討候補を事実とみなさず、明示的な個人見解がない場合は未確認事実を断定しない最善の代理回答を作成・投稿して、その不足だけを理由にHumanへ確認しない汎用規則をTool description、Schema、返却データへ実装する。初回Promptは投稿許可を含み、追加Previewや承認は要求せず、投稿後は本人状態を確認する
 - [X] T043 SPEC 007・009、README、MILESTONE、検証記録を確定契約へ同期し、全自動品質Gateを実行する
 
 ---
@@ -227,7 +227,7 @@ HumanがQuestionを選んでAgentへ回答させる最小価値は、Phase 1〜2
 4. US4で締切前の訂正・撤回・再投稿を追加する。
 5. US6でTool面とSealed境界を横断固定する。
 6. Phase 9で全品質ゲートと実機E2Eを完了する。
-7. Phase 10でPrompt、Context根拠、根拠不足時の投稿停止、追加承認不要、投稿結果確認を同期する。
+7. Phase 10でPrompt、Context根拠、明示的な個人見解がない場合の代理回答、未確認事実の非断定、不要な確認質問の禁止、追加承認不要、投稿結果確認を同期する。
 
 ## タスク集計
 

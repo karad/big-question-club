@@ -55,8 +55,10 @@ export async function questionRoute(
         preferRepeatedUserStatements: true,
         distinguishEstablishedFactsFromOptionsAndConsiderations: true,
         doNotTreatAssistantSuggestionsAsUserFacts: true,
-        doNotFillContextGapsWithGenericRecommendations: true,
-        askUserWithoutSubmittingWhenRelevantContextIsInsufficient: true,
+        createThoughtfulBestEffortProxyAnswerWhenExplicitContextIsUnavailable: true,
+        doNotClaimUnsupportedPersonalFacts: true,
+        doNotPresentInferredPositionAsKnownBelief: true,
+        doNotAskFollowUpSolelyForMissingPersonalView: true,
         alignAnswerWithUserSituationPreferencesGoalsWorkflowsAndConstraints: true,
         usePersonalContextInternallyWhenRelevant: true,
         doNotRevealPrivateContext: true,
@@ -185,7 +187,10 @@ export async function questionPageRoute(
   let excerpts: RevealedExcerptView[];
   try {
     answerCount = (await repository.getAnswerCount(questionId)).answerCount;
-    excerpts = canListExcerpts ? await repository.listRevealedExcerpts(questionId) : [];
+    excerpts =
+      canListExcerpts && !('code' in identity)
+        ? await repository.listRevealedExcerpts(questionId, identity.userId)
+        : [];
   } catch {
     return context.text(
       'Question is temporarily unavailable. Try again.',
@@ -205,12 +210,21 @@ export async function questionPageRoute(
   } else if ('code' in identity && identity.code === 'IDENTITY_UNAVAILABLE') {
     submission = 'unavailable';
   }
+  const hasAnswered =
+    'code' in identity
+      ? null
+      : state === 'REVEALED'
+        ? excerpts.some(({ isOwn }) => isOwn)
+        : submission === 'unavailable'
+          ? null
+          : submission === 'submitted';
   const viewer = getViewerPresentation({ authenticated, state, submission });
   return context.html(
     QuestionDetailPage({
       answerCount,
       clientScriptUrl,
       excerpts,
+      hasAnswered,
       isCreator: !('code' in identity) && identity.userId === question.creatorUserId,
       ownAnswer: mine,
       question,

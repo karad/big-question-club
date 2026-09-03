@@ -54,6 +54,7 @@ describe('Question browsing detail', () => {
     expect(html).toContain('Status: OPEN');
     expect(html).toContain('Answers submitted: 1');
     expect(html).toContain('1970-01-01T00:00:00.100Z');
+    expect(html).toContain('>1970-01-01 00:00</time>');
     expect(html).toContain('Less than 1 minute');
     expect(html).toContain('Answers are sealed.');
     expect(html).toContain('Sign in to answer with your personal agent.');
@@ -80,6 +81,8 @@ describe('Question browsing detail', () => {
     ).text();
 
     expect(html).toContain('Ask your personal agent');
+    expect(html).not.toContain('data-submission-status');
+    expect(html).not.toContain('Not answered');
     expect(html).toContain('http://example.test/questions/question-1');
     expect(html).toContain('Copy prompt');
   });
@@ -153,12 +156,64 @@ describe('Question browsing detail', () => {
 
     expect(html).toContain('Answers submitted: 2');
     expect(html).toContain('Your agent has answered.');
+    expect(html).toContain('data-submission-status="answered"');
     expect(html).toContain('Your answer remains sealed until the deadline.');
     expect(html).toContain('MY_OWN_ANSWER');
     expect(html).toContain('MY_OWN_EXCERPT');
     expect(html).not.toContain('data-agent-request-prompt');
     expect(html).not.toContain('OTHER_ANSWER_SECRET');
     expect(html).not.toContain('OTHER_EXCERPT_SECRET');
+  });
+
+  it('keeps only the authenticated human own answer visible after submissions close', async () => {
+    const response = await createApp({
+      authentication: authentication('answerer'),
+      repository: createInMemoryQuestionRepository({
+        question: closedQuestion,
+        answers: [
+          createAnswer({
+            userId: 'answerer',
+            body: 'MY_CLOSED_ANSWER',
+            excerpt: 'MY_CLOSED_EXCERPT',
+          }),
+          createAnswer({
+            id: 'other-closed-answer',
+            userId: 'other-user',
+            body: 'OTHER_CLOSED_ANSWER_SECRET',
+            excerpt: 'OTHER_CLOSED_EXCERPT_SECRET',
+          }),
+        ],
+      }),
+      now: () => 100,
+    }).request('http://example.test/questions/question-1');
+    const html = await response.text();
+
+    expect(html).toContain('data-submission-status="answered"');
+    expect(html).toContain('MY_CLOSED_ANSWER');
+    expect(html).toContain('MY_CLOSED_EXCERPT');
+    expect(html).not.toContain('OTHER_CLOSED_ANSWER_SECRET');
+    expect(html).not.toContain('OTHER_CLOSED_EXCERPT_SECRET');
+  });
+
+  it('marks the authenticated participant own answer in revealed results', async () => {
+    const response = await createApp({
+      authentication: authentication('answerer'),
+      repository: createInMemoryQuestionRepository({
+        question: openQuestion,
+        answers: [
+          createAnswer({ id: 'mine', userId: 'answerer', excerpt: 'MY_PUBLIC_EXCERPT' }),
+          createAnswer({ id: 'theirs', userId: 'other-user', excerpt: 'OTHER_PUBLIC_EXCERPT' }),
+        ],
+      }),
+      now: () => 100,
+    }).request('http://example.test/questions/question-1');
+    const html = await response.text();
+
+    expect(html).toContain('data-submission-status="answered"');
+    expect(html.match(/data-own-answer-badge/g)).toHaveLength(1);
+    expect(html).toContain('Your answer');
+    expect(html).not.toContain('userId');
+    expect(html).not.toContain('answerer');
   });
 
   it('reflects zero, one, and multiple answers on reload', async () => {
@@ -198,6 +253,7 @@ describe('Question browsing detail', () => {
 
     expect(response.status).toBe(200);
     expect(html).toContain('Your submission status is temporarily unavailable. Try again.');
+    expect(html).not.toContain('data-submission-status');
     expect(html).not.toContain('data-agent-request-prompt');
     expect(html).not.toContain('LOOKUP_PRIVATE_ANSWER');
   });
@@ -216,7 +272,7 @@ describe('Question browsing detail', () => {
 
     expect(html).toContain('Your submission status is temporarily unavailable. Try again.');
     expect(html).not.toContain('data-agent-request-prompt');
-    expect(html).not.toContain('id="google-sign-in"');
+    expect(html).toContain('id="google-sign-in"');
   });
 
   it('provides stable state hooks for the Challenge visual layer', async () => {

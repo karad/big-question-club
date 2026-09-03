@@ -76,4 +76,21 @@ describe('D1 question browsing repository', () => {
     expect(serialized).not.toContain('D1_PRIVATE_EXCERPT_SENTINEL');
     expect(serialized).not.toContain('browsing-secret-answer');
   });
+
+  it('limits pages, counts states, and batches the current user answer state', async () => {
+    const repository = createQuestionRepository(env.TEST_DB);
+    const open = await repository.listOpenQuestions(snapshotNow, 2, 0);
+    expect(open).toHaveLength(2);
+    expect(await repository.countOpenQuestions(snapshotNow)).toBeGreaterThanOrEqual(3);
+    expect(await repository.countRevealedQuestions(snapshotNow)).toBeGreaterThanOrEqual(1);
+    expect(
+      await repository.listOwnAnsweredQuestionIds(
+        ['browsing-open-first-en', 'browsing-open-later'],
+        'browsing-answerer',
+      ),
+    ).toEqual(['browsing-open-first-en']);
+    expect(
+      JSON.stringify(await repository.listRevealedQuestions(snapshotNow, 20, 0)),
+    ).not.toContain('D1_PRIVATE_BODY_SENTINEL');
+  });
 });

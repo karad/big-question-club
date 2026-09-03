@@ -44,12 +44,12 @@ closed
 
 ## AgentRequestPresentation
 
-- `prompt`: `Open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}` の確定済み1行文面。
+- `prompt`: `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}` の確定済み1行文面。
 - `questionUrl`: 閲覧中リクエストのOriginとQuestion Pathから生成した絶対URL。QueryとFragmentを含めない。
 - Question本文、User情報、認証情報、Answer情報をPromptへ含めない。
 - Tool名、呼出順、入力制約、安全上の詳細はPromptへ重複させず、WebMCP Tool契約からAgentへ提供する。
 - 初回Promptの送信を回答作成・投稿の許可とし、追加Previewや承認は要求しない。
-- WebMCP Tool契約は、利用可能なUser Context参照元、User自身の記述の優先、事実と比較・検討の区別、Assistant提案の除外、根拠不足時の質問と投稿停止、Private Context非開示、投稿結果確認を固定instructionとして返す。
+- WebMCP Tool契約は、利用可能なUser Context参照元、User自身の記述の優先、事実と比較・検討の区別、Assistant提案の除外、明示的な個人見解がない場合の代理回答、未確認事実の非断定、不要な確認質問の禁止、Private Context非開示、投稿結果確認を固定instructionとして返す。
 
 ## DeadlinePresentation
 

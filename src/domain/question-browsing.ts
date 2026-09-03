@@ -1,5 +1,6 @@
 import type { QuestionState } from './question';
 import { toIsoTimestamp } from './question';
+import { formatUtcDateTime } from './date-time';
 
 export type SubmissionPresentation = 'not-submitted' | 'submitted' | 'unavailable';
 
@@ -17,10 +18,11 @@ export function formatAnswerCount(count: number): string {
 export function getDeadlinePresentation(
   closesAt: number,
   snapshotNow: number,
-): { absolute: string; remainingLabel: string; remainingMs: number } {
+): { absolute: string; absoluteLabel: string; remainingLabel: string; remainingMs: number } {
   const remainingMs = Math.max(0, closesAt - snapshotNow);
   return {
     absolute: toIsoTimestamp(closesAt),
+    absoluteLabel: formatUtcDateTime(closesAt),
     remainingLabel: formatRemainingTime(remainingMs),
     remainingMs,
   };
@@ -36,8 +38,8 @@ export function getViewerPresentation({
   submission: SubmissionPresentation;
 }): ViewerPresentation {
   if (submission === 'unavailable') return 'submission-unavailable';
-  if (state !== 'OPEN') return 'closed';
   if (!authenticated) return 'anonymous';
+  if (state !== 'OPEN') return 'closed';
   return submission === 'submitted' ? 'authenticated-submitted' : 'authenticated-unsubmitted';
 }
 

@@ -17,6 +17,7 @@ describe('Question browsing presentation', () => {
   it('never returns a negative remaining duration', () => {
     expect(getDeadlinePresentation(100, 101)).toEqual({
       absolute: '1970-01-01T00:00:00.100Z',
+      absoluteLabel: '1970-01-01 00:00',
       remainingLabel: 'Closed',
       remainingMs: 0,
     });
@@ -39,6 +40,7 @@ describe('Question browsing presentation', () => {
     ['OPEN', false, 'unavailable', 'submission-unavailable'],
     ['CLOSED', true, 'submitted', 'closed'],
     ['REVEALED', true, 'submitted', 'closed'],
+    ['REVEALED', false, 'not-submitted', 'anonymous'],
   ] as const)(
     'derives an exclusive viewer presentation for %s/%s/%s',
     (state, authenticated, submission, expected) => {

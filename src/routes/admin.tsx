@@ -1,13 +1,23 @@
 import type { Context } from 'hono';
 import { readCurrentIdentity, type Authentication } from '../auth/session';
-import { ADMIN_PATH } from '../domain/admin';
+import { ADMIN_PAGE_SIZE, ADMIN_PATH, createAdminPage, type AdminListKind } from '../domain/admin';
+import { parsePage } from '../domain/question-listing';
 import type {
+  AdminListResult,
   AdminRepository,
+  AdminUserView,
+  AuditLogView,
   BanUserResult,
   DeleteAdminTargetResult,
   UnbanUserResult,
 } from '../repositories/admin-repository';
-import { ADMIN_RESPONSE_HEADERS, AdminDashboardPage, AdminMessagePage } from '../views/admin';
+import type { Answer, Question } from '../domain/question';
+import {
+  ADMIN_RESPONSE_HEADERS,
+  AdminDashboardPage,
+  AdminListPage,
+  AdminMessagePage,
+} from '../views/admin';
 
 type AuthorizedAdmin = { userId: string; repository: AdminRepository };
 
@@ -15,20 +25,55 @@ export async function adminDashboardRoute(
   context: Context,
   authentication: Authentication | undefined,
   repository: AdminRepository | undefined,
-  now: () => number,
 ): Promise<Response> {
   const authorized = await authorizeAdmin(context, authentication, repository);
   if (authorized instanceof Response) return authorized;
   try {
-    const dashboard = await authorized.repository.getDashboard();
+    const summary = await authorized.repository.getSummary();
+    return context.html(<AdminDashboardPage summary={summary} />, 200, ADMIN_RESPONSE_HEADERS);
+  } catch {
+    return adminError(context, 503, 'Administration is unavailable. Try again.');
+  }
+}
+
+export async function adminListRoute(
+  context: Context,
+  kind: AdminListKind,
+  authentication: Authentication | undefined,
+  repository: AdminRepository | undefined,
+  now: () => number,
+): Promise<Response> {
+  const authorized = await authorizeAdmin(context, authentication, repository);
+  if (authorized instanceof Response) return authorized;
+  const page = parsePage(context.req.query('page'));
+  const offset = (page - 1) * ADMIN_PAGE_SIZE;
+  try {
+    const result = await readAdminList(authorized.repository, kind, ADMIN_PAGE_SIZE, offset);
     return context.html(
-      <AdminDashboardPage dashboard={dashboard} adminUserId={authorized.userId} now={now()} />,
+      <AdminListPage
+        kind={kind}
+        result={createAdminPage(result.items, result.totalItems, page)}
+        adminUserId={authorized.userId}
+        now={now()}
+      />,
       200,
       ADMIN_RESPONSE_HEADERS,
     );
   } catch {
     return adminError(context, 503, 'Administration is unavailable. Try again.');
   }
+}
+
+function readAdminList(
+  repository: AdminRepository,
+  kind: AdminListKind,
+  limit: number,
+  offset: number,
+): Promise<AdminListResult<AdminUserView | Question | Answer | AuditLogView>> {
+  if (kind === 'users') return repository.listUsers(limit, offset);
+  if (kind === 'questions') return repository.listQuestions(limit, offset);
+  if (kind === 'answers') return repository.listAnswers(limit, offset);
+  return repository.listAuditLogs(limit, offset);
 }
 
 export async function deleteAdminQuestionRoute(
@@ -42,6 +87,7 @@ export async function deleteAdminQuestionRoute(
     authentication,
     repository,
     now,
+    `${ADMIN_PATH}/questions`,
     (admin, target, actor, timestamp) => admin.deleteQuestion(target, actor, timestamp),
   );
 }
@@ -57,6 +103,7 @@ export async function deleteAdminAnswerRoute(
     authentication,
     repository,
     now,
+    `${ADMIN_PATH}/answers`,
     (admin, target, actor, timestamp) => admin.deleteAnswer(target, actor, timestamp),
   );
 }
@@ -72,6 +119,7 @@ export async function banAdminUserRoute(
     authentication,
     repository,
     now,
+    `${ADMIN_PATH}/users`,
     (admin, target, actor, timestamp) => admin.banUser(target, actor, timestamp),
   );
 }
@@ -87,6 +135,7 @@ export async function unbanAdminUserRoute(
     authentication,
     repository,
     now,
+    `${ADMIN_PATH}/users`,
     (admin, target, actor, timestamp) => admin.unbanUser(target, actor, timestamp),
   );
 }
@@ -96,6 +145,7 @@ async function runAdminMutation(
   authentication: Authentication | undefined,
   repository: AdminRepository | undefined,
   now: () => number,
+  successRedirect: string,
   operation: (
     repository: AdminRepository,
     targetId: string,
@@ -112,7 +162,7 @@ async function runAdminMutation(
   try {
     const result = await operation(authorized.repository, targetId, authorized.userId, now());
     if (result === 'deleted' || result === 'banned' || result === 'unbanned') {
-      return context.redirect(ADMIN_PATH, 303);
+      return context.redirect(successRedirect, 303);
     }
     if (result === 'missing' || result === 'not-banned')
       return adminError(context, 404, 'Administration target not found.');

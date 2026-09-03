@@ -55,9 +55,9 @@ describe('D1 answer visibility projections', () => {
 
   it('orders excerpt projections and keeps body lookup inside the requested question', async () => {
     const repository = createQuestionRepository(env.TEST_DB);
-    expect(await repository.listRevealedExcerpts('question-1')).toEqual([
-      { id: 'answer-a', excerpt: 'First excerpt' },
-      { id: 'answer-b', excerpt: 'Second excerpt' },
+    expect(await repository.listRevealedExcerpts('question-1', 'user-1')).toEqual([
+      { id: 'answer-a', excerpt: 'First excerpt', isOwn: true },
+      { id: 'answer-b', excerpt: 'Second excerpt', isOwn: false },
     ]);
     expect(await repository.getRevealedAnswerBody('question-1', 'answer-b')).toEqual({
       id: 'answer-b',

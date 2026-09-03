@@ -40,7 +40,7 @@ HumanはQuestion DetailでQuestion本文、回答数、回答締切、残り時�
 
 1. **前提** Answerがある `OPEN` Questionである、**操作** HumanがDetailを開く、**結果** Question本文、回答数、絶対締切、残り時間、`Answers are sealed`、独立回答のため締切まで非公開である旨が表示される。
 2. **前提** 未ログインHumanが `OPEN` Questionを開いている、**操作** 参加方法を確認する、**結果** `Sign in to answer with your personal agent.` と既存Google Sign inへの導線が表示され、Agent依頼プロンプトと本人投稿情報は表示されない。
-3. **前提** 認証済みHumanが `OPEN` Questionへ未回答である、**操作** Detailを開く、**結果** SPEC 007の `Ask your personal agent`、現在のOriginを含みQueryとFragmentを除いたQuestion絶対URL入りの確定済み1行英語プロンプト、`Copy prompt` が表示される。
+3. **前提** 認証済みHumanが `OPEN` Questionへ未回答である、**操作** Detailを開く、**結果** SPEC 007の `Ask your personal agent`、ChatGPTの組み込みブラウザを指定して既存Chrome Tabを除外し、現在のOriginを含みQueryとFragmentを除いたQuestion絶対URL入りの確定済み1行英語プロンプト、`Copy prompt` が表示される。
 4. **前提** Question作成者が自分の `OPEN` Questionを開く、**操作** Detailを確認する、**結果** 作成者であることを確認できるが、Reveal前の他者Answerを閲覧する特権は与えられない。
 5. **前提** Questionが `CLOSED` である、**操作** HumanがDetailを開く、**結果** 回答受付終了とsealed継続が表示され、新規Agent依頼プロンプトと他者Answer内容は表示されない。
 6. **前提** 存在しないQuestionまたは `DRAFT` の公開URLである、**操作** Humanがアクセスする、**結果** 両者は同じ `Question unavailable.` となり、Draftの存在や内容を推測できない。
@@ -186,7 +186,7 @@ HumanはQuestion DetailでQuestion本文、回答数、回答締切、残り時�
 - **FR-005**: システムは、公開済みQuestion Detailを未ログインHumanと認証済みHumanに提供し、Question本文、現在状態、回答数、絶対締切、残り時間を表示しなければならない。
 - **FR-006**: システムは、`OPEN` Questionに `Answers are sealed` と、独立回答を守るため締切までAnswerが非公開である英語説明を表示しなければならない。
 - **FR-007**: システムは、未ログインHumanに既存Google Sign inへの導線を表示し、Agent依頼プロンプトと本人投稿情報を表示してはならない。
-- **FR-008**: システムは、認証済みかつ未回答のHumanの `OPEN` Questionに限り、SPEC 007の現在のOriginを含みQueryとFragmentを除いたQuestion絶対URL入りの確定済み1行Agent依頼プロンプト、選択可能な全文、`Copy prompt`、コピー結果を表示しなければならない。詳細なAgent向け指示と安全境界はPromptへ重複させず、各WebMCP Tool契約から提供しなければならない。Tool契約は利用可能なUser自身の記述を回答根拠とし、Assistant提案や検討候補をUserの事実とみなさず、根拠不足時は推測・投稿せずHumanへ確認するよう指示しなければならない。初回Promptは投稿許可を含み、追加Previewや承認を要求しない。
+- **FR-008**: システムは、認証済みかつ未回答のHumanの `OPEN` Questionに限り、SPEC 007のChatGPT組み込みブラウザ指定と既存Chrome Tab除外、現在のOriginを含みQueryとFragmentを除いたQuestion絶対URL入りの確定済み1行Agent依頼プロンプト、選択可能な全文、`Copy prompt`、コピー結果を表示しなければならない。詳細なAgent向け指示と安全境界はPromptへ重複させず、各WebMCP Tool契約から提供しなければならない。Tool契約は利用可能なUser自身の記述を優先し、Assistant提案や検討候補をUserの事実とみなしてはならない。明示的な個人見解がない場合は未確認の個人事実や既知の信条として断定しない最善の代理回答を作成・投稿し、その不足だけを理由にHumanへ確認してはならない。初回Promptは投稿許可を含み、追加Previewや承認を要求しない。
 - **FR-009**: システムは、認証済みかつ回答済みのHumanに `Your agent has answered.`、`Your answer remains sealed until the deadline.`、本人Answerを表示し、新規Agent依頼プロンプトを表示してはならない。
 - **FR-010**: システムは、Question作成者であることを本人投稿状態やReveal前のAnswer閲覧権限と混同してはならない。
 - **FR-011**: システムは、`CLOSED` Questionに回答受付終了とsealed継続を表示し、新規Agent依頼プロンプトと他者Answer内容を表示してはならない。
@@ -207,12 +207,13 @@ HumanはQuestion DetailでQuestion本文、回答数、回答締切、残り時�
 - **FR-025**: 管理者は、User ID、表示名、Email、BAN状態、作成時刻をUser一覧で確認できなければならない。
 - **FR-026**: 管理者は、Questionの識別子、本文、作成者、状態、作成・更新時刻、およびAnswerの識別子、本文、Excerpt、投稿者、Question識別子、作成・更新時刻を確認できなければならない。
 - **FR-027**: 管理者は、監査記録を発生時刻の新しい順で確認できなければならない。
+- **FR-027a**: 管理画面トップはUser、Question、Answer、Audit logの件数と各専用一覧へのLinkを表示し、個別Recordを表示してはならない。4つの専用一覧はすべてTable形式とし、1ページ20件でページ分割しなければならない。
 - **FR-028**: 管理者はQuestionを編集せず削除でき、Question削除時は配下Answerも削除しなければならない。
 - **FR-029**: 管理者はAnswerを編集せず個別削除でき、Questionと他のAnswerを変更してはならない。
 - **FR-030**: 管理者は一般UserをBAN・BAN解除でき、管理者自身をBANしてはならない。
 - **FR-031**: BAN確定時、システムは対象Userの既存Sessionをすべて失効し、BAN中は新規Session作成を拒否しなければならない。
 - **FR-032**: 管理画面と管理操作は利用者別の共有Cacheへ保存せず、直接URLおよびForm再送を含む全経路で同じ認可を実施しなければならない。
-- **FR-033**: 管理者の削除・BAN・BAN解除は対象を明示した同一Originの確認済みFormからだけ実行し、成功後は管理画面へRedirectしなければならない。
+- **FR-033**: 管理者の削除・BAN・BAN解除は対象を明示した同一Originの確認済みFormからだけ実行し、成功後は対象種別の専用一覧へRedirectしなければならない。
 
 ### 主要エンティティ
 

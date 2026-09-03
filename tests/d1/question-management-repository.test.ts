@@ -54,6 +54,71 @@ describe('Question management repository', () => {
     expect(await repository.getOwnedQuestion(question.id, 'creator-1')).toEqual(question);
   });
 
+  it('creates draft or published questions idempotently with a client creation token', async () => {
+    const repository = createQuestionRepository(env.TEST_DB);
+    const input = {
+      questionId: '00000000-0000-4000-8000-000000000001',
+      creatorUserId: 'creator-1',
+      body: 'What should humanity improve?',
+      language: 'auto',
+      closesAt: deadline,
+      revealsAt: deadline,
+      intent: 'publish' as const,
+    };
+    expect((await repository.createQuestion(input, now)).kind).toBe('created');
+    expect((await repository.createQuestion(input, now + 1)).kind).toBe('reused');
+    expect(
+      (await repository.createQuestion({ ...input, body: 'How should humanity improve?' }, now + 1))
+        .kind,
+    ).toBe('conflict');
+    expect((await repository.getQuestion(input.questionId))?.publishedAt).toBe(now);
+  });
+
+  it('deletes only the matching owner revision with answers and a content-free audit record', async () => {
+    const { repository, question } = await createDraft();
+    await env.TEST_DB.prepare(
+      'INSERT INTO answers (id, question_id, user_id, body, excerpt, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    )
+      .bind(
+        'delete-answer',
+        question.id,
+        'answerer',
+        'PRIVATE_DELETE_BODY',
+        'PRIVATE_DELETE_EXCERPT',
+        now,
+        now,
+      )
+      .run();
+    expect(
+      await repository.deleteOwnedQuestion(question.id, 'creator-2', question.updatedAt, now + 1),
+    ).toEqual({ kind: 'missing' });
+    expect(
+      await repository.deleteOwnedQuestion(
+        question.id,
+        'creator-1',
+        question.updatedAt + 1,
+        now + 1,
+      ),
+    ).toEqual({ kind: 'conflict' });
+    expect(
+      await repository.deleteOwnedQuestion(question.id, 'creator-1', question.updatedAt, now + 1),
+    ).toEqual({ kind: 'deleted' });
+    expect(await repository.getQuestion(question.id)).toBeNull();
+    const deletedAnswer = await env.TEST_DB.prepare('SELECT id FROM answers WHERE question_id = ?')
+      .bind(question.id)
+      .first();
+    expect(deletedAnswer).toBeNull();
+    const audit = await env.TEST_DB.prepare(
+      "SELECT action, actor_user_id, target_id FROM audit_logs WHERE action = 'QUESTION_DELETED'",
+    ).first<Record<string, unknown>>();
+    expect(audit).toMatchObject({
+      action: 'QUESTION_DELETED',
+      actor_user_id: 'creator-1',
+      target_id: question.id,
+    });
+    expect(JSON.stringify(audit)).not.toContain('PRIVATE_DELETE');
+  });
+
   it.each([
     ['short body', { body: 'short' }],
     ['deadline too soon', { closesAt: now + hour - 1, revealsAt: now + hour - 1 }],

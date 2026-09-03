@@ -1,0 +1,160 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-paper: #fffaf4;
+  --color-paper-deep: #fff0e2;
+  --color-panel: #fffefd;
+  --color-line: #eedbcb;
+  --color-control: #a88d76;
+  --color-ink: #28180f;
+  --color-ink-muted: #7b6858;
+  --color-action: #c94700;
+  --color-action-deep: #a83800;
+  --color-sealed: #9a5a2e;
+  --color-revealed: #ef5b00;
+  --font-display: Georgia, 'Times New Roman', serif;
+  --font-body: Inter, 'Helvetica Neue', Arial, ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html {
+    @apply bg-paper font-body text-ink antialiased;
+  }
+  body {
+    @apply m-0 min-h-screen text-[15px] leading-6;
+  }
+  a {
+    @apply text-action underline decoration-1 underline-offset-4 transition-colors hover:text-action-deep;
+  }
+  button,
+  input,
+  textarea {
+    font: inherit;
+  }
+  :focus-visible {
+    @apply outline-3 outline-offset-3 outline-action;
+  }
+  label {
+    @apply font-semibold text-ink;
+  }
+  input[type='text'],
+  input[type='datetime-local'],
+  textarea {
+    @apply border-control bg-panel text-ink shadow-xs transition focus:border-action focus:outline-none focus:ring-3 focus:ring-action/15;
+  }
+  code {
+    @apply rounded bg-paper-deep px-1.5 py-0.5 font-mono text-[0.85em] text-action-deep;
+  }
+}
+
+@layer components {
+  .page-shell {
+    @apply mx-auto w-full max-w-5xl px-5 py-10 sm:px-8 sm:py-14 lg:py-16;
+  }
+  .home-hero {
+    @apply relative isolate;
+  }
+  .home-hero::before {
+    background-image: url('./assets/images/question-planet-right-hollow-mark-16x9.png');
+    background-position: right center;
+    background-repeat: no-repeat;
+    background-size: auto 100%;
+    content: '';
+    inset: 0;
+    opacity: 0.3;
+    pointer-events: none;
+    position: absolute;
+    z-index: -1;
+  }
+  .editorial-title {
+    @apply font-display text-4xl font-bold leading-[1.04] tracking-[-0.025em] sm:text-5xl;
+  }
+  .section-title {
+    @apply font-display text-2xl font-bold leading-tight tracking-[-0.015em] sm:text-[1.75rem];
+  }
+  .eyebrow {
+    @apply text-xs font-bold uppercase tracking-[0.16em] text-action;
+  }
+  .site-navigation a {
+    @apply text-ink-muted no-underline hover:text-action;
+  }
+  .site-navigation a[href='/questions/new'] {
+    @apply rounded-full bg-action px-5 py-2 text-white shadow-sm hover:bg-action-deep hover:text-white;
+  }
+  .paper-card {
+    @apply rounded-2xl border border-line bg-panel p-5 shadow-[0_2px_0_rgba(80,45,20,0.06)] sm:p-6;
+  }
+  .question-card-link::after {
+    @apply absolute inset-0 rounded-2xl;
+    content: '';
+  }
+  .question-card-link:focus-visible {
+    outline: none;
+  }
+  .question-card-link:focus-visible::after {
+    @apply outline-3 outline-offset-3 outline-action;
+  }
+  .button-primary {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-action px-5 py-2 text-sm font-bold text-white no-underline shadow-sm transition hover:bg-action-deep disabled:cursor-wait disabled:opacity-60;
+  }
+  .button-secondary {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-control bg-panel px-5 py-2 text-sm font-semibold text-ink-muted no-underline transition hover:border-action hover:text-action disabled:cursor-wait disabled:opacity-60;
+  }
+  .header-auth-button {
+    @apply inline-flex min-h-9 items-center justify-center rounded-full border border-control bg-panel px-4 py-1.5 text-sm font-semibold text-ink-muted transition hover:border-action hover:text-action disabled:cursor-wait disabled:opacity-60;
+  }
+  .button-danger {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-red-700 px-5 py-2 text-sm font-bold text-white no-underline shadow-sm transition hover:bg-red-800 disabled:cursor-wait disabled:opacity-60;
+  }
+  .status-sealed {
+    @apply inline-flex w-fit items-center gap-1.5 rounded-full bg-paper-deep px-3 py-1 text-xs font-bold text-sealed;
+  }
+  .status-revealed {
+    @apply inline-flex w-fit items-center gap-1.5 rounded-full bg-paper-deep px-3 py-1 text-xs font-bold text-revealed;
+  }
+  .status-submission {
+    @apply inline-flex w-fit items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800;
+  }
+  .prose-safe {
+    @apply whitespace-pre-wrap break-words [overflow-wrap:anywhere];
+  }
+  .admin-table {
+    @apply w-full min-w-3xl border-collapse text-left text-sm;
+  }
+  .admin-table thead {
+    @apply bg-ink text-paper;
+  }
+  .admin-table th,
+  .admin-table td {
+    @apply border-b border-ink/10 px-4 py-4 align-top;
+  }
+  .admin-table tbody tr:last-child th,
+  .admin-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .admin-table tbody tr {
+    @apply transition-colors hover:bg-paper-deep/60;
+  }
+  .admin-identifier {
+    @apply break-all rounded bg-paper-deep px-1.5 py-0.5 font-mono text-xs text-ink-muted;
+  }
+  .danger-disclosure > summary {
+    list-style: none;
+  }
+  .danger-disclosure > summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

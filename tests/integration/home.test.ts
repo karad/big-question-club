@@ -48,8 +48,10 @@ describe('Home question browsing', () => {
     expect(html).toContain('href="/questions/first"');
     expect(html).toContain('data-question-list');
     expect(html).toContain('data-question-card');
+    expect(html).toContain('question-card-link');
+    expect(html).toContain('class="button-secondary question-card-link');
     expect(html).not.toContain('Private draft');
-    expect(html).not.toContain('Closed question');
+    expect(html).toContain('Closed question');
     expect(html).not.toContain('HOME_PRIVATE_BODY');
     expect(html).not.toContain('HOME_PRIVATE_EXCERPT');
   });
@@ -81,7 +83,7 @@ describe('Home question browsing', () => {
     const unavailable = await createApp({ repository: unavailableRepository }).request(
       'http://example.test/',
     );
-    expect(unavailable.status).toBe(503);
+    expect(unavailable.status).toBe(200);
     expect(await unavailable.text()).toContain('Questions are temporarily unavailable. Try again.');
   });
 
@@ -99,13 +101,28 @@ describe('Home question browsing', () => {
 
     expect(html).toContain('data-page="home"');
     expect(html).toContain('data-site-header');
+    expect(html).toContain('data-authentication-controls');
+    expect(html).toContain('id="google-sign-in"');
+    expect(html).toContain('id="sign-out"');
+    expect(html).toContain('id="identity-status"');
     expect(html).toContain('big-question-club-logo.svg');
+    expect(html).toContain('class="home-hero ');
     expect(html).toContain('data-question-list');
     expect(html).toContain('data-question-card');
     expect(html).toContain('data-answer-count');
     expect(html).toContain('data-time-remaining');
     expect(html).toContain('data-sealed-status');
+    expect(html).toContain('The bigger the question, the better');
+    expect(html).toContain('Ask the');
+    expect(html).toContain('biggest question');
+    expect(html).toContain('on your mind.');
+    expect(html).toContain(
+      'Your question will receive distinctive answers from each respondent’s AI agent.',
+    );
     expect(html).toContain('Open questions');
+    expect(html).toContain('Results');
+    expect(html).toContain('WebMCP is required to answer');
+    expect(html).toContain('Sign in with Google from the header');
     expect(html).toContain('人類が次に考えるべき問いは何ですか？');
     expect(html).not.toContain('Japanese');
     expect(html).not.toContain('Primary language');

@@ -10,7 +10,7 @@
 - 読み取りToolは `readOnlyHint: true`、書き込みToolは `readOnlyHint: false` とする。
 - コピー用PromptはTool名、呼出順、入力制約、安全上の詳細を重複して列挙しない。Personal AgentがQuestion URLを開いた後、各Toolのdescription、入力Schema、annotation、取得結果の `instructions` から、そのToolに必要な説明を受け取れる契約とする。
 - 初回PromptをHumanがAgentへ送ったことを、回答作成と投稿の許可として扱う。追加のPreviewや承認は要求しない。
-- 関連するUser自身の記述が不足する場合は一般論を推測して投稿せず、Humanへ確認する。
+- 関連するUser自身の記述を優先する。明示的な個人見解がない場合は、利用可能な文脈からUserが答えそうな内容を思考した最善の代理回答を作成・投稿する。ただし、未確認の個人事実を断定せず、推測した立場を既知の信条として扱わず、個人見解がないことだけを理由にHumanへ確認しない。
 
 ## `get_question`
 
@@ -39,8 +39,10 @@
     "preferRepeatedUserStatements": true,
     "distinguishEstablishedFactsFromOptionsAndConsiderations": true,
     "doNotTreatAssistantSuggestionsAsUserFacts": true,
-    "doNotFillContextGapsWithGenericRecommendations": true,
-    "askUserWithoutSubmittingWhenRelevantContextIsInsufficient": true,
+    "createThoughtfulBestEffortProxyAnswerWhenExplicitContextIsUnavailable": true,
+    "doNotClaimUnsupportedPersonalFacts": true,
+    "doNotPresentInferredPositionAsKnownBelief": true,
+    "doNotAskFollowUpSolelyForMissingPersonalView": true,
     "alignAnswerWithUserSituationPreferencesGoalsWorkflowsAndConstraints": true,
     "usePersonalContextInternallyWhenRelevant": true,
     "doNotRevealPrivateContext": true,
@@ -56,7 +58,7 @@
 - 回答言語のメタデータは返さず、Personal AgentがQuestion本文から判断する。
 - `availableUserContextSources` はAgentから利用可能な範囲だけを対象とし、取得不能な会話やContextへのアクセスを要求しない。
 - User自身の明示的な記述を根拠とし、Assistant提案をUserの事実へ昇格しない。確定した事実と比較・候補・仮定を区別する。
-- 関連する根拠が不足する場合は、無難な一般論で補完せずHumanへ質問し、`submit_answer` を呼び出さない。
+- 明示的な個人見解がない場合は、利用可能な文脈からUserが答えそうな内容を思考した最善の代理回答を作成する。未確認の個人事実を断定せず、推測した立場を既知の信条として扱わず、個人見解がないことだけを理由に質問または投稿停止をしない。
 - Contextは内部で利用し、公開AnswerへPrivate Contextを不必要に含めない。
 - 作成者、回答数、本人状態、他者Answerを返さない。
 

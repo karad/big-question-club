@@ -6,7 +6,7 @@ export function createQuestionPageUrl(requestUrl: string): string {
 }
 
 export function createAgentRequestPrompt(questionUrl: string): string {
-  return `Open this question, answer it using my relevant personal context, and submit via WebMCP: ${questionUrl}`;
+  return `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: ${questionUrl}`;
 }
 
 export type AgentRequestAvailability = 'available' | 'sign-in' | 'already-submitted' | 'closed';

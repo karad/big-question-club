@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { AUDIT_ACTIONS, readAdminEmail } from '../../src/domain/admin';
+import {
+  ADMIN_PAGE_SIZE,
+  AUDIT_ACTIONS,
+  adminListPath,
+  createAdminPage,
+  readAdminEmail,
+} from '../../src/domain/admin';
 
 describe('admin configuration', () => {
   it('normalizes one configured admin email', () => {
@@ -20,6 +26,7 @@ describe('admin configuration', () => {
       'QUESTION_CREATED',
       'QUESTION_UPDATED',
       'QUESTION_PUBLISHED',
+      'QUESTION_DELETED',
       'ANSWER_SUBMITTED',
       'ANSWER_UPDATED',
       'ANSWER_REMOVED',
@@ -28,5 +35,29 @@ describe('admin configuration', () => {
       'USER_BANNED',
       'USER_UNBANNED',
     ]);
+  });
+
+  it('keeps administration list paths stable', () => {
+    expect(adminListPath('users')).toBe('/club-operations/users');
+    expect(adminListPath('questions')).toBe('/club-operations/questions');
+    expect(adminListPath('answers')).toBe('/club-operations/answers');
+    expect(adminListPath('audit-log')).toBe('/club-operations/audit-log');
+  });
+
+  it.each([
+    [0, 1],
+    [20, 1],
+    [21, 2],
+    [40, 2],
+    [41, 3],
+  ])('creates twenty-item pages for %i total items', (totalItems, totalPages) => {
+    expect(createAdminPage(['item'], totalItems, 2)).toEqual({
+      items: ['item'],
+      page: 2,
+      pageSize: ADMIN_PAGE_SIZE,
+      totalItems,
+      totalPages,
+    });
+    expect(ADMIN_PAGE_SIZE).toBe(20);
   });
 });

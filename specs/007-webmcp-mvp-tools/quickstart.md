@@ -45,10 +45,10 @@ npm run dev
 2. 未投稿の `OPEN` Question画面を開く。
 3. `Ask your personal agent`、締切まで更新・削除可能である旨、選択可能な英語Prompt、`Copy prompt` が表示されることを確認する。
 4. Promptが次の1行だけで、`{{questionUrl}}` が閲覧中ページの絶対URLになっていることを確認する。Query、Fragment、Question本文、User情報、Answer情報は含まれない。
-   `Open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}`
+   `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}`
 5. `Copy prompt` を押し、`Copied` が通知され、表示とコピー結果が一致することを確認する。
 6. コピーしたPromptをPersonal Agentへ貼り付ける。
-7. Agentが指定URLを開き、そのページで提供されるTool契約を解釈して対象Questionだけを取得することを確認する。現在の会話、利用可能な過去会話、Project ContextにあるUser自身の明示的な記述から関連する根拠を見つけた場合は、追加Previewや承認を求めず回答・投稿し、`get_my_submission` で成功を確認する。根拠が不足する場合は一般論を投稿せずHumanへ確認する。
+7. Agentが指定URLを開き、そのページで提供されるTool契約を解釈して対象Questionだけを取得することを確認する。現在の会話、利用可能な過去会話、Project ContextにあるUser自身の明示的な記述を優先し、追加Previewや承認を求めず回答・投稿して、`get_my_submission` で成功を確認する。明示的な個人見解がない場合はUserが答えそうな最善の代理回答を作成・投稿し、未確認の個人事実や既知の信条として断定せず、その不足だけを理由にHumanへ確認しないことを確認する。
 8. Question画面を再表示し、新規投稿Promptが消え、本人の投稿済み状態が表示されることを確認する。
 
 Clipboardを無効または拒否した場合は、英語の失敗statusが表示され、画面上のPromptを手動選択・コピーできることを確認する。コピーだけではWebMCP Toolが呼ばれないことも確認する。

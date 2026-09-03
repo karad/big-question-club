@@ -46,7 +46,7 @@
 
 - [x] **SPEC 007 — WebMCP MVP Tool群**
   - 目的: Question画面のコピペ用プロンプトを起点に、AgentがHumanの指定したOpen Questionを取得し、独立したAnswerを投稿・確認し、締切までは本人の依頼により更新・削除できる最小Tool群を提供する。
-  - SpecKitで確定する情報: 現在のOriginに追従するQuestion絶対URLを含む1行の英語コピペ用プロンプトとコピー操作、プロンプトから分離して各ToolからAgentへ渡すUser自身の記述を優先するContext根拠規則、根拠不足時の質問・投稿停止、初回Promptによる投稿許可と追加承認不要、投稿結果確認、`get_question`、`submit_answer`、`update_answer`、`remove_answer`、`get_my_submission`の入出力契約、HumanによるQuestion指定、認可、エラー契約、文字数制限、Tool description、非公開データの除外、Integration Testのシナリオ。
+  - SpecKitで確定する情報: ChatGPTの組み込みブラウザを使い既存Chrome Tabを使わないこと、現在のOriginに追従するQuestion絶対URLを含む1行の英語コピペ用プロンプトとコピー操作、プロンプトから分離して各ToolからAgentへ渡すUser自身の記述を優先するContext根拠規則、明示的な個人見解がない場合の最善の代理回答、未確認事実の非断定、個人見解不足だけを理由とする確認質問の禁止、初回Promptによる投稿許可と追加承認不要、投稿結果確認、`get_question`、`submit_answer`、`update_answer`、`remove_answer`、`get_my_submission`の入出力契約、HumanによるQuestion指定、認可、エラー契約、文字数制限、Tool description、非公開データの除外、Integration Testのシナリオ。
   - 完了条件: 認証済みHumanがQuestion画面のプロンプトをPersonal Agentへ貼り付け、指定Questionについて投稿・確認まで完了し、締切前は本人Answerを更新・削除できる。AgentはQuestionを自動探索せず、他AgentのAnswerへアクセスまたは変更できない。
 
 - [x] **SPEC 008 — Sealed Answersのアクセス制御**
@@ -56,7 +56,7 @@
 
 - [x] **SPEC 009 — Challenge Core閲覧フロー**
   - 目的: HomeとQuestion Detailの必須機能を完成し、HumanがOpen Questionを選び、Personal Agentへ回答を依頼し、回答数の変化とsealed状態を確認できるようにする。
-  - SpecKitで確定する情報: Open Question一覧、回答数・締切・sealed表示、未ログイン・作成者・未回答・回答済みの最小表示状態、SPEC 007のAgent依頼プロンプト統合、User自身の記述を優先するContext根拠規則、根拠不足時の質問・投稿停止、初回Promptによる投稿許可と追加承認不要、SPEC 008の非露出回帰、自動テスト範囲。
+  - SpecKitで確定する情報: Open Question一覧、回答数・締切・sealed表示、未ログイン・作成者・未回答・回答済みの最小表示状態、SPEC 007のAgent依頼プロンプト統合、User自身の記述を優先するContext根拠規則、明示的な個人見解がない場合の最善の代理回答、未確認事実の非断定、不要な確認質問の禁止、初回Promptによる投稿許可と追加承認不要、SPEC 008の非露出回帰、自動テスト範囲。
   - 完了条件: 3分デモの回答前・1件回答・複数回答・sealedを機能として再現でき、Reveal前に他者Answerが漏れない。専用Login、My Questions再設計、最終Visual Designは含めない。
   - 追加SPEC : 理由 → Webアプリはインターネットに公開され、審査員の他誰でもアクセス可能になるため
     - ログイン、ログアウト、質問入力、回答入力を実施アカウントとともにDBにログとして記録する
@@ -66,25 +66,35 @@
     - 管理者は、質問の削除と回答の削除ができる。編集はできなくて良い
     - 管理画面からのユーザーのBANが可能
 
-- [ ] **SPEC 010 — Reveal体験とChallenge Visual Design**
+- [x] **SPEC 010 — Reveal体験とChallenge Visual Design**
   - 目的: Reveal後に複数の独立回答の違いをHumanが明瞭に読めるようにし、Home・Question Detail・sealed・Revealを一貫した高品質な表現として完成させる。
   - SpecKitで確定する情報: Challengeで伝えるVisual Direction、Typography、Color、Layout、Motion、Responsive表現、Homeと回答期間中Detailの完成表示、Reveal後のAnswer一覧・本文表示・比較しやすい順序・空状態、英語文言、基本Accessibility、3分デモの画面遷移とUI／Integration Test。
-  - 完了条件: 同じQuestionへの2件以上の異なるPersonal Agent回答について、`sealed → unsealed` の変化と回答の違いが3分デモで視覚的に伝わる。HomeからReveal結果までのCore画面が一貫したVisual品質を持ち、WebMCPからは他者Answerを取得できない。
+  - 完了条件: 同じQuestionへの2件以上の異なるPersonal Agent回答について、`sealed → unsealed` の変化と回答の違いが3分デモで視覚的に伝わる。HomeからReveal結果までのCore画面が一貫したVisual品質を持ち、WebMCPからは他者Answerを取得できない。追加SPECをまずは優先する
+  - 追加SPEC
+    - スタイリングはすべてTailwind CSS で行う。アイコン関連は https://react-icons.github.io/react-icons/ を使う
+    - Signed in as TFym9cJ4Sp81IJaZJD6sT1SD81KWUCeU.の表示は不要
+    - Open Questions の一覧にもプロンプトをコピーのエリアを用意。ただしプロンプトのフィールドをみせるために、一度押すとプロンプトのフィールドとコピーボタンがあるようにする。GitHubのCloneの部分と同様な感じ
+    - 一覧の質問はAnswers、remainingを1行で質問の下に出すこと。アイコンでシンプルに
+    - remainingを押すとDeadlineに切り変わる。切り替わるときは全部の日付が切り替わるようにする
+    - Answers are sealedは、アイコンなどを使い視覚的にわかるようにし、テキスト情報はアイコンに設定する
+    - トップページにはオープンな質問（5件）、回答を確認できる質問の一覧（10件）も表示。それぞれ一覧ページへのリンクも表示
+    - 質問の一覧ページは1ページ20件までとし、ページングにより一覧ページを移動する
+    - デフォルトでDeadline入れておく。デフォルト値は1日後の00:00
+    - 質問の詳細ページにある回答は
+    - 2重投稿がされてしまうのでダブルクリック防止をする
+    - 自分で作った質問は削除もできるようにする
+    - 質問作成時に「Draftとして保存ボタン」と「公開ボタン」を配置し、即時公開できるようにする
 
 ## P2 — 時間があれば行う品質強化
 
 - [ ] **SPEC 011 — 追加品質保証・提出強化（時間があれば）**
   - 目的: SPEC 009・010でChallenge提出に必要なCore体験が完成した後、残り時間で追加の品質保証、運用文書、提出素材を強化する。
-  - SpecKitで確定する情報: 包括的Cross-browser／Accessibility／JavaScript無効検証、追加の障害・境界Matrix、デプロイ手順の精緻化、README・Quickstart拡充、追加スクリーンショットや提出文面改善、既知の制約。
+  - SpecKitで確定する情報: 包括的Cross-browser／Accessibility／JavaScript無効検証、追加の障害・境界Matrix、デプロイ手順の精緻化、README・Quickstart拡充、追加スクリーンショットや提出文面改善、既知の制約。ただし、自動でテストできる範囲内で実施
   - 完了条件: 時間内に選択した追加品質項目が検証・記録される。本SPECはChallenge Core完成の必須条件にしない。
 
 ## P3 — 未確定アイデア
 
-- Signed in as TFym9cJ4Sp81IJaZJD6sT1SD81KWUCeU.の表示は不要
-- Open Questions の一覧にもプロンプトをコピーのエリアを用意。ただしプロンプトのフィールドをみせるために、一度押すとプロンプトのフィールドとコピーボタンがあるようにする。GitHubのCloneの部分と同様な感じ
-- 一覧の質問はAnswers、remainingを1行で質問の下に出すこと。アイコンでシンプルに
-- remainingを押すとDeadlineに切り変わる。切り替わるときは全部の日付が切り替わるようにする
-- Answers are sealedは、アイコンなどを使い視覚的にわかるようにし、テキスト情報はアイコンに設定する
+
 
 ## 対象外
 

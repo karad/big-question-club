@@ -79,3 +79,35 @@
 - `GPT-5`: SPEC 003の手動E2Eで通常の日本語Question `case-ja-01` を評価し、Private Context非出力・言語一致・関連回答を確認した。
 - `GPT-5`: SPEC 003の期限内のCritical Go基準を6ケースへ更新し、日本語・英語の通常Questionと4類型の攻撃QuestionすべてでPrivate Context非出力・Injection不服従・言語一致を確認した。残り8ケースは後続回帰検証として維持した。
 - `GPT-5`: SPEC 003で未実施の8件の回帰検証を、仕様内の未完了タスクからリポジトリ直下のバックログへ移管した。
+
+## 2026-09-03
+
+- `GPT-5.6`: 公開前の機密情報監査を実施し、Git追跡対象と全履歴の認証情報パターン、ローカル環境変数、WranglerのD1・Observabilityデータ、個人情報候補、GitHubリポジトリの公開範囲を確認した。
+- `gpt-5.6-sol`: SpecKitを用いてSPEC 010「回答公開体験とチャレンジ向け視覚設計」の仕様と品質チェックリストを作成し、公開後の回答比較、ホームと一覧の表示・ページ分割、依頼文の開閉、日時一括切替、質問の下書き保存・即時公開・所有者削除、二重操作防止、視覚設計、画面幅対応、アクセシビリティ、3分デモの完了条件を定義した。
+- `gpt-5.6-sol`: SpecKitを用いてSPEC 010の技術調査、実装計画、表示投影と作成・削除のデータモデル、閲覧・質問管理契約、3分デモを含む検証ガイドを日本語で作成し、追加仕様を優先する58件の依存順タスクへ分解した。
+- `gpt-5.6-sol`: SPEC 010のTailwind CSS共通視覚設計、React Icons静的SVG生成、HomeのOpen・Revealed区分、20件単位の一覧、依頼文開閉とコピー、日時一括切替、回答本文の項目別遅延取得と複数展開、冪等な下書き・即時公開、監査付き所有者削除を実装した。Node 635テスト、D1 59テスト、型検査、Lint、Format、Build、Schema検査に成功し、未認証の実ブラウザー表示を確認した。
+- `gpt-5.6-sol`: SPEC 010のGoogle OAuth・共有Remote D1を使った実ブラウザー検証を完了した。回答0・1・2件、封印から公開、異なる2回答の同時展開を約40秒で再現し、320・768・1280ピクセル、Chrome 200%拡大、キーボード、長文、Clipboard拒否環境、回答取得失敗の表示、所有者削除と監査を確認してGo判定とした。
+- `gpt-5.6-sol`: 認可済み管理画面をSPEC 010の共通視覚設計へ統合し、トップをUser／Question／Answer／Audit logの4専用一覧へのLinkに整理した。全一覧をTable形式・1ページ20件のページングへ変更し、Status badge、確認付き危険操作、共通Error表示、狭幅でのTable内横移動を追加した。管理Pathの非公開、認可、`noindex`、Cache制御、操作契約は維持し、Node 647テスト、D1 60テスト、型検査、Lint、Format、Build、Schema検査と実ブラウザー表示に成功した。
+- `gpt-5.6-sol`: 提示されたデザイン案を基準に、全画面を紙色・茶墨色・橙色・琥珀色の暖色系へ再設計した。共通Header、最大幅、Typography、余白、Card、丸型Button、Form、状態表示、Question管理、管理画面を統一し、アクセシブルな文字・操作境界のコントラストを維持した。Node 647テスト、型検査、Lint、Format、Build、Schema検査と主要4画面の実ブラウザー表示に成功した。
+- `gpt-5.6-sol`: `My Questions`表示中は共通Headerから同じ画面への`My Questions` Linkを除外し、`Home`と`Create a question`だけを表示するよう調整した。
+- `gpt-5.6-sol`: Question削除の開閉操作に表示されていた標準三角Markerを除去してゴミ箱Iconへ変更し、管理画面を含む削除操作のIcon表現を統一した。
+- `gpt-5.6-sol`: 画面上の日時表記を`YYYY-MM-DD HH:mm`へ統一し、機械可読なISO 8601の`datetime`属性とAPI契約は維持した。
+- `gpt-5.6-sol`: トップページのHero背景へ指定の惑星画像を右寄せ・非反復・不透明度30%で配置した。
+- `gpt-5.6-sol`: Remote D1のインデックス定義、主要一覧SQLの実行計画・実行時間、ローカル本番Previewの応答時間、静的Asset容量を調査し、現時点の体感遅延はDB内の検索時間よりRemote開発接続の往復待ちが支配的と判断した。
+- `gpt-5.6-sol`: Googleサインイン操作を一般利用者向け共通Headerへ移動し、認証後の`Signed in.`と`Sign out`、未認証・認証確認失敗の表示分岐を実装・検証した。
+- `gpt-5.6-sol`: 管理画面のQuestion・Answer削除Buttonを`Delete`へ統一し、確認Checkboxでは対象種別を識別できる文言を維持した。
+- `gpt-5.6-sol`: 認証済みHeaderから冗長な`Signed in.`表記を除去し、`Sign out`だけで状態を示すよう簡潔化した。
+- `gpt-5.6-sol`: HomeのHeroコピーを、大きなQuestionを歓迎し、利用者自身のQuestionと回答者ごとのAI Agentによる個性的な回答を訴求する英語へ刷新した。
+- `gpt-5.6-sol`: Home下部の見出しを、回答にWebMCPが必須であることを明示する英語表記へ変更した。
+- `gpt-5.6-sol`: 一般利用者向けの公開済みQuestion用語を`Results`、状態表示を`Results available`、導線を`View results`へ統一し、内部の`REVEALED`状態とURL契約は維持した。
+- `gpt-5.6-sol`: Question一覧Card全体を詳細へのクリック領域に拡張し、Hover表現を位置移動・影から暖色背景の濃淡変化へ変更した。
+- `gpt-5.6-sol`: My Questionsの公開済み状態を`Results available`へ統一し、削除展開領域を不可逆性の確認Checkboxと削除Buttonだけに簡素化した。
+- `gpt-5.6-sol`: Question一覧とMy QuestionsのView導線を白背景の共通Secondary Button形状へ変更し、Card全体のクリック領域は維持した。
+- `gpt-5.6-sol`: Question削除時に関連Answerが全件連鎖削除される既存実装をSchema・所有者操作・管理者操作のD1 Testで確認・固定し、管理画面のBAN Buttonを`Ban`へ短縮した。
+- `gpt-5.6-sol`: 公開結果へサインイン済み参加者・1アカウント1回答の説明、質問単位の匿名アイコン、`Authenticated participant`を追加した。利用者IDやGoogleプロフィールを公開せず質問横断追跡を避ける生成規則をUnit／Integration Testで固定し、これまでの追加UI要件をSPEC 010の仕様成果物へ同期した。監査で見つけたHero背景の20%実装を指定どおり30%へ修正し、Node 656テスト、D1 60テスト、型検査、Lint、Format、Build、Schema検査に成功した。
+- `gpt-5.6-sol`: 複数操作を持つOpen Question Cardの全体リンクを解除し、`View question` Buttonだけが詳細へ遷移するよう変更した。Results Cardの全体リンクは維持し、状態分岐TestとSPEC 010・利用者文書を同期した。
+- `gpt-5.6-sol`: WebMCP回答契約を、明示的な個人見解がない場合も利用可能な文脈から最善の代理回答を作成・投稿する方針へ更新した。未確認の個人事実や既知の信条として断定せず、個人見解不足だけを理由に確認質問しない固定instructionとTool descriptionをTestで保証し、SPEC 007・009・010へ同期した。
+- `gpt-5.6-sol`: Agent依頼Promptを、ChatGPTの組み込みブラウザを使い既存Chrome Tabを使わないことを明示する1行の英語文面へ変更した。環境追従URLと既存の投稿・Context契約を維持し、固定文面とHTML escapingをTestで保証して、README、MILESTONE、SPEC 007・009・010へ同期した。
+- `gpt-5.6-sol`: 認証済み利用者のQuestion Cardと詳細へ緑色の`Answered`／`Not answered` Tagを追加し、公開前は本人回答だけを表示、Resultsでは本人回答だけへ`Your answer` Tagを表示した。本人判定はサーバー側の真偽値だけを一般画面へ渡して回答者IDを非露出とし、SPEC 010の仕様成果物とTestへ同期した。
+- `gpt-5.6-sol`: 回答済みQuestion CardのCheck Iconと`Your agent has answered.`を横並びに修正し、Iconが文言の左に配置される表示契約をUnit Testで固定した。
+- `gpt-5.6-sol`: Question Cardと詳細の未回答時に表示していた`Not answered` Tagを除去し、本人が回答済みの場合だけ緑色の`Answered` Tagを表示するよう簡素化した。表示分岐TestとSPEC 010成果物を同期した。

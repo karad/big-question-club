@@ -32,7 +32,7 @@ describe('Agent request prompt display', () => {
     expect(html).toContain('data-agent-request-prompt');
     expect(html).toContain('http://example.test/questions/question-1');
     expect(html).toContain(
-      'Open this question, answer it using my relevant personal context, and submit via WebMCP: http://example.test/questions/question-1',
+      'Use ChatGPT&#39;s built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: http://example.test/questions/question-1',
     );
     expect(html).not.toContain('Call get_question');
     expect(html).not.toContain('Question ID:');

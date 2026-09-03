@@ -11,7 +11,15 @@
 
 ## 一覧を確認する
 
-管理画面では次の情報を確認できます。
+管理画面トップには件数Summaryと、次の専用一覧ページへのLinkがあります。トップには個別Recordを表示しません。
+
+- `/club-operations/users`
+- `/club-operations/questions`
+- `/club-operations/answers`
+- `/club-operations/audit-log`
+
+各一覧は1ページ20件のTable形式で表示し、`Previous`と`Next`でページを移動します。横幅が狭い場合は、いずれもTable内だけを横へ移動できます。
+画面上の日付と時刻は`YYYY-MM-DD HH:mm`形式で表示します。
 
 - User: 名前、Email、BAN状態、登録時刻
 - Question: 本文、作成者、状態、作成・更新時刻
@@ -22,7 +30,7 @@ QuestionとAnswerの内容は管理上必要な場合に限って取り扱って
 
 ## QuestionまたはAnswerを削除する
 
-対象行の確認欄を選択してから`Delete`を実行します。
+QuestionまたはAnswer一覧で、対象行の確認欄を選択してから`Delete`を実行します。
 
 - Questionを削除すると、そのQuestionに属するAnswerも削除されます。
 - Answerの削除では、Questionと他のAnswerは残ります。
@@ -33,7 +41,7 @@ QuestionとAnswerの内容は管理上必要な場合に限って取り扱って
 
 ## UserをBANまたは解除する
 
-対象Userの確認欄を選択してから`Ban`を実行します。BANすると、そのUserの既存ログイン状態は失効し、新しいログインも拒否されます。
+User一覧で、対象Userの確認欄を選択してから`Ban`を実行します。BANすると、そのUserの既存ログイン状態は失効し、新しいログインも拒否されます。
 
 `Unban`を実行すると、次回から再びログインできます。過去のログイン状態は復元されません。管理者自身はBANできません。
 

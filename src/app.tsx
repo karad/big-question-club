@@ -8,6 +8,7 @@ import { ADMIN_PATH } from './domain/admin';
 import { answerError } from './domain/answer-submission';
 import { authenticationRoute } from './routes/auth';
 import { homeRoute } from './routes/home';
+import { questionListRoute } from './routes/question-list';
 import { healthRoute } from './routes/health';
 import { verificationQuestionRoute } from './routes/verification-question';
 import { whoAmIRoute } from './routes/who-am-i';
@@ -23,6 +24,7 @@ import {
 } from './routes/question';
 import {
   createQuestionRoute,
+  deleteQuestionRoute,
   editQuestionPageRoute,
   myQuestionsRoute,
   newQuestionPageRoute,
@@ -32,6 +34,7 @@ import {
 } from './routes/question-management';
 import {
   adminDashboardRoute,
+  adminListRoute,
   banAdminUserRoute,
   deleteAdminAnswerRoute,
   deleteAdminQuestionRoute,
@@ -62,8 +65,18 @@ export function createApp({
   });
 
   app.get('/health', healthRoute);
-  app.get(ADMIN_PATH, (context) =>
-    adminDashboardRoute(context, authentication, adminRepository, now ?? Date.now),
+  app.get(ADMIN_PATH, (context) => adminDashboardRoute(context, authentication, adminRepository));
+  app.get(`${ADMIN_PATH}/users`, (context) =>
+    adminListRoute(context, 'users', authentication, adminRepository, now ?? Date.now),
+  );
+  app.get(`${ADMIN_PATH}/questions`, (context) =>
+    adminListRoute(context, 'questions', authentication, adminRepository, now ?? Date.now),
+  );
+  app.get(`${ADMIN_PATH}/answers`, (context) =>
+    adminListRoute(context, 'answers', authentication, adminRepository, now ?? Date.now),
+  );
+  app.get(`${ADMIN_PATH}/audit-log`, (context) =>
+    adminListRoute(context, 'audit-log', authentication, adminRepository, now ?? Date.now),
   );
   app.post(`${ADMIN_PATH}/questions/:targetId/delete`, csrf(), (context) =>
     deleteAdminQuestionRoute(context, authentication, adminRepository, now ?? Date.now),
@@ -119,10 +132,35 @@ export function createApp({
   app.post('/questions/:questionId/publish', csrf(), (context) =>
     publishQuestionRoute(context, authentication, repository, now ?? Date.now, clientScriptUrl),
   );
+  app.post('/questions/:questionId/delete', csrf(), (context) =>
+    deleteQuestionRoute(context, authentication, repository, now ?? Date.now, clientScriptUrl),
+  );
+  app.get('/questions/open', (context) =>
+    questionListRoute(
+      context,
+      'open',
+      authentication,
+      repository,
+      now ?? Date.now,
+      clientScriptUrl,
+    ),
+  );
+  app.get('/questions/revealed', (context) =>
+    questionListRoute(
+      context,
+      'revealed',
+      authentication,
+      repository,
+      now ?? Date.now,
+      clientScriptUrl,
+    ),
+  );
   app.get('/questions/:questionId', (context) =>
     questionPageRoute(context, authentication, repository, now ?? Date.now, clientScriptUrl),
   );
-  app.get('/', (context) => homeRoute(context, repository, now ?? Date.now, clientScriptUrl));
+  app.get('/', (context) =>
+    homeRoute(context, authentication, repository, now ?? Date.now, clientScriptUrl),
+  );
 
   app.notFound((context) =>
     context.req.path.startsWith('/api/questions/')

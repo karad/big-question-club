@@ -30,7 +30,7 @@ npm run db:schema:check
 ## Question Detail
 
 1. 未ログイン、作成者、認証済み未回答、認証済み回答済みで同じ `OPEN` Questionを開く。
-2. 公開情報、sealed、Sign in、Agent Prompt、本人Answerが各状態で排他的に表示されることを確認する。未回答時のAgent Promptは `Open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}` の1行で、`{{questionUrl}}` が閲覧中OriginのQuestion絶対URLとなり、QueryとFragmentを含まないことを確認する。
+2. 公開情報、sealed、Sign in、Agent Prompt、本人Answerが各状態で排他的に表示されることを確認する。未回答時のAgent Promptは `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}` の1行で、ChatGPTの組み込みブラウザを指定し、`{{questionUrl}}` が閲覧中OriginのQuestion絶対URLとなり、QueryとFragmentを含まないことを確認する。
 3. `get_question` が利用可能なUser Context参照元と根拠規則を固定instructionで返すことを確認する。関連するUser自身の記述がある場合は追加Previewや承認なしで投稿し、`get_my_submission` で成功を確認する。根拠不足の場合は一般論を投稿せずHumanへ質問することを確認する。
 4. 2人のAnswer投稿後に回答数が2へ増え、各利用者は本人Answerだけを確認できることを確認する。
 5. `CLOSED` で受付終了・sealed・新規Promptなしを確認する。
@@ -41,13 +41,15 @@ npm run db:schema:check
 ## 管理画面
 
 1. `ADMIN_EMAIL`を管理用GoogleアカウントのEmailへ設定する。
-2. 未ログイン、一般User、管理者で `/club-operations` を開き、管理者だけがUser、Question、Answer、Audit logを閲覧できることを確認する。他の2状態は通常の404と同じ応答で、管理画面を示す文言・リンクを含まないことを確認する。
-3. 旧 `/admin` がRedirectせず404となり、一般画面に管理画面へのリンクがなく、管理画面に `noindex, nofollow` があることを確認する。
-4. Questionを削除し、配下Answerも消え、他QuestionとAudit logが残ることを確認する。
-5. 複数Answerから1件を削除し、Questionと他Answerが残り、回答数が減ることを確認する。
-6. 一般UserをBANし、既存Sessionが失効して再Loginも拒否されることを確認する。
-7. BANを解除し、次回Loginが成功することを確認する。
-8. 管理者自身のBAN、一般Userからの管理POST、存在しない対象の削除が安全に拒否されることを確認する。
+2. 未ログイン、一般User、管理者で `/club-operations` と4つの一覧Pathを開き、管理者だけが閲覧できることを確認する。他の2状態は通常の404と同じ応答で、管理画面を示す文言・リンクを含まないことを確認する。
+3. 管理画面トップにはUser、Question、Answer、Audit logの件数と専用一覧へのLinkだけがあり、個別Recordを含まないことを確認する。
+4. 4つの専用一覧がすべてTable形式で、1ページ20件となり、21件以上では`Previous`と`Next`で重複なく移動できることを確認する。
+5. 旧 `/admin` がRedirectせず404となり、一般画面に管理画面へのリンクがなく、管理画面に `noindex, nofollow` があることを確認する。
+6. Questionを削除し、配下Answerも消え、他QuestionとAudit logが残ることを確認する。
+7. 複数Answerから1件を削除し、Questionと他Answerが残り、回答数が減ることを確認する。
+8. 一般UserをBANし、既存Sessionが失効して再Loginも拒否されることを確認する。
+9. BANを解除し、次回Loginが成功することを確認する。
+10. 管理者自身のBAN、一般Userからの管理POST、存在しない対象の削除が安全に拒否されることを確認する。
 
 ## 監査記録
 

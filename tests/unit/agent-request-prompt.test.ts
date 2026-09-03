@@ -18,7 +18,7 @@ describe('Agent request prompt', () => {
 
   it('is a single-line request containing the absolute question URL', () => {
     expect(createAgentRequestPrompt('https://club.example/questions/question-123')).toBe(
-      'Open this question, answer it using my relevant personal context, and submit via WebMCP: https://club.example/questions/question-123',
+      "Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: https://club.example/questions/question-123",
     );
   });
 

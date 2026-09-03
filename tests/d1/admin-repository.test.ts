@@ -52,22 +52,87 @@ describe('D1 admin repository', () => {
       )
       .run();
 
-    const dashboard = await createAdminRepository(env.TEST_DB, 'admin@example.com').getDashboard();
-    expect(dashboard.users.find(({ id }) => id === 'managed-user')).toMatchObject({
+    const repository = createAdminRepository(env.TEST_DB, 'admin@example.com');
+    const [summary, userPage, questionPage, answerPage, auditPage] = await Promise.all([
+      repository.getSummary(),
+      repository.listUsers(20, 0),
+      repository.listQuestions(20, 0),
+      repository.listAnswers(20, 0),
+      repository.listAuditLogs(20, 0),
+    ]);
+    expect(summary).toMatchObject({ userCount: 3 });
+    expect(userPage.items.find(({ id }) => id === 'managed-user')).toMatchObject({
       email: 'managed-user@example.test',
       bannedAt: null,
     });
-    expect(dashboard.questions.find(({ id }) => id === 'admin-list-question')).toMatchObject({
+    expect(questionPage.items.find(({ id }) => id === 'admin-list-question')).toMatchObject({
       creatorUserId: 'managed-user',
       body: '<script>unsafe question</script>',
     });
-    expect(dashboard.answers.find(({ id }) => id === 'admin-list-answer')).toMatchObject({
+    expect(answerPage.items.find(({ id }) => id === 'admin-list-answer')).toMatchObject({
       userId: 'second-user',
       body: '<script>unsafe answer</script>',
     });
-    expect(dashboard.auditLogs[0]?.createdAt).toBeGreaterThanOrEqual(
-      dashboard.auditLogs.at(-1)?.createdAt ?? 0,
+    expect(auditPage.items[0]?.createdAt).toBeGreaterThanOrEqual(
+      auditPage.items.at(-1)?.createdAt ?? 0,
     );
+  });
+
+  it('applies limits and offsets independently to every administration list', async () => {
+    for (let index = 0; index < 21; index += 1) {
+      const timestamp = 100_000 + index;
+      await env.TEST_DB.prepare(
+        'INSERT INTO questions (id, creator_user_id, body, language, published_at, closes_at, reveals_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      )
+        .bind(
+          `paged-question-${index}`,
+          'managed-user',
+          `Paged question ${index}`,
+          'auto',
+          timestamp,
+          timestamp + 1_000,
+          timestamp + 1_000,
+          timestamp,
+          timestamp,
+        )
+        .run();
+      await env.TEST_DB.prepare(
+        'INSERT INTO answers (id, question_id, user_id, body, excerpt, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      )
+        .bind(
+          `paged-answer-${index}`,
+          `paged-question-${index}`,
+          'second-user',
+          `Paged answer ${index}`,
+          `Paged excerpt ${index}`,
+          timestamp,
+          timestamp,
+        )
+        .run();
+    }
+
+    const repository = createAdminRepository(env.TEST_DB, 'admin@example.com');
+    const [usersPageOne, usersPageTwo] = await Promise.all([
+      repository.listUsers(2, 0),
+      repository.listUsers(2, 2),
+    ]);
+    expect(usersPageOne.items).toHaveLength(2);
+    expect(usersPageTwo.items).toHaveLength(1);
+    expect(usersPageOne.totalItems).toBe(usersPageTwo.totalItems);
+    expect(ids(usersPageOne.items)).not.toContain(usersPageTwo.items[0]?.id);
+
+    for (const list of [
+      repository.listQuestions.bind(repository),
+      repository.listAnswers.bind(repository),
+      repository.listAuditLogs.bind(repository),
+    ]) {
+      const [pageOne, pageTwo] = await Promise.all([list(20, 0), list(20, 20)]);
+      expect(pageOne.items).toHaveLength(20);
+      expect(pageTwo.items.length).toBeGreaterThan(0);
+      expect(pageTwo.items.length).toBeLessThanOrEqual(20);
+      expect(pageOne.totalItems).toBe(pageTwo.totalItems);
+      expect(ids(pageOne.items).some((id) => ids(pageTwo.items).includes(id))).toBe(false);
+    }
   });
 
   it('deletes one answer while preserving its question and sibling answer', async () => {
@@ -164,6 +229,10 @@ describe('D1 admin repository', () => {
       `SELECT COUNT(*) AS count FROM ${table} WHERE ${condition}`,
     ).first<{ count: number }>();
     return result?.count ?? 0;
+  }
+
+  function ids(items: Array<{ id: string }>): string[] {
+    return items.map(({ id }) => id);
   }
 
   async function expectAudit(action: string, targetId: string, actorUserId: string): Promise<void> {
