@@ -27,7 +27,7 @@
 - Browser側のClipboard、認証、Reveal本文取得は既存Client Entryを再利用し、別のUI Frameworkや重複Client基盤を追加していない。
 - Questionの主言語入力・表示・WebMCPメタデータを削除し、任意言語の本文からPersonal Agentが回答言語を判断する契約へ変更した。既存D1列は互換性のため維持し、新規Questionには `auto` を保存する。
 - Agent依頼Promptは閲覧中リクエストのOriginを使ったQuestion絶対URLを含め、ローカル／本番環境へ追従する。QueryとFragmentを除外し、HTML escapingとともにUnit／Integration Testで確認した。
-- Agent依頼Promptを `Open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}` の確定文面へ更新した。詳細なContext根拠規則は `get_question` の固定instructionとTool descriptionへ分離し、現在の会話・利用可能な過去会話・Project ContextにあるUser自身の記述を優先する。Assistant提案や比較候補を事実とみなさず、根拠不足時は質問して投稿を止める。初回Promptは投稿許可を含むため追加Preview／承認を要求せず、投稿後は `get_my_submission` で確認する契約をUnit／Integration Testで固定した。
+- Agent依頼Promptを `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}` の確定文面へ更新した。ChatGPTの組み込みブラウザを使い既存Chrome Tabを使わない指定をPromptへ含める。詳細なContext根拠規則は `get_question` の固定instructionとTool descriptionへ分離し、現在の会話・利用可能な過去会話・Project ContextにあるUser自身の記述を優先する。Assistant提案や比較候補を事実とみなさず、明示的な個人見解がない場合は未確認の個人事実や既知の信条として断定しない最善の代理回答を作成・投稿し、その不足だけを理由に確認質問をしない。初回Promptは投稿許可を含むため追加Preview／承認を要求せず、投稿後は `get_my_submission` で確認する契約をUnit／Integration Testで固定した。
 
 ## 未解決事項
 

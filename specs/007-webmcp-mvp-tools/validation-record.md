@@ -56,7 +56,7 @@ D1では既存Answer保持と `updatedAt` 初期化、書記素境界、本人�
 ## Context根拠付き回答契約の追補
 
 - 実施日: 2026-09-02
-- Agent依頼Promptを `Open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}` の1行へ確定した。
-- `get_question` の固定instructionとTool descriptionへ、現在の会話・利用可能な過去会話・Project ContextからUser自身の明示的・反復された記述を優先する規則、事実と比較・検討の区別、Assistant提案の除外、根拠不足時の質問と投稿停止、Private Context非開示を追加した。
+- Agent依頼Promptを `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}` の1行へ更新し、ChatGPTの組み込みブラウザを明示した。
+- `get_question` の固定instructionとTool descriptionへ、現在の会話・利用可能な過去会話・Project ContextからUser自身の明示的・反復された記述を優先する規則、事実と比較・検討の区別、Assistant提案の除外、Private Context非開示を追加した。2026-09-03の追補で、明示的な個人見解がない場合は未確認の個人事実や既知の信条として断定しない最善の代理回答を作成・投稿し、その不足だけを理由に確認質問をしない契約へ更新した。
 - 初回Promptを回答作成・投稿の許可とし、追加Previewや承認を要求しない。投稿後は `get_my_submission` で本人状態を確認する契約を追加した。
 - Unit／Integration Testは35ファイル610件、D1 Integration Testは16ファイル56件に成功した。Typecheck、Lint、Format、Build、Schema checkも成功した。拡張済み契約の実Personal Agent確認はSPEC 010のCore Demo手動確認へ含める。

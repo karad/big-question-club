@@ -64,7 +64,7 @@
     background-size: auto 100%;
     content: '';
     inset: 0;
-    opacity: 0.2;
+    opacity: 0.3;
     pointer-events: none;
     position: absolute;
     z-index: -1;
@@ -87,11 +87,24 @@
   .paper-card {
     @apply rounded-2xl border border-line bg-panel p-5 shadow-[0_2px_0_rgba(80,45,20,0.06)] sm:p-6;
   }
+  .question-card-link::after {
+    @apply absolute inset-0 rounded-2xl;
+    content: '';
+  }
+  .question-card-link:focus-visible {
+    outline: none;
+  }
+  .question-card-link:focus-visible::after {
+    @apply outline-3 outline-offset-3 outline-action;
+  }
   .button-primary {
     @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-action px-5 py-2 text-sm font-bold text-white no-underline shadow-sm transition hover:bg-action-deep disabled:cursor-wait disabled:opacity-60;
   }
   .button-secondary {
     @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-control bg-panel px-5 py-2 text-sm font-semibold text-ink-muted no-underline transition hover:border-action hover:text-action disabled:cursor-wait disabled:opacity-60;
+  }
+  .header-auth-button {
+    @apply inline-flex min-h-9 items-center justify-center rounded-full border border-control bg-panel px-4 py-1.5 text-sm font-semibold text-ink-muted transition hover:border-action hover:text-action disabled:cursor-wait disabled:opacity-60;
   }
   .button-danger {
     @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-red-700 px-5 py-2 text-sm font-bold text-white no-underline shadow-sm transition hover:bg-red-800 disabled:cursor-wait disabled:opacity-60;
@@ -101,6 +114,9 @@
   }
   .status-revealed {
     @apply inline-flex w-fit items-center gap-1.5 rounded-full bg-paper-deep px-3 py-1 text-xs font-bold text-revealed;
+  }
+  .status-submission {
+    @apply inline-flex w-fit items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800;
   }
   .prose-safe {
     @apply whitespace-pre-wrap break-words [overflow-wrap:anywhere];

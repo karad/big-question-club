@@ -55,7 +55,7 @@ Questionの状態はSPEC 005の共通判定で `DRAFT`、`OPEN`、`CLOSED`、`RE
 | `id` | string | Humanが指定したQuestion IDと一致。 |
 | `question` | string | 未信頼本文。 |
 | `closesAt` | ISO timestamp | 絶対時刻。 |
-| `instructions` | object | 利用可能なUser Context参照元、根拠の優先順位、事実と検討の区別、根拠不足時の確認、Private Context非開示、投稿許可、投稿確認を示す固定契約。 |
+| `instructions` | object | 利用可能なUser Context参照元、根拠の優先順位、事実と検討の区別、明示的な個人見解がない場合の代理回答、未確認事実の非断定、不要な確認質問の禁止、Private Context非開示、投稿許可、投稿確認を示す固定契約。 |
 
 作成者、回答数、本人状態、他者Answer、Session情報は含めない。
 

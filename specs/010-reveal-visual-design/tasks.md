@@ -190,6 +190,31 @@
 
 ---
 
+## 第10段階: 採用済み回答者匿名表示と仕様同期
+
+**目的**: 認証済み回答である安心感と質問横断追跡を防ぐ匿名性を両立し、追加UI改修をSPEC成果物へ同期する。
+
+- [X] T059 [P] [US1] 質問単位匿名アイコンの決定性・質問間分離・模様境界と、認証説明・回答者秘密値非露出の失敗先行Testを`tests/unit/anonymous-participant.test.ts`、`tests/integration/question-visibility.test.ts`、`tests/integration/challenge-demo.test.ts`へ追加する
+- [X] T060 [US1] 質問識別子と回答識別子だけから匿名アイコンを生成する純粋処理を`src/domain/anonymous-participant.ts`へ実装し、公開結果の冒頭説明、各回答の匿名アイコン、`Authenticated participant`を`src/views/question-detail.tsx`へ表示する
+- [X] T061 [US5] Hero背景の実装を仕様どおり不透明度30%へ修正し、過去のHeader、Card、日時、削除、管理一覧、英語Label変更と今回の匿名回答者方針をSPEC、計画、データモデル、契約、調査、Quickstartへ同期する
+- [X] T062 全Nodeテスト、D1テスト、型検査、Lint、Format、Build、Schema検査を実行し、結果を`specs/010-reveal-visual-design/validation-record.md`へ記録する
+- [X] T063 受け入れ条件、仕様品質Checklist、未解決事項を再確認し、使用モデルと重要判断を`USE_CODEX.md`へ記録する
+- [X] T064 [P] [US2] Open Questionは`View question`だけ、ResultsはCard面全体から遷移する状態分岐Testを`tests/unit/question-card.test.ts`へ追加する
+- [X] T065 [US2] `src/views/question-card.tsx`のCard全体リンクをResultsだけに限定し、SPEC、画面契約、Quickstart、利用者文書、検証記録を同期する
+- [X] T066 [P] [US2] 明示的な個人見解がない場合の最善の代理回答、未確認事実の非断定、不要な確認質問の禁止を`tests/unit/register-five-tools.test.ts`、`tests/unit/register-submit-answer-tool.test.ts`、WebMCP API結合Testへ追加する
+- [X] T067 [US2] `get_question`の固定instructionと`get_question`・`submit_answer`のdescriptionを代理回答方針へ更新し、SPEC 007・009・010の関連成果物へ同期する
+- [X] T068 全Nodeテスト、型検査、Lint、Format、Production Buildを実行し、結果を`specs/010-reveal-visual-design/validation-record.md`と`USE_CODEX.md`へ記録する
+- [X] T069 [P] [US2] Agent依頼PromptがChatGPTの組み込みブラウザを指定し既存Chrome Tabを除外する固定文面Testを`tests/unit/agent-request-prompt.test.ts`と`tests/integration/agent-request-prompt.test.ts`へ追加する
+- [X] T070 [US2] `src/domain/agent-request-prompt.ts`の1行Promptを組み込みブラウザ指定へ更新し、README、MILESTONE、SPEC 007・009・010の関連成果物へ同期する
+- [X] T071 全Nodeテスト、型検査、Lint、Format、Production Buildを実行し、結果を`specs/010-reveal-visual-design/validation-record.md`と`USE_CODEX.md`へ記録する
+- [X] T072 [P] [US1] [US2] Question Cardと詳細の回答済み時だけの`Answered`、公開前の本人回答限定表示、Resultsの`Your answer`、回答者利用者ID非露出をUnit／Integration／D1 Testで固定する
+- [X] T073 [US1] [US2] 本人回答済みQuestion集合と公開Excerptの`isOwn`投影をRepositoryへ実装し、Question Card・詳細へ緑色の回答状態Tag、公開結果の本人回答へ`Your answer` Tagを表示する
+- [X] T074 SPEC、計画、データモデル、画面契約、調査、Quickstartを同期し、全Nodeテスト、D1テスト、型検査、Lint、Format、Production Build、Schema検査の結果を検証記録と`USE_CODEX.md`へ記録する
+- [X] T075 [US2] 回答済みQuestion CardのCheck Iconと`Your agent has answered.`を横並びにし、表示回帰Testと検証記録を更新する
+- [X] T076 [US2] 未回答時の`Not answered` Tagを除去し、回答済みの場合だけ`Answered` Tagを表示するよう実装・Test・SPEC成果物を同期する
+
+---
+
 ## 依存関係と実行順序
 
 ### 段階間の依存関係
@@ -203,6 +228,8 @@
 - **第7段階（US5）**: US1〜US4の実装済み画面を対象に最終視覚調整するため、第3〜6段階に依存する。
 - **第8段階（US6）**: 主要導線全体を扱うため、第3〜7段階に依存する。
 - **第9段階（仕上げ）**: 希望する全ユーザーストーリーの完了後に実施する。
+- **第10段階（採用済み追加要件）**: T059の失敗先行Test後にT060とT061を実施し、T062・T063で横断検証する。
+- **第11段階（本人回答状態の可視化）**: T072の回帰Testを基準にT073を確認し、T074で仕様成果物と品質ゲートを同期する。
 
 ### ユーザーストーリー依存図
 

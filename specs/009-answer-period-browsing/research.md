@@ -50,7 +50,7 @@
 
 ## 7. 既存SPECとの統合
 
-**決定**: Agent依頼PromptとClipboardはSPEC 007、Answer認可・本人Answer・Reveal最小表示はSPEC 008を再利用する。Agent依頼Promptは、現在のOriginへ追従するQuestion絶対URLを含む確定済み1行文面を使用し、Context根拠と安全上の詳細指示は各WebMCP Tool契約からAgentへ渡す。Tool契約は現在の会話、利用可能な過去会話、Project ContextにあるUser自身の明示的・反復された記述を優先し、Assistant提案と比較・検討中の候補を確定事実とみなさない。関連する根拠が不足する場合は推測して投稿せずHumanへ確認する。Prompt自体を初回投稿の許可とし、追加Previewや承認は要求しない。
+**決定**: Agent依頼PromptとClipboardはSPEC 007、Answer認可・本人Answer・Reveal最小表示はSPEC 008を再利用する。Agent依頼Promptは、ChatGPTの組み込みブラウザを使い既存Chrome Tabを使わず、現在のOriginへ追従するQuestion絶対URLを含む確定済み1行文面を使用し、Context根拠と安全上の詳細指示は各WebMCP Tool契約からAgentへ渡す。Tool契約は現在の会話、利用可能な過去会話、Project ContextにあるUser自身の明示的・反復された記述を優先し、Assistant提案と比較・検討中の候補を確定事実とみなさない。明示的な個人見解がない場合はUserが答えそうな最善の代理回答を作成・投稿するが、未確認の個人事実や既知の信条として断定せず、その不足だけを理由にHumanへ確認しない。Prompt自体を初回投稿の許可とし、追加Previewや承認は要求しない。
 
 **理由**: 既に実機検証済みのChallenge中心機能と安全境界を短期変更で壊さない。
 

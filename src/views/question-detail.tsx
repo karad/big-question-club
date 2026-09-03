@@ -1,4 +1,5 @@
 import { createAgentRequestPrompt } from '../domain/agent-request-prompt';
+import { createAnonymousParticipantVisual } from '../domain/anonymous-participant';
 import {
   formatAnswerCount,
   getDeadlinePresentation,
@@ -9,6 +10,7 @@ import type { OwnAnswerView, RevealedExcerptView } from '../repositories/questio
 import { DeleteQuestionForm } from './question-management';
 import { Icon } from './icon';
 import { SiteLayout } from './layout';
+import { SubmissionStatus } from './submission-status';
 
 export function AgentRequestSection({ questionUrl }: { questionUrl: string }) {
   return (
@@ -56,11 +58,25 @@ export function RevealedAnswers({
   if (answers.length === 0) return <p class="paper-card">No answers were submitted.</p>;
   return (
     <ol class="space-y-5">
-      {answers.map(({ id, excerpt }, index) => (
+      {answers.map(({ id, excerpt, isOwn }, index) => (
         <li class="paper-card" key={id}>
-          <p class="text-sm font-semibold uppercase tracking-[0.16em] text-revealed">
-            Answer {index + 1}
-          </p>
+          <div class="flex items-center gap-3">
+            <AnonymousParticipantIcon answerId={id} questionId={questionId} />
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <p class="text-sm font-semibold uppercase tracking-[0.16em] text-revealed">
+                  Answer {index + 1}
+                </p>
+                {isOwn ? (
+                  <span class="status-submission" data-own-answer-badge>
+                    <Icon name="check" />
+                    Your answer
+                  </span>
+                ) : null}
+              </div>
+              <p class="mt-0.5 text-sm text-ink-muted">Authenticated participant</p>
+            </div>
+          </div>
           <p class="mt-3 prose-safe text-lg font-semibold">{excerpt}</p>
           <button
             class="button-secondary mt-4"
@@ -86,10 +102,35 @@ export function RevealedAnswers({
   );
 }
 
+function AnonymousParticipantIcon({
+  answerId,
+  questionId,
+}: {
+  answerId: string;
+  questionId: string;
+}) {
+  const visual = createAnonymousParticipantVisual(questionId, answerId);
+  return (
+    <svg
+      class="size-11 shrink-0 rounded-xl"
+      viewBox="0 0 5 5"
+      aria-hidden="true"
+      focusable="false"
+      data-anonymous-participant-icon
+    >
+      <rect width="5" height="5" fill={visual.background} />
+      {visual.cells.map(([x, y]) => (
+        <rect x={x} y={y} width="1" height="1" fill={visual.foreground} key={`${x}-${y}`} />
+      ))}
+    </svg>
+  );
+}
+
 export function QuestionDetailPage({
   answerCount,
   clientScriptUrl,
   excerpts,
+  hasAnswered,
   isCreator,
   ownAnswer,
   question,
@@ -101,6 +142,7 @@ export function QuestionDetailPage({
   answerCount: number;
   clientScriptUrl: string;
   excerpts: RevealedExcerptView[];
+  hasAnswered: boolean | null;
   isCreator: boolean;
   ownAnswer: OwnAnswerView | null;
   question: Question;
@@ -119,25 +161,30 @@ export function QuestionDetailPage({
         <>
           <a href="/">Home</a>
           <a href="/questions/open">Open questions</a>
-          <a href="/questions/revealed">Revealed questions</a>
+          <a href="/questions/revealed">Results</a>
         </>
       }
     >
       <article data-question-detail data-question-state={state}>
         <header class="border-b border-line pb-10 pt-2 sm:pb-12">
-          <span
-            class={state === 'REVEALED' ? 'status-revealed' : 'status-sealed'}
-            data-sealed-status
-          >
-            <Icon
-              name={state === 'REVEALED' ? 'unlock' : 'lock'}
-              label={state === 'REVEALED' ? 'Answers are revealed' : 'Answers are sealed'}
-            />
-            {state === 'REVEALED' ? 'Answers revealed.' : 'Answers are sealed.'}
-          </span>
+          <div class="flex flex-wrap items-center gap-2">
+            <span
+              class={state === 'REVEALED' ? 'status-revealed' : 'status-sealed'}
+              data-sealed-status
+            >
+              <Icon
+                name={state === 'REVEALED' ? 'unlock' : 'lock'}
+                label={state === 'REVEALED' ? 'Results available' : 'Answers are sealed'}
+              />
+              {state === 'REVEALED' ? 'Results available' : 'Answers are sealed.'}
+            </span>
+            <SubmissionStatus hasAnswered={hasAnswered} />
+          </div>
           <h1 class="editorial-title prose-safe mt-5">{question.body}</h1>
           <div class="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-muted">
-            <span class="font-semibold text-sealed">Status: {state}</span>
+            <span class="font-semibold text-sealed">
+              Status: {state === 'REVEALED' ? 'Results available' : state}
+            </span>
             <span class="inline-flex items-center gap-2" data-answer-count>
               <Icon name="users" />
               Answers submitted: {answerCount} ({formatAnswerCount(answerCount)})
@@ -168,13 +215,14 @@ export function QuestionDetailPage({
               <div class="mb-5">
                 <p class="eyebrow">The seal is open</p>
                 <h2 class="section-title mt-2">Independent answers</h2>
+                <p class="mt-3 max-w-2xl text-sm leading-6 text-ink-muted">
+                  All answers were submitted by signed-in participants. One answer per account.
+                </p>
               </div>
               <RevealedAnswers answers={excerpts} questionId={question.id} />
             </section>
           ) : null}
-          {isCreator ? (
-            <DeleteQuestionForm question={question} answerCount={answerCount} state={state} />
-          ) : null}
+          {isCreator ? <DeleteQuestionForm question={question} /> : null}
         </div>
       </article>
     </SiteLayout>
@@ -203,17 +251,12 @@ function ViewerSection({
       <section class="paper-card" data-viewer-state="anonymous">
         <p>
           {state === 'REVEALED'
-            ? 'Sign in to view revealed answers.'
+            ? 'Sign in to view results.'
             : state === 'CLOSED'
               ? 'Sign in to view your submission.'
               : 'Sign in to answer with your personal agent.'}
         </p>
-        <button class="button-primary mt-4" id="google-sign-in" type="button">
-          Sign in with Google
-        </button>
-        <p id="identity-status" role="status">
-          Sign in to identify your account.
-        </p>
+        <p class="mt-3 text-sm text-ink-muted">Use Sign in with Google in the header.</p>
       </section>
     );
   if (viewer === 'authenticated-unsubmitted')

@@ -52,7 +52,7 @@ export type OwnAnswerView = Pick<
   Answer,
   'body' | 'createdAt' | 'excerpt' | 'questionId' | 'updatedAt'
 >;
-export type RevealedExcerptView = Pick<Answer, 'excerpt' | 'id'>;
+export type RevealedExcerptView = Pick<Answer, 'excerpt' | 'id'> & { isOwn: boolean };
 export type RevealedBodyView = Pick<Answer, 'body' | 'id'>;
 export type SubmitResult =
   | { kind: 'submitted'; answer: Answer }
@@ -127,7 +127,7 @@ export interface QuestionRepository {
   getAnswerBody(questionId: string, answerId: string): Promise<string | null>;
   getAnswerCount(questionId: string): Promise<AnswerCountView>;
   getOwnAnswer(questionId: string, userId: string): Promise<OwnAnswerView | null>;
-  listRevealedExcerpts(questionId: string): Promise<RevealedExcerptView[]>;
+  listRevealedExcerpts(questionId: string, viewerUserId: string): Promise<RevealedExcerptView[]>;
   getRevealedAnswerBody(questionId: string, answerId: string): Promise<RevealedBodyView | null>;
 }
 
@@ -506,8 +506,17 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
       const { body, createdAt, excerpt, questionId: ownedQuestionId, updatedAt } = answer;
       return { body, createdAt, excerpt, questionId: ownedQuestionId, updatedAt };
     },
-    async listRevealedExcerpts(questionId) {
-      return repository.listExcerpts(questionId);
+    async listRevealedExcerpts(questionId, viewerUserId) {
+      const rows = await db
+        .select({ excerpt: answers.excerpt, id: answers.id, userId: answers.userId })
+        .from(answers)
+        .where(eq(answers.questionId, questionId))
+        .orderBy(asc(answers.createdAt), asc(answers.id));
+      return rows.map(({ excerpt, id, userId }) => ({
+        excerpt,
+        id,
+        isOwn: userId === viewerUserId,
+      }));
     },
     async getRevealedAnswerBody(questionId, answerId) {
       const body = await repository.getAnswerBody(questionId, answerId);

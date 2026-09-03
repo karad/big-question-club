@@ -267,8 +267,8 @@
 
 ## Phase 18: Personal Context根拠付き回答契約
 
-- [X] T059 [US3] 確定した1行Prompt、User Context参照元、User自身の記述の優先、事実と検討の区別、Assistant提案の除外、根拠不足時の質問・投稿停止、追加承認不要、投稿結果確認を先行Unit／Integration Testで固定する（`tests/unit/agent-request-prompt.test.ts`、`tests/unit/register-five-tools.test.ts`、`tests/unit/register-submit-answer-tool.test.ts`、`tests/unit/register-my-submission-tool.test.ts`、`tests/integration/agent-request-prompt.test.ts`、`tests/integration/webmcp-question-api.test.ts`、`tests/integration/question-visibility.test.ts`）
-- [X] T060 [US3] 確定した1行Promptを表示し、詳細な汎用Context根拠規則を `get_question` の固定instructionとTool description／Schemaへ実装する。初回Prompt自体を投稿許可とし追加Previewや承認を要求せず、根拠不足時はHumanへ質問して投稿しない契約と、投稿後の本人状態確認を実装する（`src/domain/agent-request-prompt.ts`、`src/routes/question.ts`、`src/webmcp/register-get-question-tool.ts`、`src/webmcp/register-submit-answer-tool.ts`、`src/webmcp/register-my-submission-tool.ts`）
+- [X] T059 [US3] 確定した1行Prompt、User Context参照元、User自身の記述の優先、事実と検討の区別、Assistant提案の除外、明示的な個人見解がない場合の代理回答、未確認事実の非断定、不要な確認質問の禁止、追加承認不要、投稿結果確認を先行Unit／Integration Testで固定する（`tests/unit/agent-request-prompt.test.ts`、`tests/unit/register-five-tools.test.ts`、`tests/unit/register-submit-answer-tool.test.ts`、`tests/unit/register-my-submission-tool.test.ts`、`tests/integration/agent-request-prompt.test.ts`、`tests/integration/webmcp-question-api.test.ts`、`tests/integration/question-visibility.test.ts`）
+- [X] T060 [US3] 確定した1行Promptを表示し、詳細な汎用Context根拠規則を `get_question` の固定instructionとTool description／Schemaへ実装する。初回Prompt自体を投稿許可とし追加Previewや承認を要求せず、明示的な個人見解がない場合は未確認事実を断定しない最善の代理回答を作成・投稿して、その不足だけを理由にHumanへ確認しない契約と、投稿後の本人状態確認を実装する（`src/domain/agent-request-prompt.ts`、`src/routes/question.ts`、`src/webmcp/register-get-question-tool.ts`、`src/webmcp/register-submit-answer-tool.ts`、`src/webmcp/register-my-submission-tool.ts`）
 - [X] T061 [US3] SPEC 007・009、README、MILESTONE、検証記録を確定契約へ同期し、全自動品質Gateを実行する（`specs/007-webmcp-mvp-tools/`、`specs/009-answer-period-browsing/`、`README.md`、`MILESTONE.md`、`USE_CODEX.md`）
 
 ---
@@ -309,7 +309,7 @@ Setup -> Foundational -> US1 -> US2 -> US3 -> Core回帰 -> 管理Foundational -
 10. T055〜T056で管理画面Pathと認可前の存在非開示を固定する。
 11. T057で全HTML画面の共通Logo Headerを固定する。
 12. T058でコピー用Promptに環境追従するQuestion絶対URLを埋め込む。
-13. T059〜T061で確定Promptと汎用Context根拠規則、追加承認不要、根拠不足時の投稿停止、投稿結果確認をTool契約へ反映する。
+13. T059〜T061で確定Promptと汎用Context根拠規則、明示的な個人見解がない場合の代理回答、未確認事実の非断定、不要な確認質問の禁止、追加承認不要、投稿結果確認をTool契約へ反映する。
 
 ## 注記
 

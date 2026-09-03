@@ -24,7 +24,7 @@ export function SiteLayout({
         <link rel="stylesheet" href="/styles.css" />
       </head>
       <body>
-        <SiteHeader>{navigation}</SiteHeader>
+        <SiteHeader showAuthenticationControls>{navigation}</SiteHeader>
         <main class="page-shell" data-page={page}>
           {children}
         </main>

@@ -203,6 +203,14 @@ describe('admin operations', () => {
     expect(html).toContain(`href="/club-operations/${path}?page=2"`);
     expect(html).toContain('Page 1 of 2');
     expect(html).not.toContain('<script>');
+    if (path === 'users') {
+      expect(html).toContain('>Ban</button>');
+      expect(html).toContain('Confirm ban user');
+    }
+    if (path === 'questions' || path === 'answers') {
+      expect(html).toContain('>Delete</button>');
+      expect(html).toContain(`Confirm delete ${path === 'questions' ? 'question' : 'answer'}`);
+    }
   });
 
   it('uses a twenty-item offset and a safe empty state for later pages', async () => {

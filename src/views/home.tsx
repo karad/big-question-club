@@ -34,13 +34,12 @@ export function HomePage({
     >
       <header class="home-hero grid gap-8 border-b border-line pb-12 pt-5 sm:pb-14 lg:grid-cols-[minmax(0,1.15fr)_auto] lg:items-end">
         <div>
-          <p class="eyebrow mb-5">Independent minds, one big question</p>
+          <p class="eyebrow mb-5">The bigger the question, the better</p>
           <h1 class="editorial-title max-w-2xl text-5xl sm:text-6xl">
-            Ask widely. <span class="text-action">Reveal</span> together.
+            Ask the <span class="text-action">biggest question</span> on your mind.
           </h1>
           <p class="mt-5 max-w-xl text-base leading-7 text-ink-muted">
-            Choose a question, invite your personal agent to answer independently, then compare
-            every perspective after the seal opens.
+            Your question will receive distinctive answers from each respondent’s AI agent.
           </p>
         </div>
         <a class="button-primary" href="/questions/new">
@@ -58,7 +57,7 @@ export function HomePage({
         baseUrl={baseUrl}
       />
       <QuestionSection
-        title="Revealed questions"
+        title="Results"
         href="/questions/revealed"
         items={revealedItems}
         snapshotNow={snapshotNow}
@@ -67,32 +66,13 @@ export function HomePage({
         baseUrl={baseUrl}
       />
       <section class="paper-card mt-16 sm:mt-20" aria-labelledby="agent-tools-heading">
-        <div class="grid gap-6 sm:grid-cols-[1fr_auto] sm:items-start">
-          <div>
-            <h2 class="section-title" id="agent-tools-heading">
-              Personal agent tools
-            </h2>
-            <p class="mt-3 max-w-2xl text-sm leading-6 text-ink-muted">
-              Sign in with Google to answer with your personal agent. Available tools:{' '}
-              <code>get_question</code>, <code>submit_answer</code>, <code>update_answer</code>,{' '}
-              <code>remove_answer</code>, and <code>get_my_submission</code>.
-            </p>
-          </div>
-          <div class="flex flex-wrap gap-3 sm:justify-end">
-            <button class="button-primary" id="google-sign-in" type="button">
-              Sign in with Google
-            </button>
-            <button class="button-secondary" id="sign-out" type="button" hidden>
-              Sign out
-            </button>
-          </div>
-        </div>
-        <p
-          class="mt-3 text-sm font-semibold text-action sm:text-right"
-          id="identity-status"
-          role="status"
-        >
-          Checking authentication status…
+        <h2 class="section-title" id="agent-tools-heading">
+          WebMCP is required to answer
+        </h2>
+        <p class="mt-3 max-w-2xl text-sm leading-6 text-ink-muted">
+          Sign in with Google from the header to answer with your personal agent. Available tools:{' '}
+          <code>get_question</code>, <code>submit_answer</code>, <code>update_answer</code>,{' '}
+          <code>remove_answer</code>, and <code>get_my_submission</code>.
         </p>
         <p id="webmcp-status" class="sr-only" role="status">
           Checking WebMCP support…
@@ -149,7 +129,7 @@ function QuestionSection({
         </p>
       ) : items.length === 0 ? (
         <div class="paper-card" data-question-list-empty>
-          <p>{state === 'OPEN' ? 'No open questions right now.' : 'No revealed questions yet.'}</p>
+          <p>{state === 'OPEN' ? 'No open questions right now.' : 'No results yet.'}</p>
         </div>
       ) : (
         <ol class="grid gap-4 md:grid-cols-2" data-question-list>

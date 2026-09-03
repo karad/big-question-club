@@ -38,7 +38,8 @@
 | --- | --- |
 | `question` | 公開済み質問の公開可能項目。`creatorUserId`は画面へ出さない |
 | `answerCount` | 対象質問の回答件数。回答内容は含めない |
-| `viewerSubmission` | `not-submitted`、`submitted`、`unavailable`。ホームの回答受付中5件で認証済み利用者にだけ計算する |
+| `hasAnswered` | 本人回答済みなら`true`、未回答なら`false`、未認証または安全に判定不能なら`null`。ホームと状態別一覧の表示対象だけを一括判定する |
+| `promptAvailable` | 認証済みかつ回答受付中の項目で`true`。実際の依頼文表示は`hasAnswered === false`の場合だけ許可する |
 
 不変条件:
 
@@ -87,13 +88,19 @@
 | --- | --- |
 | `id` | 詳細取得に使う回答識別子。`REVEALED`状態の認証済み人向けだけに返す |
 | `position` | `createdAt ASC, id ASC`の結果へ1から付ける表示連番 |
+| `anonymousVisual` | `questionId`と回答`id`から要求時に生成する配色と左右対称模様。保存せず、利用者IDを入力に使わない |
+| `participantLabel` | 固定表示`Authenticated participant` |
+| `isOwn` | 閲覧中のセッション利用者自身の回答かをサーバー側で判定した真偽値。本人Tagの表示だけに使う |
 | `excerpt` | 初期HTMLへ含める要約文 |
 | `bodyState` | クライアント内だけの`collapsed`、`loading`、`expanded`、`error` |
 | `body` | `expanded`時にだけクライアントメモリーへ保持する取得済み本文 |
 
 不変条件:
 
-- `userId`、利用者名、メールアドレス、`createdAt`、`updatedAt`を公開画面へ出さない。
+- `userId`、利用者名、メールアドレス、Googleプロフィール画像、生のハッシュ値、`createdAt`、`updatedAt`を公開画面へ出さない。
+- `isOwn`は永続化せず、要求ごとにセッション利用者と回答者を比較して生成する。一般画面には`isOwn`だけを渡し、比較元の`userId`は渡さない。
+- `anonymousVisual`は同じ質問と回答で安定するが、質問横断の利用者識別には使えない。
+- 永続化された`userId`との関連は既存の管理画面と監査・Moderation用途だけで利用する。
 - 本文取得失敗時に別回答の本文を再利用しない。
 - 1件を展開しても他の`expanded`項目を閉じない。
 

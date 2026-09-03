@@ -36,9 +36,14 @@ describe('three-minute challenge path', () => {
       now: () => 100,
     });
     const home = await (await app.request('http://example.test/')).text();
-    expect(home).toContain('Revealed questions');
+    expect(home).toContain('Results');
     const detail = await (await app.request('http://example.test/questions/question-1')).text();
-    expect(detail).toContain('Answers revealed.');
+    expect(detail).toContain('Results available');
+    expect(detail).toContain(
+      'All answers were submitted by signed-in participants. One answer per account.',
+    );
+    expect(detail.match(/Authenticated participant/g)).toHaveLength(2);
+    expect(detail.match(/data-anonymous-participant-icon/g)).toHaveLength(2);
     expect(detail).toContain('Answer 1');
     expect(detail).toContain('Answer 2');
     expect(detail).toContain('First independent view.');

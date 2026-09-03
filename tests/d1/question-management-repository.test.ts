@@ -104,6 +104,10 @@ describe('Question management repository', () => {
       await repository.deleteOwnedQuestion(question.id, 'creator-1', question.updatedAt, now + 1),
     ).toEqual({ kind: 'deleted' });
     expect(await repository.getQuestion(question.id)).toBeNull();
+    const deletedAnswer = await env.TEST_DB.prepare('SELECT id FROM answers WHERE question_id = ?')
+      .bind(question.id)
+      .first();
+    expect(deletedAnswer).toBeNull();
     const audit = await env.TEST_DB.prepare(
       "SELECT action, actor_user_id, target_id FROM audit_logs WHERE action = 'QUESTION_DELETED'",
     ).first<Record<string, unknown>>();

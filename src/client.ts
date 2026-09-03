@@ -6,6 +6,10 @@ import { initializeQuestionDeadline } from './ui/deadline-display';
 import { initializeSubmissionGuards } from './ui/form-submission-guard';
 import { initializeQuestionLists } from './ui/question-list';
 import { initializeRevealedAnswers } from './ui/revealed-answers';
+import {
+  getAuthenticationControlPresentation,
+  type AuthenticationControlState,
+} from './ui/authentication-controls';
 
 const statusElement = document.getElementById('webmcp-status');
 const identityStatusElement = document.getElementById('identity-status');
@@ -84,9 +88,11 @@ function updateIdentityStatus(message: string): void {
   }
 }
 
-function updateAuthenticationControls(isAuthenticated: boolean): void {
-  signInButton?.toggleAttribute('hidden', isAuthenticated);
-  signOutButton?.toggleAttribute('hidden', !isAuthenticated);
+function updateAuthenticationControls(state: AuthenticationControlState): void {
+  const presentation = getAuthenticationControlPresentation(state);
+  signInButton?.toggleAttribute('hidden', !presentation.showSignIn);
+  signOutButton?.toggleAttribute('hidden', !presentation.showSignOut);
+  updateIdentityStatus(presentation.statusMessage);
 }
 
 async function registerWebMcpTools(): Promise<void> {
@@ -110,26 +116,22 @@ initializeRevealedAnswers(document, fetch);
 
 void fetch('/api/who-am-i', { headers: { Accept: 'application/json' } }).then(async (response) => {
   if (response.status === 401) {
-    updateAuthenticationControls(false);
-    updateIdentityStatus('Sign in to identify your account.');
+    updateAuthenticationControls('signed-out');
     return;
   }
 
   if (!response.ok) {
-    updateAuthenticationControls(false);
-    updateIdentityStatus('Identity verification is temporarily unavailable.');
+    updateAuthenticationControls('unavailable');
     return;
   }
 
   const payload = (await response.json()) as { userId?: unknown };
   if (typeof payload.userId === 'string') {
-    updateAuthenticationControls(true);
-    updateIdentityStatus('Signed in.');
+    updateAuthenticationControls('signed-in');
     return;
   }
 
-  updateAuthenticationControls(false);
-  updateIdentityStatus('Identity verification is temporarily unavailable.');
+  updateAuthenticationControls('unavailable');
 });
 
 signInButton?.addEventListener('click', async () => {

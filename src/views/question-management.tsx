@@ -44,9 +44,7 @@ export function AuthenticationRequiredPage({ clientScriptUrl }: { clientScriptUr
       <section class="paper-card mx-auto max-w-2xl">
         <p class="eyebrow">Account required</p>
         <h1 class="editorial-title mt-2">Sign in to manage questions.</h1>
-        <a class="button-primary mt-6" href="/">
-          Go to sign in
-        </a>
+        <p class="mt-4 text-ink-muted">Use Sign in with Google in the header to continue.</p>
       </section>
     </QuestionManagementLayout>
   );
@@ -379,7 +377,9 @@ export function MyQuestionsPage({
               <h2 class="prose-safe font-display text-xl font-bold leading-snug">
                 {excerpt(question.body)}
               </h2>
-              <p class="mt-4 text-sm font-semibold text-sealed">{questionState(question, now)}</p>
+              <p class="mt-4 text-sm font-semibold text-sealed">
+                {questionStateLabel(questionState(question, now))}
+              </p>
               <p class="mt-2 text-sm text-ink-muted">
                 Deadline:{' '}
                 <time dateTime={toIsoTimestamp(question.closesAt)}>
@@ -396,17 +396,13 @@ export function MyQuestionsPage({
                 </p>
               ) : (
                 <a
-                  class="mt-4 inline-block font-semibold"
+                  class="button-secondary mt-4"
                   href={`/questions/${encodeURIComponent(question.id)}`}
                 >
                   View question
                 </a>
               )}
-              <DeleteQuestionForm
-                question={question}
-                answerCount={answerCount}
-                state={questionState(question, now)}
-              />
+              <DeleteQuestionForm question={question} />
             </li>
           ))}
         </ol>
@@ -415,15 +411,7 @@ export function MyQuestionsPage({
   );
 }
 
-export function DeleteQuestionForm({
-  question,
-  answerCount,
-  state,
-}: {
-  question: Question;
-  answerCount: number;
-  state?: QuestionState;
-}) {
+export function DeleteQuestionForm({ question }: { question: Question }) {
   return (
     <details class="danger-disclosure mt-5 border-t border-ink/15 pt-4">
       <summary
@@ -433,15 +421,9 @@ export function DeleteQuestionForm({
         <Icon name="trash" />
         Delete question
       </summary>
-      <div class="mt-4 rounded-xl bg-red-50 p-4">
-        <p class="prose-safe font-semibold">{excerpt(question.body)}</p>
-        <p>
-          Status: {state ?? (question.publishedAt === null ? 'DRAFT' : 'PUBLISHED')} · Answers:{' '}
-          {answerCount}
-        </p>
-        <p>This permanently deletes the question and all of its answers.</p>
+      <div class="mt-4 rounded-xl bg-red-50 p-4" data-delete-confirmation>
         <form
-          class="mt-4 space-y-3"
+          class="space-y-3"
           method="post"
           action={`/questions/${encodeURIComponent(question.id)}/delete`}
           data-submission-guard
@@ -512,6 +494,10 @@ function excerpt(value: string): string {
 
 function questionState(question: Question, now: number): QuestionState {
   return getQuestionState(question, now);
+}
+
+function questionStateLabel(state: QuestionState): string {
+  return state === 'REVEALED' ? 'Results available' : state;
 }
 
 function errorTarget(key: string): string {

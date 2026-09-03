@@ -232,11 +232,11 @@ export function createInMemoryQuestionRepository({
       const { body, createdAt, excerpt, questionId: ownedQuestionId, updatedAt } = answer;
       return { body, createdAt, excerpt, questionId: ownedQuestionId, updatedAt };
     },
-    async listRevealedExcerpts(questionId) {
+    async listRevealedExcerpts(questionId, viewerUserId) {
       return storedAnswers
         .filter((answer) => answer.questionId === questionId)
         .sort((left, right) => left.createdAt - right.createdAt || left.id.localeCompare(right.id))
-        .map(({ id, excerpt }) => ({ id, excerpt }));
+        .map(({ id, excerpt, userId }) => ({ id, excerpt, isOwn: userId === viewerUserId }));
     },
     async getRevealedAnswerBody(questionId, answerId) {
       const answer = storedAnswers.find(

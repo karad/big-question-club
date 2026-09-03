@@ -60,7 +60,8 @@ contentAcknowledged: on
 ## 所有者削除の表示
 
 - `My Questions`の全状態、および認証済み所有者の公開質問詳細に削除操作を表示する。
-- 確認領域は質問本文の安全な抜粋、現在状態、回答数、`This permanently deletes the question and all of its answers.`を表示する。
+- `My Questions`のCard本体で質問本文、現在状態、回答数を表示する。
+- 削除確認領域の可視要素は`I understand this cannot be undone.`の確認Checkbox、`Delete permanently` Button、必要な状態通知だけとし、Card本体の内容や開発確認用説明を重複表示しない。
 - 削除フォームは`expectedUpdatedAt`と`confirmDeletion=on`を送る。
 - 非所有者には削除操作を表示しない。
 

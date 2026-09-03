@@ -34,21 +34,17 @@ export async function homeRoute(
   ]);
   const open = openResult.status === 'fulfilled' ? openResult.value : [];
   const revealed = revealedResult.status === 'fulfilled' ? revealedResult.value : [];
-  let answered = new Set<string>();
-  if (userId !== undefined && open.length > 0) {
+  let answered: Set<string> | null = userId === undefined ? null : new Set<string>();
+  const visibleQuestionIds = [...open, ...revealed].map(({ question }) => question.id);
+  if (userId !== undefined && visibleQuestionIds.length > 0) {
     try {
-      answered = new Set(
-        await repository.listOwnAnsweredQuestionIds(
-          open.map(({ question }) => question.id),
-          userId,
-        ),
-      );
+      answered = new Set(await repository.listOwnAnsweredQuestionIds(visibleQuestionIds, userId));
     } catch {
       return context.html(
         <HomePage
           clientScriptUrl={clientScriptUrl}
           openItems={[]}
-          revealedItems={toItems(revealed, new Set(), false)}
+          revealedItems={toItems(revealed, null, false)}
           snapshotNow={snapshotNow}
           baseUrl={baseUrl}
           openUnavailable
@@ -65,7 +61,7 @@ export async function homeRoute(
     <HomePage
       clientScriptUrl={clientScriptUrl}
       openItems={toItems(open, answered, userId !== undefined)}
-      revealedItems={toItems(revealed, new Set(), false)}
+      revealedItems={toItems(revealed, answered, false)}
       snapshotNow={snapshotNow}
       baseUrl={baseUrl}
       openUnavailable={openResult.status === 'rejected'}
@@ -78,13 +74,13 @@ export async function homeRoute(
 
 function toItems(
   items: OpenQuestionSummary[],
-  answered: Set<string>,
+  answered: Set<string> | null,
   promptAvailable: boolean,
 ): QuestionListItem[] {
   return items.map(({ question, answerCount }) => ({
     question,
     answerCount,
-    hasAnswered: answered.has(question.id),
+    hasAnswered: answered?.has(question.id) ?? null,
     promptAvailable,
   }));
 }

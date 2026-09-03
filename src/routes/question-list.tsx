@@ -43,18 +43,18 @@ export async function questionListRoute(
           ],
     );
     const answered =
-      userId !== undefined && kind === 'open'
+      userId !== undefined
         ? new Set(
             await repository.listOwnAnsweredQuestionIds(
               summaries.map(({ question }) => question.id),
               userId,
             ),
           )
-        : new Set<string>();
+        : null;
     const items: QuestionListItem[] = summaries.map(({ question, answerCount }) => ({
       question,
       answerCount,
-      hasAnswered: answered.has(question.id),
+      hasAnswered: answered?.has(question.id) ?? null,
       promptAvailable: userId !== undefined && kind === 'open',
     }));
     return context.html(

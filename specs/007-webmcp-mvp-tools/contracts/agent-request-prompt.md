@@ -26,10 +26,10 @@ statusは支援技術へ通知できる領域に表示する。コピー失敗�
 `{{questionUrl}}`だけを、閲覧中のリクエストOriginとQuestion Pathから生成した絶対URLへ置換する。Promptは1行とする。QueryとFragmentを除外し、Question本文、作成者、回答数、Answer、User情報、認証情報を埋め込まない。
 
 ```text
-Open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}
+Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}
 ```
 
-このPromptは初回回答の作成と投稿を許可するため、Agentは回答本文の追加Previewや承認を要求しない。関連するUser Contextが不足する場合だけ、推測して投稿せずHumanへ確認する。`update_answer` と `remove_answer` は、投稿後にHumanが別途明示的に依頼した場合だけ使用する。
+このPromptは初回回答の作成と投稿を許可するため、Agentは回答本文の追加Previewや承認を要求しない。明示的な個人見解がない場合は、利用可能な文脈からUserが答えそうな内容を最善の代理回答として作成・投稿し、未確認の個人事実や既知の信条として断定しない。個人見解がないことだけを理由にHumanへ確認しない。`update_answer` と `remove_answer` は、投稿後にHumanが別途明示的に依頼した場合だけ使用する。
 
 ## コピー動作
 

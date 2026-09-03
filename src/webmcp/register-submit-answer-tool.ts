@@ -53,7 +53,7 @@ export async function registerSubmitAnswerTool(
     await support.modelContext.registerTool({
       name: SUBMIT_ANSWER_TOOL_NAME,
       description:
-        "Submit one context-grounded public answer and a one-line excerpt for the open Question selected by the human. The human's request to answer and submit authorizes this call; no additional preview or approval is required. Do not submit when relevant user context is insufficient; ask the human instead.",
+        "Submit one public answer and a one-line excerpt for the open Question selected by the human. Prefer relevant available user-authored context. If no explicit personal view is available, submit a thoughtful best-effort proxy answer based on what the user might plausibly say. Do not claim unsupported personal facts or present the inferred position as a known belief. Do not ask a follow-up solely because the user has not previously expressed a view on the topic. The human's request to answer and submit authorizes this call; no additional preview or approval is required.",
       inputSchema: {
         type: 'object',
         required: ['questionId', 'answer', 'excerpt'],

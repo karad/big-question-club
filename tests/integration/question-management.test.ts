@@ -258,15 +258,25 @@ describe('Question management', () => {
       'http://example.test/my/questions',
     );
     const html = await response.text();
-    expect(html).toContain('Status: DRAFT');
-    expect(html).toContain('Status: OPEN');
-    expect(html).toContain('Status: CLOSED');
-    expect(html).toContain('Status: REVEALED');
+    expect(html).toContain('DRAFT');
+    expect(html).toContain('OPEN');
+    expect(html).toContain('CLOSED');
+    expect(html).toContain('Results available');
+    expect(html).not.toContain('REVEALED');
     expect(html).toContain('Answers: 2');
     expect(html).toContain('Review and publish');
     expect(html).toContain('View question');
+    expect(html).toContain('class="button-secondary mt-4"');
     expect(html).toContain('class="danger-disclosure');
     expect(html).toContain('data-delete-trigger="true"><span class="size-4"');
+    const deleteConfirmation = html.match(
+      /<div[^>]*data-delete-confirmation="true"[^>]*>[\s\S]*?<\/div>/,
+    )?.[0];
+    expect(deleteConfirmation).toContain('name="confirmDeletion"');
+    expect(deleteConfirmation).toContain('Delete permanently');
+    expect(deleteConfirmation).not.toContain('Status:');
+    expect(deleteConfirmation).not.toContain('Answers:');
+    expect(deleteConfirmation).not.toContain('This permanently deletes');
     expect(html).not.toContain('Other private draft');
     expect(html).not.toContain('A private answer body.');
     expect(html).not.toContain('A one-line excerpt.');
@@ -280,14 +290,14 @@ describe('Question management', () => {
   });
 
   it.each([
-    { label: 'draft state', questions: [draft()], include: 'Status: DRAFT' },
+    { label: 'draft state', questions: [draft()], include: 'DRAFT' },
     { label: 'draft edit action', questions: [draft()], include: '>Edit<' },
     { label: 'draft review action', questions: [draft()], include: 'Review and publish' },
     { label: 'draft excludes view action', questions: [draft()], exclude: 'View question' },
     {
       label: 'open state',
       questions: [draft({ publishedAt: now - hour })],
-      include: 'Status: OPEN',
+      include: 'OPEN',
     },
     {
       label: 'open view action',
@@ -304,7 +314,7 @@ describe('Question management', () => {
       questions: [
         draft({ publishedAt: now - 3 * hour, closesAt: now - hour, revealsAt: now + hour }),
       ],
-      include: 'Status: CLOSED',
+      include: 'CLOSED',
     },
     {
       label: 'closed view action',
@@ -318,7 +328,7 @@ describe('Question management', () => {
       questions: [
         draft({ publishedAt: now - 3 * hour, closesAt: now - hour, revealsAt: now - hour }),
       ],
-      include: 'Status: REVEALED',
+      include: 'Results available',
     },
     {
       label: 'revealed view action',

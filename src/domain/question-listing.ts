@@ -6,7 +6,7 @@ export type QuestionListKind = 'open' | 'revealed';
 export type QuestionListItem = {
   question: Question;
   answerCount: number;
-  hasAnswered: boolean;
+  hasAnswered: boolean | null;
   promptAvailable: boolean;
 };
 export type QuestionListPage = {

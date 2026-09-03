@@ -3,6 +3,7 @@ import { formatAnswerCount, getDeadlinePresentation } from '../domain/question-b
 import type { QuestionListItem } from '../domain/question-listing';
 import type { QuestionState } from '../domain/question';
 import { Icon } from './icon';
+import { SubmissionStatus } from './submission-status';
 
 export function QuestionCard({
   item,
@@ -20,17 +21,20 @@ export function QuestionCard({
   const panelId = `prompt-${question.id}`;
   return (
     <article
-      class="paper-card flex h-full flex-col gap-4 transition hover:-translate-y-0.5 hover:border-action/35 hover:shadow-[0_5px_18px_rgba(100,50,10,0.08)]"
+      class="question-card paper-card relative flex h-full flex-col gap-4 shadow-none transition-colors hover:bg-paper-deep/60"
       data-question-card
       data-question-state={state}
     >
-      <span class={state === 'REVEALED' ? 'status-revealed' : 'status-sealed'} data-sealed-status>
-        <Icon
-          name={state === 'REVEALED' ? 'unlock' : 'lock'}
-          label={state === 'REVEALED' ? 'Answers are revealed' : 'Answers are sealed'}
-        />
-        {state === 'REVEALED' ? 'Answers revealed' : 'Answers are sealed'}
-      </span>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class={state === 'REVEALED' ? 'status-revealed' : 'status-sealed'} data-sealed-status>
+          <Icon
+            name={state === 'REVEALED' ? 'unlock' : 'lock'}
+            label={state === 'REVEALED' ? 'Results available' : 'Answers are sealed'}
+          />
+          {state === 'REVEALED' ? 'Results available' : 'Answers are sealed'}
+        </span>
+        <SubmissionStatus hasAnswered={hasAnswered} />
+      </div>
       <h3 class="prose-safe font-display text-xl font-bold leading-snug tracking-[-0.01em]">
         {question.body}
       </h3>
@@ -52,7 +56,7 @@ export function QuestionCard({
         ) : null}
       </div>
       {state === 'OPEN' && promptUrl !== undefined && !hasAnswered ? (
-        <div>
+        <div class="relative z-10">
           <button
             class="button-secondary"
             type="button"
@@ -80,15 +84,22 @@ export function QuestionCard({
           </div>
         </div>
       ) : state === 'OPEN' && hasAnswered ? (
-        <p class="text-sm font-semibold text-revealed">
+        <p
+          class="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-revealed"
+          data-agent-answered-message
+        >
           <Icon name="check" /> Your agent has answered.
         </p>
       ) : null}
       <a
-        class="mt-auto inline-flex items-center gap-1 font-semibold"
+        class={
+          state === 'REVEALED'
+            ? 'button-secondary question-card-link mt-auto w-fit'
+            : 'button-secondary relative z-10 mt-auto w-fit'
+        }
         href={`/questions/${encodeURIComponent(question.id)}`}
       >
-        View question <Icon name="arrowRight" />
+        {state === 'REVEALED' ? 'View results' : 'View question'} <Icon name="arrowRight" />
       </a>
     </article>
   );

@@ -273,6 +273,7 @@ function UserTable({ users, adminUserId }: { users: AdminUserView[]; adminUserId
                 <ConfirmForm
                   action={`${ADMIN_PATH}/users/${encodeURIComponent(user.id)}/ban`}
                   label="Ban user"
+                  buttonLabel="Ban"
                 />
               ) : (
                 <ConfirmForm
@@ -321,6 +322,7 @@ function QuestionTable({ questions, now }: { questions: Question[]; now: number 
               <ConfirmForm
                 action={`${ADMIN_PATH}/questions/${encodeURIComponent(question.id)}/delete`}
                 label="Delete question"
+                buttonLabel="Delete"
               />
             </td>
           </tr>
@@ -367,6 +369,7 @@ function AnswerTable({ answers }: { answers: Answer[] }) {
               <ConfirmForm
                 action={`${ADMIN_PATH}/answers/${encodeURIComponent(answer.id)}/delete`}
                 label="Delete answer"
+                buttonLabel="Delete"
               />
             </td>
           </tr>
@@ -439,10 +442,12 @@ function StatusBadge({
 function ConfirmForm({
   action,
   label,
+  buttonLabel = label,
   intent = 'danger',
 }: {
   action: string;
   label: string;
+  buttonLabel?: string;
   intent?: 'danger' | 'restore';
 }) {
   return (
@@ -461,7 +466,7 @@ function ConfirmForm({
           type="submit"
         >
           <Icon name={intent === 'danger' ? 'trash' : 'unlock'} />
-          {label}
+          {buttonLabel}
         </button>
       </div>
     </form>

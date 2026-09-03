@@ -17,7 +17,7 @@ export function QuestionListPageView({
   baseUrl: string;
 }) {
   const open = kind === 'open';
-  const title = open ? 'Open questions' : 'Revealed questions';
+  const title = open ? 'Open questions' : 'Results';
   return (
     <SiteLayout
       title={title}
@@ -51,9 +51,7 @@ export function QuestionListPageView({
         </header>
         {result.items.length === 0 ? (
           <div class="paper-card">
-            <p>
-              {open ? 'No open questions on this page.' : 'No revealed questions on this page.'}
-            </p>
+            <p>{open ? 'No open questions on this page.' : 'No results on this page.'}</p>
             {result.page > 1 ? <a href={`/questions/${kind}`}>Go to page 1</a> : null}
           </div>
         ) : (

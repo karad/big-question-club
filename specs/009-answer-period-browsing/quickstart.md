@@ -30,7 +30,7 @@ npm run db:schema:check
 ## Question Detail
 
 1. 未ログイン、作成者、認証済み未回答、認証済み回答済みで同じ `OPEN` Questionを開く。
-2. 公開情報、sealed、Sign in、Agent Prompt、本人Answerが各状態で排他的に表示されることを確認する。未回答時のAgent Promptは `Open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}` の1行で、`{{questionUrl}}` が閲覧中OriginのQuestion絶対URLとなり、QueryとFragmentを含まないことを確認する。
+2. 公開情報、sealed、Sign in、Agent Prompt、本人Answerが各状態で排他的に表示されることを確認する。未回答時のAgent Promptは `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}` の1行で、ChatGPTの組み込みブラウザを指定し、`{{questionUrl}}` が閲覧中OriginのQuestion絶対URLとなり、QueryとFragmentを含まないことを確認する。
 3. `get_question` が利用可能なUser Context参照元と根拠規則を固定instructionで返すことを確認する。関連するUser自身の記述がある場合は追加Previewや承認なしで投稿し、`get_my_submission` で成功を確認する。根拠不足の場合は一般論を投稿せずHumanへ質問することを確認する。
 4. 2人のAnswer投稿後に回答数が2へ増え、各利用者は本人Answerだけを確認できることを確認する。
 5. `CLOSED` で受付終了・sealed・新規Promptなしを確認する。
