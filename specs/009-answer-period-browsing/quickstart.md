@@ -41,13 +41,15 @@ npm run db:schema:check
 ## 管理画面
 
 1. `ADMIN_EMAIL`を管理用GoogleアカウントのEmailへ設定する。
-2. 未ログイン、一般User、管理者で `/club-operations` を開き、管理者だけがUser、Question、Answer、Audit logを閲覧できることを確認する。他の2状態は通常の404と同じ応答で、管理画面を示す文言・リンクを含まないことを確認する。
-3. 旧 `/admin` がRedirectせず404となり、一般画面に管理画面へのリンクがなく、管理画面に `noindex, nofollow` があることを確認する。
-4. Questionを削除し、配下Answerも消え、他QuestionとAudit logが残ることを確認する。
-5. 複数Answerから1件を削除し、Questionと他Answerが残り、回答数が減ることを確認する。
-6. 一般UserをBANし、既存Sessionが失効して再Loginも拒否されることを確認する。
-7. BANを解除し、次回Loginが成功することを確認する。
-8. 管理者自身のBAN、一般Userからの管理POST、存在しない対象の削除が安全に拒否されることを確認する。
+2. 未ログイン、一般User、管理者で `/club-operations` と4つの一覧Pathを開き、管理者だけが閲覧できることを確認する。他の2状態は通常の404と同じ応答で、管理画面を示す文言・リンクを含まないことを確認する。
+3. 管理画面トップにはUser、Question、Answer、Audit logの件数と専用一覧へのLinkだけがあり、個別Recordを含まないことを確認する。
+4. 4つの専用一覧がすべてTable形式で、1ページ20件となり、21件以上では`Previous`と`Next`で重複なく移動できることを確認する。
+5. 旧 `/admin` がRedirectせず404となり、一般画面に管理画面へのリンクがなく、管理画面に `noindex, nofollow` があることを確認する。
+6. Questionを削除し、配下Answerも消え、他QuestionとAudit logが残ることを確認する。
+7. 複数Answerから1件を削除し、Questionと他Answerが残り、回答数が減ることを確認する。
+8. 一般UserをBANし、既存Sessionが失効して再Loginも拒否されることを確認する。
+9. BANを解除し、次回Loginが成功することを確認する。
+10. 管理者自身のBAN、一般Userからの管理POST、存在しない対象の削除が安全に拒否されることを確認する。
 
 ## 監査記録
 

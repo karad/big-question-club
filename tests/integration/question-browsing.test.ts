@@ -54,6 +54,7 @@ describe('Question browsing detail', () => {
     expect(html).toContain('Status: OPEN');
     expect(html).toContain('Answers submitted: 1');
     expect(html).toContain('1970-01-01T00:00:00.100Z');
+    expect(html).toContain('>1970-01-01 00:00</time>');
     expect(html).toContain('Less than 1 minute');
     expect(html).toContain('Answers are sealed.');
     expect(html).toContain('Sign in to answer with your personal agent.');

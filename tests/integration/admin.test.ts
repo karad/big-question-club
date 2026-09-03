@@ -12,62 +12,70 @@ function authentication(userId: string | undefined): Authentication {
 }
 
 function adminRepository({ admin = true }: { admin?: boolean } = {}): AdminRepository {
+  const users = [
+    {
+      id: 'admin-user',
+      name: 'Admin',
+      email: 'admin@example.com',
+      createdAt: 1,
+      bannedAt: null,
+    },
+    {
+      id: 'managed-user',
+      name: 'Managed',
+      email: 'managed@example.com',
+      createdAt: 2,
+      bannedAt: null,
+    },
+  ];
+  const questions = [
+    {
+      id: 'question-1',
+      creatorUserId: 'managed-user',
+      body: '<script>question secret</script>',
+      language: 'auto',
+      publishedAt: 1,
+      closesAt: 10,
+      revealsAt: 10,
+      createdAt: 1,
+      updatedAt: 1,
+    },
+  ];
+  const answers = [
+    {
+      id: 'answer-1',
+      questionId: 'question-1',
+      userId: 'managed-user',
+      body: '<script>answer secret</script>',
+      excerpt: 'Answer excerpt',
+      createdAt: 2,
+      updatedAt: 2,
+    },
+  ];
+  const auditLogs = [
+    {
+      id: 'audit-1',
+      actorUserId: 'managed-user',
+      action: 'ANSWER_SUBMITTED' as const,
+      targetType: 'ANSWER' as const,
+      targetId: 'answer-1',
+      outcome: 'SUCCESS' as const,
+      createdAt: 2,
+    },
+  ];
   return {
     isAdmin: vi.fn().mockResolvedValue(admin),
     isUserBanned: vi.fn().mockResolvedValue(false),
-    getDashboard: vi.fn().mockResolvedValue({
-      users: [
-        {
-          id: 'admin-user',
-          name: 'Admin',
-          email: 'admin@example.com',
-          createdAt: 1,
-          bannedAt: null,
-        },
-        {
-          id: 'managed-user',
-          name: 'Managed',
-          email: 'managed@example.com',
-          createdAt: 2,
-          bannedAt: null,
-        },
-      ],
-      questions: [
-        {
-          id: 'question-1',
-          creatorUserId: 'managed-user',
-          body: '<script>question secret</script>',
-          language: 'auto',
-          publishedAt: 1,
-          closesAt: 10,
-          revealsAt: 10,
-          createdAt: 1,
-          updatedAt: 1,
-        },
-      ],
-      answers: [
-        {
-          id: 'answer-1',
-          questionId: 'question-1',
-          userId: 'managed-user',
-          body: '<script>answer secret</script>',
-          excerpt: 'Answer excerpt',
-          createdAt: 2,
-          updatedAt: 2,
-        },
-      ],
-      auditLogs: [
-        {
-          id: 'audit-1',
-          actorUserId: 'managed-user',
-          action: 'ANSWER_SUBMITTED',
-          targetType: 'ANSWER',
-          targetId: 'answer-1',
-          outcome: 'SUCCESS',
-          createdAt: 2,
-        },
-      ],
+    getSummary: vi.fn().mockResolvedValue({
+      userCount: users.length,
+      questionCount: questions.length,
+      answerCount: answers.length,
+      auditLogCount: auditLogs.length,
     }),
+    listUsers: vi.fn().mockResolvedValue({ items: users, totalItems: users.length }),
+    listQuestions: vi.fn().mockResolvedValue({ items: questions, totalItems: questions.length }),
+    listAnswers: vi.fn().mockResolvedValue({ items: answers, totalItems: answers.length }),
+    listAuditLogs: vi.fn().mockResolvedValue({ items: auditLogs, totalItems: auditLogs.length }),
     deleteQuestion: vi.fn().mockResolvedValue('deleted'),
     deleteAnswer: vi.fn().mockResolvedValue('deleted'),
     banUser: vi.fn().mockResolvedValue('banned'),
@@ -95,18 +103,26 @@ describe('admin operations', () => {
   ] as const)(
     'returns the ordinary not-found response to %s without revealing administration',
     async (_label, userId, repository) => {
-      const response = await createApp({
-        authentication: authentication(userId),
-        ...(repository === undefined ? {} : { adminRepository: repository }),
-      }).request('http://example.test/club-operations');
-      const html = await response.text();
-      expect(response.status).toBe(404);
-      expect(html).toBe('Not Found');
-      expect(html).not.toContain('Administration');
-      expect(html).not.toContain('administer');
-      expect(html).not.toContain('href=');
-      expect(html).not.toContain('question secret');
-      expect(html).not.toContain('managed@example.com');
+      for (const path of [
+        '/club-operations',
+        '/club-operations/users',
+        '/club-operations/questions',
+        '/club-operations/answers',
+        '/club-operations/audit-log',
+      ]) {
+        const response = await createApp({
+          authentication: authentication(userId),
+          ...(repository === undefined ? {} : { adminRepository: repository }),
+        }).request(`http://example.test${path}`);
+        const html = await response.text();
+        expect(response.status).toBe(404);
+        expect(html).toBe('Not Found');
+        expect(html).not.toContain('Administration');
+        expect(html).not.toContain('administer');
+        expect(html).not.toContain('href=');
+        expect(html).not.toContain('question secret');
+        expect(html).not.toContain('managed@example.com');
+      }
     },
   );
 
@@ -118,7 +134,7 @@ describe('admin operations', () => {
     }).request('http://example.test/admin');
     expect(response.status).toBe(404);
     expect(await response.text()).toBe('Not Found');
-    expect(repository.getDashboard).not.toHaveBeenCalled();
+    expect(repository.getSummary).not.toHaveBeenCalled();
   });
 
   it('does not advertise administration from the public application', async () => {
@@ -132,7 +148,7 @@ describe('admin operations', () => {
     expect(html).not.toContain('Administration');
   });
 
-  it('renders all moderation lists for the configured administrator and escapes content', async () => {
+  it('renders the four dedicated list destinations without embedding list records', async () => {
     const response = await createApp({
       authentication: authentication('admin-user'),
       adminRepository: adminRepository(),
@@ -144,16 +160,80 @@ describe('admin operations', () => {
     expect(response.headers.get('Vary')).toBe('Cookie');
     expect(html).toContain('data-site-header');
     expect(html).toContain('big-question-club-logo.svg');
-    expect(html).toContain('Users');
-    expect(html).toContain('Questions');
-    expect(html).toContain('Answers');
-    expect(html).toContain('Audit log');
+    expect(html).toContain('href="/styles.css"');
+    expect(html).toContain('data-page="administration"');
+    expect(html).toContain('aria-label="Content totals"');
+    expect(html).toContain('Administration lists');
+    expect(html).toContain('href="/club-operations/users"');
+    expect(html).toContain('href="/club-operations/questions"');
+    expect(html).toContain('href="/club-operations/answers"');
+    expect(html).toContain('href="/club-operations/audit-log"');
+    expect(html).toContain('Private operations');
     expect(html).toContain('name="robots" content="noindex, nofollow"');
-    expect(html).toContain('managed@example.com');
-    expect(html).toContain('&lt;script&gt;question secret&lt;/script&gt;');
-    expect(html).toContain('&lt;script&gt;answer secret&lt;/script&gt;');
-    expect(html).not.toContain('<script>question secret</script>');
+    expect(html).not.toContain('managed@example.com');
+    expect(html).not.toContain('question secret');
+    expect(html).not.toContain('answer secret');
     expect(html).not.toContain('/club-operations/users/admin-user/ban');
+  });
+
+  it.each([
+    ['users', 'listUsers', 'managed@example.com'],
+    ['questions', 'listQuestions', '&lt;script&gt;question secret&lt;/script&gt;'],
+    ['answers', 'listAnswers', '&lt;script&gt;answer secret&lt;/script&gt;'],
+    ['audit-log', 'listAuditLogs', 'ANSWER_SUBMITTED'],
+  ] as const)('renders the %s list as a paged table', async (path, method, content) => {
+    const repository = adminRepository();
+    const firstPage = await repository[method](20, 0);
+    vi.mocked(repository[method]).mockResolvedValue({
+      items: firstPage.items,
+      totalItems: 21,
+    } as never);
+    vi.mocked(repository[method]).mockClear();
+    const response = await createApp({
+      authentication: authentication('admin-user'),
+      adminRepository: repository,
+      now: () => 5,
+    }).request(`http://example.test/club-operations/${path}`);
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(repository[method]).toHaveBeenCalledWith(20, 0);
+    expect(html).toContain('class="admin-table');
+    expect(html).toContain(content);
+    expect(html).toContain(`href="/club-operations/${path}?page=2"`);
+    expect(html).toContain('Page 1 of 2');
+    expect(html).not.toContain('<script>');
+  });
+
+  it('uses a twenty-item offset and a safe empty state for later pages', async () => {
+    const repository = adminRepository();
+    vi.mocked(repository.listQuestions).mockResolvedValue({ items: [], totalItems: 21 });
+    const response = await createApp({
+      authentication: authentication('admin-user'),
+      adminRepository: repository,
+    }).request('http://example.test/club-operations/questions?page=2');
+    const html = await response.text();
+
+    expect(repository.listQuestions).toHaveBeenCalledWith(20, 20);
+    expect(html).toContain('No questions on this page.');
+    expect(html).toContain('Go to page 1');
+    expect(html).toContain('Page 2 of 2');
+  });
+
+  it('renders administration errors with the shared visual assets and private indexing policy', async () => {
+    const repository = adminRepository();
+    vi.mocked(repository.getSummary).mockRejectedValue(new Error('unavailable'));
+    const response = await createApp({
+      authentication: authentication('admin-user'),
+      adminRepository: repository,
+    }).request('http://example.test/club-operations');
+    const html = await response.text();
+
+    expect(response.status).toBe(503);
+    expect(html).toContain('href="/styles.css"');
+    expect(html).toContain('class="paper-card mx-auto max-w-2xl border-red-900/20"');
+    expect(html).toContain('name="robots" content="noindex, nofollow"');
+    expect(html).toContain('Administration is unavailable. Try again.');
   });
 
   it.each([
@@ -174,7 +254,13 @@ describe('admin operations', () => {
       now: () => 123,
     }).request(formRequest(path));
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('/club-operations');
+    expect(response.headers.get('location')).toBe(
+      method === 'deleteQuestion'
+        ? '/club-operations/questions'
+        : method === 'deleteAnswer'
+          ? '/club-operations/answers'
+          : '/club-operations/users',
+    );
     expect(repository[method]).toHaveBeenCalledWith(targetId, 'admin-user', 123);
   });
 

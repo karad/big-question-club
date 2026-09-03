@@ -49,7 +49,7 @@ describe('Home question browsing', () => {
     expect(html).toContain('data-question-list');
     expect(html).toContain('data-question-card');
     expect(html).not.toContain('Private draft');
-    expect(html).not.toContain('Closed question');
+    expect(html).toContain('Closed question');
     expect(html).not.toContain('HOME_PRIVATE_BODY');
     expect(html).not.toContain('HOME_PRIVATE_EXCERPT');
   });
@@ -81,7 +81,7 @@ describe('Home question browsing', () => {
     const unavailable = await createApp({ repository: unavailableRepository }).request(
       'http://example.test/',
     );
-    expect(unavailable.status).toBe(503);
+    expect(unavailable.status).toBe(200);
     expect(await unavailable.text()).toContain('Questions are temporarily unavailable. Try again.');
   });
 
@@ -100,6 +100,7 @@ describe('Home question browsing', () => {
     expect(html).toContain('data-page="home"');
     expect(html).toContain('data-site-header');
     expect(html).toContain('big-question-club-logo.svg');
+    expect(html).toContain('class="home-hero ');
     expect(html).toContain('data-question-list');
     expect(html).toContain('data-question-card');
     expect(html).toContain('data-answer-count');

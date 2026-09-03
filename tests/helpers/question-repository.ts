@@ -41,6 +41,43 @@ export function createInMemoryQuestionRepository({
       storedQuestions.push(created);
       return { kind: 'created', question: created };
     },
+    async createQuestion(input, now) {
+      const current = storedQuestions.find((item) => item.id === input.questionId);
+      if (current !== undefined) {
+        const same =
+          current.creatorUserId === input.creatorUserId &&
+          current.body === input.body &&
+          current.language === input.language &&
+          current.closesAt === input.closesAt &&
+          current.revealsAt === input.revealsAt &&
+          (current.publishedAt === null) === (input.intent === 'draft');
+        return same ? { kind: 'reused', question: current } : { kind: 'conflict' };
+      }
+      const created: Question = {
+        id: input.questionId,
+        creatorUserId: input.creatorUserId,
+        body: input.body,
+        language: input.language,
+        publishedAt: input.intent === 'publish' ? now : null,
+        closesAt: input.closesAt,
+        revealsAt: input.revealsAt,
+        createdAt: now,
+        updatedAt: now,
+      };
+      storedQuestions.push(created);
+      return { kind: 'created', question: created };
+    },
+    async deleteOwnedQuestion(questionId, creatorUserId, expectedUpdatedAt) {
+      const index = storedQuestions.findIndex(
+        (item) => item.id === questionId && item.creatorUserId === creatorUserId,
+      );
+      if (index < 0) return { kind: 'missing' };
+      if (storedQuestions[index]?.updatedAt !== expectedUpdatedAt) return { kind: 'conflict' };
+      storedQuestions.splice(index, 1);
+      for (let i = storedAnswers.length - 1; i >= 0; i -= 1)
+        if (storedAnswers[i]?.questionId === questionId) storedAnswers.splice(i, 1);
+      return { kind: 'deleted' };
+    },
     async updateDraft(input, now) {
       const current = storedQuestions.find(
         (item) => item.id === input.questionId && item.creatorUserId === input.creatorUserId,
@@ -77,7 +114,7 @@ export function createInMemoryQuestionRepository({
           answerCount: storedAnswers.filter((answer) => answer.questionId === item.id).length,
         }));
     },
-    async listOpenQuestions(snapshotNow) {
+    async listOpenQuestions(snapshotNow, limit, offset = 0) {
       return storedQuestions
         .filter((item) => getQuestionState(item, snapshotNow) === 'OPEN')
         .sort(
@@ -86,10 +123,34 @@ export function createInMemoryQuestionRepository({
             (left.publishedAt ?? 0) - (right.publishedAt ?? 0) ||
             left.id.localeCompare(right.id),
         )
+        .slice(offset, limit === undefined ? undefined : offset + limit)
         .map((item) => ({
           question: item,
           answerCount: storedAnswers.filter((answer) => answer.questionId === item.id).length,
         }));
+    },
+    async listRevealedQuestions(snapshotNow, limit, offset = 0) {
+      return storedQuestions
+        .filter((item) => getQuestionState(item, snapshotNow) === 'REVEALED')
+        .sort((left, right) => right.revealsAt - left.revealsAt || left.id.localeCompare(right.id))
+        .slice(offset, limit === undefined ? undefined : offset + limit)
+        .map((item) => ({
+          question: item,
+          answerCount: storedAnswers.filter((answer) => answer.questionId === item.id).length,
+        }));
+    },
+    async countOpenQuestions(snapshotNow) {
+      return storedQuestions.filter((item) => getQuestionState(item, snapshotNow) === 'OPEN')
+        .length;
+    },
+    async countRevealedQuestions(snapshotNow) {
+      return storedQuestions.filter((item) => getQuestionState(item, snapshotNow) === 'REVEALED')
+        .length;
+    },
+    async listOwnAnsweredQuestionIds(questionIds, userId) {
+      return storedAnswers
+        .filter((answer) => answer.userId === userId && questionIds.includes(answer.questionId))
+        .map((answer) => answer.questionId);
     },
     async submit(questionId, userId, input, now): Promise<SubmitResult> {
       const current = storedQuestions.find((item) => item.id === questionId);

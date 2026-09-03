@@ -66,10 +66,24 @@
     - 管理者は、質問の削除と回答の削除ができる。編集はできなくて良い
     - 管理画面からのユーザーのBANが可能
 
-- [ ] **SPEC 010 — Reveal体験とChallenge Visual Design**
+- [x] **SPEC 010 — Reveal体験とChallenge Visual Design**
   - 目的: Reveal後に複数の独立回答の違いをHumanが明瞭に読めるようにし、Home・Question Detail・sealed・Revealを一貫した高品質な表現として完成させる。
   - SpecKitで確定する情報: Challengeで伝えるVisual Direction、Typography、Color、Layout、Motion、Responsive表現、Homeと回答期間中Detailの完成表示、Reveal後のAnswer一覧・本文表示・比較しやすい順序・空状態、英語文言、基本Accessibility、3分デモの画面遷移とUI／Integration Test。
-  - 完了条件: 同じQuestionへの2件以上の異なるPersonal Agent回答について、`sealed → unsealed` の変化と回答の違いが3分デモで視覚的に伝わる。HomeからReveal結果までのCore画面が一貫したVisual品質を持ち、WebMCPからは他者Answerを取得できない。
+  - 完了条件: 同じQuestionへの2件以上の異なるPersonal Agent回答について、`sealed → unsealed` の変化と回答の違いが3分デモで視覚的に伝わる。HomeからReveal結果までのCore画面が一貫したVisual品質を持ち、WebMCPからは他者Answerを取得できない。追加SPECをまずは優先する
+  - 追加SPEC
+    - スタイリングはすべてTailwind CSS で行う。アイコン関連は https://react-icons.github.io/react-icons/ を使う
+    - Signed in as TFym9cJ4Sp81IJaZJD6sT1SD81KWUCeU.の表示は不要
+    - Open Questions の一覧にもプロンプトをコピーのエリアを用意。ただしプロンプトのフィールドをみせるために、一度押すとプロンプトのフィールドとコピーボタンがあるようにする。GitHubのCloneの部分と同様な感じ
+    - 一覧の質問はAnswers、remainingを1行で質問の下に出すこと。アイコンでシンプルに
+    - remainingを押すとDeadlineに切り変わる。切り替わるときは全部の日付が切り替わるようにする
+    - Answers are sealedは、アイコンなどを使い視覚的にわかるようにし、テキスト情報はアイコンに設定する
+    - トップページにはオープンな質問（5件）、回答を確認できる質問の一覧（10件）も表示。それぞれ一覧ページへのリンクも表示
+    - 質問の一覧ページは1ページ20件までとし、ページングにより一覧ページを移動する
+    - デフォルトでDeadline入れておく。デフォルト値は1日後の00:00
+    - 質問の詳細ページにある回答は
+    - 2重投稿がされてしまうのでダブルクリック防止をする
+    - 自分で作った質問は削除もできるようにする
+    - 質問作成時に「Draftとして保存ボタン」と「公開ボタン」を配置し、即時公開できるようにする
 
 ## P2 — 時間があれば行う品質強化
 
@@ -80,11 +94,7 @@
 
 ## P3 — 未確定アイデア
 
-- Signed in as TFym9cJ4Sp81IJaZJD6sT1SD81KWUCeU.の表示は不要
-- Open Questions の一覧にもプロンプトをコピーのエリアを用意。ただしプロンプトのフィールドをみせるために、一度押すとプロンプトのフィールドとコピーボタンがあるようにする。GitHubのCloneの部分と同様な感じ
-- 一覧の質問はAnswers、remainingを1行で質問の下に出すこと。アイコンでシンプルに
-- remainingを押すとDeadlineに切り変わる。切り替わるときは全部の日付が切り替わるようにする
-- Answers are sealedは、アイコンなどを使い視覚的にわかるようにし、テキスト情報はアイコンに設定する
+
 
 ## 対象外
 

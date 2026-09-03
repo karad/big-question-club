@@ -7,6 +7,7 @@ import { createAnswer, createInMemoryQuestionRepository } from '../helpers/quest
 const now = 1_000_000;
 const hour = 60 * 60 * 1000;
 const deadline = now + 2 * hour;
+const creationToken = '00000000-0000-4000-8000-000000000001';
 
 function authentication(userId: string | undefined): Authentication {
   return {
@@ -56,6 +57,8 @@ function validForm(overrides: Record<string, string> = {}): URLSearchParams {
     closesAt: String(deadline),
     timeZone: 'Asia/Tokyo',
     contentAcknowledged: 'on',
+    creationToken,
+    intent: 'draft',
     ...overrides,
   });
 }
@@ -83,7 +86,7 @@ describe('Question management', () => {
     expect(html).not.toContain('Primary language');
     expect(html).not.toContain('name="language"');
     expect(html).toContain('Answer deadline');
-    expect(html).toContain('Save draft');
+    expect(html).toContain('Save as draft');
     expect(html).toContain('data-question-form');
   });
 
@@ -91,9 +94,55 @@ describe('Question management', () => {
     const app = appFor();
     const response = await app.request(formRequest('/questions', validForm()));
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('/questions/question-1/review');
-    const review = await app.request('http://example.test/questions/question-1/review');
+    expect(response.headers.get('location')).toBe(`/questions/${creationToken}/review`);
+    const review = await app.request(`http://example.test/questions/${creationToken}/review`);
     expect(await review.text()).toContain('What should humanity improve?');
+  });
+
+  it('publishes immediately and treats an identical creation-token retry as the same question', async () => {
+    const app = appFor();
+    const publish = () => app.request(formRequest('/questions', validForm({ intent: 'publish' })));
+    const first = await publish();
+    const retry = await publish();
+    expect(first.status).toBe(303);
+    expect(first.headers.get('location')).toBe(`/questions/${creationToken}`);
+    expect(retry.headers.get('location')).toBe(`/questions/${creationToken}`);
+    expect((await app.request(`http://example.test/questions/${creationToken}`)).status).toBe(200);
+  });
+
+  it('rejects an invalid or conflicting creation token without exposing the existing question', async () => {
+    expect(
+      (await appFor().request(formRequest('/questions', validForm({ creationToken: 'invalid' }))))
+        .status,
+    ).toBe(400);
+    const app = appFor();
+    await app.request(formRequest('/questions', validForm()));
+    const conflict = await app.request(
+      formRequest(
+        '/questions',
+        validForm({ body: 'How should communities improve?', intent: 'publish' }),
+      ),
+    );
+    expect(conflict.status).toBe(409);
+    expect(await conflict.text()).not.toContain('What should humanity improve?');
+  });
+
+  it('allows only the owner to confirm deletion', async () => {
+    const question = draft();
+    const app = appFor({ questions: [question], answers: [createAnswer()] });
+    const missingConfirmation = await app.request(
+      formRequest('/questions/question-1/delete', new URLSearchParams({ expectedUpdatedAt: '1' })),
+    );
+    expect(missingConfirmation.status).toBe(400);
+    const deleted = await app.request(
+      formRequest(
+        '/questions/question-1/delete',
+        new URLSearchParams({ expectedUpdatedAt: '1', confirmDeletion: 'on' }),
+      ),
+    );
+    expect(deleted.status).toBe(303);
+    expect(deleted.headers.get('location')).toBe('/my/questions?deleted=1');
+    expect((await app.request('http://example.test/questions/question-1')).status).toBe(404);
   });
 
   it('preserves valid values and escapes untrusted text after validation errors', async () => {
@@ -216,6 +265,8 @@ describe('Question management', () => {
     expect(html).toContain('Answers: 2');
     expect(html).toContain('Review and publish');
     expect(html).toContain('View question');
+    expect(html).toContain('class="danger-disclosure');
+    expect(html).toContain('data-delete-trigger="true"><span class="size-4"');
     expect(html).not.toContain('Other private draft');
     expect(html).not.toContain('A private answer body.');
     expect(html).not.toContain('A one-line excerpt.');
@@ -225,6 +276,7 @@ describe('Question management', () => {
     const html = await (await appFor().request('http://example.test/my/questions')).text();
     expect(html).toContain('You haven&#39;t created any questions yet.');
     expect(html).toContain('Create a question');
+    expect(html).not.toContain('href="/my/questions"');
   });
 
   it.each([

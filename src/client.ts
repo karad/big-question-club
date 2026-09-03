@@ -1,5 +1,11 @@
+import './styles.css';
+import { formatLocalDateTime, formatUtcDateTime } from './domain/date-time';
 import { registerProductionWebMcpTools } from './webmcp/register-production-tools';
 import { initializeAgentPromptClipboard } from './ui/agent-prompt-clipboard';
+import { initializeQuestionDeadline } from './ui/deadline-display';
+import { initializeSubmissionGuards } from './ui/form-submission-guard';
+import { initializeQuestionLists } from './ui/question-list';
+import { initializeRevealedAnswers } from './ui/revealed-answers';
 
 const statusElement = document.getElementById('webmcp-status');
 const identityStatusElement = document.getElementById('identity-status');
@@ -32,7 +38,7 @@ function initializeQuestionForm(): void {
     if (timeZoneDisplay !== null) timeZoneDisplay.textContent = timeZone;
     if (utcDisplay !== null) {
       utcDisplay.textContent = Number.isFinite(timestamp)
-        ? new Date(timestamp).toISOString()
+        ? formatUtcDateTime(timestamp)
         : 'Choose a deadline';
     }
   };
@@ -62,11 +68,7 @@ function initializeDeadlineDisplay(): void {
   const timestamp = Date.parse(deadline.dateTime);
   if (!Number.isFinite(timestamp)) return;
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  deadline.textContent = new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'long',
-    timeStyle: 'short',
-    timeZone,
-  }).format(timestamp);
+  deadline.textContent = formatLocalDateTime(timestamp);
   timeZoneDisplay.textContent = timeZone;
 }
 
@@ -99,32 +101,12 @@ async function registerWebMcpTools(): Promise<void> {
 
 void registerWebMcpTools();
 initializeQuestionForm();
+initializeQuestionDeadline(document);
 initializeDeadlineDisplay();
 initializeAgentPromptClipboard(document);
-
-document.addEventListener('click', (event) => {
-  const target = event.target;
-  if (!(target instanceof HTMLButtonElement)) return;
-  const answerId = target.dataset.answerId;
-  if (answerId === undefined) return;
-  const questionId = window.location.pathname.split('/').at(-1);
-  if (questionId === undefined || questionId.length === 0) return;
-  void fetch(
-    `/api/questions/${encodeURIComponent(questionId)}/answers/${encodeURIComponent(answerId)}`,
-    {
-      headers: { Accept: 'application/json' },
-    },
-  ).then(async (response) => {
-    if (!response.ok) return;
-    const payload = (await response.json()) as { body?: unknown };
-    if (typeof payload.body !== 'string') return;
-    const bodyElement = document.getElementById(`answer-${answerId}`);
-    if (bodyElement !== null) {
-      bodyElement.textContent = payload.body;
-      bodyElement.hidden = false;
-    }
-  });
-});
+initializeSubmissionGuards(document);
+initializeQuestionLists(document);
+initializeRevealedAnswers(document, fetch);
 
 void fetch('/api/who-am-i', { headers: { Accept: 'application/json' } }).then(async (response) => {
   if (response.status === 401) {
@@ -142,7 +124,7 @@ void fetch('/api/who-am-i', { headers: { Accept: 'application/json' } }).then(as
   const payload = (await response.json()) as { userId?: unknown };
   if (typeof payload.userId === 'string') {
     updateAuthenticationControls(true);
-    updateIdentityStatus(`Signed in as ${payload.userId}.`);
+    updateIdentityStatus('Signed in.');
     return;
   }
 

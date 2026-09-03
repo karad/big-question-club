@@ -177,7 +177,7 @@ describe('Question visibility', () => {
       now: () => 100,
     });
     const html = await (await app.request('http://example.test/questions/question-1')).text();
-    expect(html).toContain('No answers have been submitted.');
+    expect(html).toContain('No answers were submitted.');
     expect(html).not.toContain('data-answer-id');
   });
 

@@ -36,3 +36,10 @@
 ## Manual Test
 
 - 確定Promptと拡張済みContext instructionを実Personal Agentが解釈する確認は、SPEC 010のVisual・Reveal実装完了後にCore Demo全体として実施する。
+
+## 2026-09-03 管理一覧の追加検証
+
+- 管理画面トップが4つの専用一覧へのLinkだけを持ち、個別Recordを含まないことを実ブラウザーで確認した。
+- User、Question、Answer、Audit logがすべてTable形式であることを実ブラウザーで確認した。
+- Audit log 22件を20件と2件へ分割し、`Next`／`Previous`とページ番号で移動できることを確認した。
+- Unit／Integration 44ファイル647テスト、D1 Integration 16ファイル60テスト、Typecheck、Lint、Format、Build、Schema checkに成功した。

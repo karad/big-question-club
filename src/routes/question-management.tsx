@@ -34,7 +34,13 @@ export async function newQuestionPageRoute(
 ): Promise<Response> {
   const userId = await authenticatedUserId(context, authentication, clientScriptUrl);
   if (userId instanceof Response) return userId;
-  return context.html(<QuestionFormPage clientScriptUrl={clientScriptUrl} form={emptyForm} />);
+  return context.html(
+    <QuestionFormPage
+      clientScriptUrl={clientScriptUrl}
+      form={emptyForm}
+      creationToken={crypto.randomUUID()}
+    />,
+  );
 }
 
 export async function createQuestionRoute(
@@ -48,24 +54,79 @@ export async function createQuestionRoute(
   if (userId instanceof Response) return userId;
   if (repository === undefined) return unavailable(context, clientScriptUrl);
   const timestamp = now();
-  const parsed = parseQuestionDraftForm(await context.req.parseBody(), timestamp);
+  const body = await context.req.parseBody();
+  const submittedForm = formFromBody(body);
+  const creationToken = typeof body.creationToken === 'string' ? body.creationToken : '';
+  const intent = body.intent === 'publish' ? 'publish' : body.intent === 'draft' ? 'draft' : null;
+  const parsed = parseQuestionDraftForm(body, timestamp);
   if (parsed.kind === 'invalid') {
     return context.html(
       <QuestionFormPage
         clientScriptUrl={clientScriptUrl}
         form={parsed.form}
         errors={parsed.errors}
+        creationToken={creationToken}
       />,
       400,
     );
   }
-  const result = await repository.createDraft(
-    { creatorUserId: userId, ...parsed.value },
+  if (!isUuid(creationToken) || intent === null) {
+    return context.html(
+      <QuestionFormPage
+        clientScriptUrl={clientScriptUrl}
+        form={submittedForm}
+        creationToken={creationToken}
+        errors={{ form: 'This form is invalid. Reload the page and try again.' }}
+      />,
+      400,
+    );
+  }
+  const result = await repository.createQuestion(
+    { creatorUserId: userId, questionId: creationToken, intent, ...parsed.value },
     timestamp,
   );
-  if (result.kind === 'created') {
-    return context.redirect(`/questions/${encodeURIComponent(result.question.id)}/review`, 303);
+  if (result.kind === 'created' || result.kind === 'reused') {
+    return context.redirect(
+      intent === 'publish'
+        ? `/questions/${encodeURIComponent(result.question.id)}`
+        : `/questions/${encodeURIComponent(result.question.id)}/review`,
+      303,
+    );
   }
+  if (result.kind === 'conflict')
+    return context.html(
+      <ConflictPage
+        clientScriptUrl={clientScriptUrl}
+        message="This form has already been used. Reload and try again."
+      />,
+      409,
+    );
+  return unavailable(context, clientScriptUrl);
+}
+
+export async function deleteQuestionRoute(
+  context: Context,
+  authentication: Authentication | undefined,
+  repository: QuestionRepository | undefined,
+  now: () => number,
+  clientScriptUrl: string,
+): Promise<Response> {
+  const userId = await authenticatedUserId(context, authentication, clientScriptUrl);
+  if (userId instanceof Response) return userId;
+  if (repository === undefined) return unavailable(context, clientScriptUrl);
+  const body = await context.req.parseBody();
+  if (body.confirmDeletion !== 'on')
+    return context.text('Confirm that you want to permanently delete this question.', 400);
+  const expectedUpdatedAt = parseSafeInteger(body.expectedUpdatedAt);
+  if (expectedUpdatedAt === null)
+    return context.text('Question changed. Review it and try again.', 409);
+  const questionId = context.req.param('questionId');
+  if (questionId === undefined) return questionUnavailable(context, clientScriptUrl);
+  const result = await repository.deleteOwnedQuestion(questionId, userId, expectedUpdatedAt, now());
+  if (result.kind === 'deleted') return context.redirect('/my/questions?deleted=1', 303);
+  if (result.kind === 'missing') return questionUnavailable(context, clientScriptUrl);
+  if (result.kind === 'conflict')
+    return context.text('Question changed. Review it and try again.', 409);
   return unavailable(context, clientScriptUrl);
 }
 
@@ -209,7 +270,12 @@ export async function myQuestionsRoute(
   try {
     const items = await repository.listByCreator(userId);
     return context.html(
-      <MyQuestionsPage clientScriptUrl={clientScriptUrl} items={items} now={now()} />,
+      <MyQuestionsPage
+        clientScriptUrl={clientScriptUrl}
+        items={items}
+        now={now()}
+        deleted={context.req.query('deleted') === '1'}
+      />,
     );
   } catch {
     return unavailable(context, clientScriptUrl);
@@ -260,10 +326,24 @@ function formFromQuestion(question: Question): QuestionDraftForm {
   };
 }
 
+function formFromBody(body: Record<string, unknown>): QuestionDraftForm {
+  return {
+    body: typeof body.body === 'string' ? body.body : '',
+    closesAtLocal: typeof body.closesAtLocal === 'string' ? body.closesAtLocal : '',
+    closesAt: typeof body.closesAt === 'string' ? body.closesAt : '',
+    timeZone: typeof body.timeZone === 'string' ? body.timeZone : '',
+    contentAcknowledged: body.contentAcknowledged === 'on',
+  };
+}
+
 function parseSafeInteger(value: unknown): number | null {
   if (typeof value !== 'string' || !/^\d+$/.test(value)) return null;
   const number = Number(value);
   return Number.isSafeInteger(number) ? number : null;
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 async function questionUnavailable(context: Context, clientScriptUrl: string): Promise<Response> {

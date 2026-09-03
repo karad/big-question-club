@@ -1,33 +1,90 @@
 import type { Context } from 'hono';
-import type { QuestionRepository } from '../repositories/question-repository';
+import { readCurrentIdentity, type Authentication } from '../auth/session';
+import type { QuestionListItem } from '../domain/question-listing';
+import type { OpenQuestionSummary, QuestionRepository } from '../repositories/question-repository';
 import { HomePage } from '../views/home';
+import { PRIVATE_RESPONSE_HEADERS } from './question';
 
 export async function homeRoute(
   context: Context,
+  authentication: Authentication | undefined,
   repository: QuestionRepository | undefined,
   now: () => number,
   clientScriptUrl: string,
 ): Promise<Response> {
   const snapshotNow = now();
-  if (repository === undefined) {
-    return context.html(
-      <HomePage clientScriptUrl={clientScriptUrl} items={[]} snapshotNow={snapshotNow} />,
-    );
-  }
-  try {
-    const items = await repository.listOpenQuestions(snapshotNow);
-    return context.html(
-      <HomePage clientScriptUrl={clientScriptUrl} items={items} snapshotNow={snapshotNow} />,
-    );
-  } catch {
+  const baseUrl = new URL(context.req.url).origin;
+  if (repository === undefined)
     return context.html(
       <HomePage
         clientScriptUrl={clientScriptUrl}
-        items={[]}
+        openItems={[]}
+        revealedItems={[]}
         snapshotNow={snapshotNow}
-        unavailable
+        baseUrl={baseUrl}
       />,
-      503,
+      200,
+      PRIVATE_RESPONSE_HEADERS,
     );
+  const identity = await readCurrentIdentity(authentication, context.req.raw);
+  const userId = 'code' in identity ? undefined : identity.userId;
+  const [openResult, revealedResult] = await Promise.allSettled([
+    repository.listOpenQuestions(snapshotNow, 5),
+    repository.listRevealedQuestions(snapshotNow, 10),
+  ]);
+  const open = openResult.status === 'fulfilled' ? openResult.value : [];
+  const revealed = revealedResult.status === 'fulfilled' ? revealedResult.value : [];
+  let answered = new Set<string>();
+  if (userId !== undefined && open.length > 0) {
+    try {
+      answered = new Set(
+        await repository.listOwnAnsweredQuestionIds(
+          open.map(({ question }) => question.id),
+          userId,
+        ),
+      );
+    } catch {
+      return context.html(
+        <HomePage
+          clientScriptUrl={clientScriptUrl}
+          openItems={[]}
+          revealedItems={toItems(revealed, new Set(), false)}
+          snapshotNow={snapshotNow}
+          baseUrl={baseUrl}
+          openUnavailable
+          revealedUnavailable={revealedResult.status === 'rejected'}
+        />,
+        503,
+        PRIVATE_RESPONSE_HEADERS,
+      );
+    }
   }
+  const status =
+    openResult.status === 'rejected' && revealedResult.status === 'rejected' ? 503 : 200;
+  return context.html(
+    <HomePage
+      clientScriptUrl={clientScriptUrl}
+      openItems={toItems(open, answered, userId !== undefined)}
+      revealedItems={toItems(revealed, new Set(), false)}
+      snapshotNow={snapshotNow}
+      baseUrl={baseUrl}
+      openUnavailable={openResult.status === 'rejected'}
+      revealedUnavailable={revealedResult.status === 'rejected'}
+    />,
+    status,
+    PRIVATE_RESPONSE_HEADERS,
+  );
+}
+
+function toItems(
+  items: OpenQuestionSummary[],
+  answered: Set<string>,
+  promptAvailable: boolean,
+): QuestionListItem[] {
+  return items.map(({ question, answerCount }) => ({
+    question,
+    answerCount,
+    hasAnswered: answered.has(question.id),
+    promptAvailable,
+  }));
 }

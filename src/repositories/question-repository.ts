@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, isNotNull, lte } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, inArray, isNotNull, lte } from 'drizzle-orm';
 import { parseSubmissionInput, type SubmissionInput } from '../domain/answer-submission';
 import {
   MAX_QUESTION_CLOSE_OFFSET_MS,
@@ -12,6 +12,15 @@ import { createDatabase } from '../db/client';
 import { answers, questions, users } from '../db/schema';
 
 export type CreateDraftInput = ValidatedQuestionDraft & { creatorUserId: string };
+export type CreateQuestionInput = CreateDraftInput & {
+  questionId: string;
+  intent: 'draft' | 'publish';
+};
+export type CreateQuestionResult =
+  | { kind: 'created' | 'reused'; question: Question }
+  | { kind: 'conflict' | 'creator-missing' | 'invalid' | 'unavailable' };
+export type DeleteQuestionResult =
+  { kind: 'deleted' } | { kind: 'missing' | 'conflict' | 'unavailable' };
 export type CreateDraftResult =
   | { kind: 'created'; question: Question }
   | { kind: 'creator-missing' }
@@ -37,6 +46,7 @@ export type UpdateDraftResult =
   | { kind: 'unavailable' };
 export type OwnedQuestionSummary = { question: Question; answerCount: number };
 export type OpenQuestionSummary = { question: Question; answerCount: number };
+export type QuestionPageResult = { items: OpenQuestionSummary[]; totalItems: number };
 export type AnswerCountView = { answerCount: number };
 export type OwnAnswerView = Pick<
   Answer,
@@ -70,6 +80,13 @@ export interface QuestionRepository {
   getQuestion(id: string): Promise<Question | null>;
   getOwnedQuestion(id: string, creatorUserId: string): Promise<Question | null>;
   createDraft(input: CreateDraftInput, now: number): Promise<CreateDraftResult>;
+  createQuestion(input: CreateQuestionInput, now: number): Promise<CreateQuestionResult>;
+  deleteOwnedQuestion(
+    questionId: string,
+    creatorUserId: string,
+    expectedUpdatedAt: number,
+    now: number,
+  ): Promise<DeleteQuestionResult>;
   updateDraft(input: UpdateDraftInput, now: number): Promise<UpdateDraftResult>;
   publish(
     questionId: string,
@@ -78,7 +95,19 @@ export interface QuestionRepository {
     expectedUpdatedAt?: number,
   ): Promise<PublishResult>;
   listByCreator(creatorUserId: string): Promise<OwnedQuestionSummary[]>;
-  listOpenQuestions(snapshotNow: number): Promise<OpenQuestionSummary[]>;
+  listOpenQuestions(
+    snapshotNow: number,
+    limit?: number,
+    offset?: number,
+  ): Promise<OpenQuestionSummary[]>;
+  listRevealedQuestions(
+    snapshotNow: number,
+    limit?: number,
+    offset?: number,
+  ): Promise<OpenQuestionSummary[]>;
+  countOpenQuestions(snapshotNow: number): Promise<number>;
+  countRevealedQuestions(snapshotNow: number): Promise<number>;
+  listOwnAnsweredQuestionIds(questionIds: string[], userId: string): Promise<string[]>;
   submit(
     questionId: string,
     userId: string,
@@ -146,6 +175,74 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
           .where(eq(users.id, input.creatorUserId))
           .limit(1);
         return creator === undefined ? { kind: 'creator-missing' } : { kind: 'unavailable' };
+      }
+    },
+    async createQuestion(input, now) {
+      if (
+        !isPublishableQuestion(input, now) ||
+        validateQuestionSchedule(
+          {
+            publishedAt: input.intent === 'publish' ? now : null,
+            closesAt: input.closesAt,
+            revealsAt: input.revealsAt,
+          },
+          now,
+        ) !== null
+      )
+        return { kind: 'invalid' };
+      const question: Question = {
+        id: input.questionId,
+        creatorUserId: input.creatorUserId,
+        body: input.body,
+        language: input.language,
+        publishedAt: input.intent === 'publish' ? now : null,
+        closesAt: input.closesAt,
+        revealsAt: input.revealsAt,
+        createdAt: now,
+        updatedAt: now,
+      };
+      try {
+        await db.insert(questions).values(question);
+        return { kind: 'created', question };
+      } catch {
+        const current = await repository.getQuestion(input.questionId);
+        if (current !== null) {
+          const same =
+            current.creatorUserId === input.creatorUserId &&
+            current.body === input.body &&
+            current.language === input.language &&
+            current.closesAt === input.closesAt &&
+            current.revealsAt === input.revealsAt &&
+            (current.publishedAt === null) === (input.intent === 'draft');
+          return same ? { kind: 'reused', question: current } : { kind: 'conflict' };
+        }
+        const [creator] = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.id, input.creatorUserId))
+          .limit(1);
+        return creator === undefined ? { kind: 'creator-missing' } : { kind: 'unavailable' };
+      }
+    },
+    async deleteOwnedQuestion(questionId, creatorUserId, expectedUpdatedAt, now) {
+      try {
+        const [, deletion] = await database.batch([
+          database
+            .prepare(
+              "INSERT INTO audit_logs (id, actor_user_id, action, target_type, target_id, outcome, created_at) SELECT lower(hex(randomblob(16))), creator_user_id, 'QUESTION_DELETED', 'QUESTION', id, 'SUCCESS', ? FROM questions WHERE id = ? AND creator_user_id = ? AND updated_at = ?",
+            )
+            .bind(now, questionId, creatorUserId, expectedUpdatedAt),
+          database
+            .prepare(
+              'DELETE FROM questions WHERE id = ? AND creator_user_id = ? AND updated_at = ?',
+            )
+            .bind(questionId, creatorUserId, expectedUpdatedAt),
+        ]);
+        if (deletion !== undefined && deletion.meta.changes > 0) return { kind: 'deleted' };
+        const current = await repository.getOwnedQuestion(questionId, creatorUserId);
+        return current === null ? { kind: 'missing' } : { kind: 'conflict' };
+      } catch {
+        return { kind: 'unavailable' };
       }
     },
     async updateDraft(input, now) {
@@ -225,8 +322,8 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
         .orderBy(desc(questions.createdAt), desc(questions.id));
       return rows.map(({ question, answerCount }) => ({ question, answerCount }));
     },
-    async listOpenQuestions(snapshotNow) {
-      const rows = await db
+    async listOpenQuestions(snapshotNow, limit, offset = 0) {
+      const query = db
         .select({ question: questions, answerCount: count(answers.id) })
         .from(questions)
         .leftJoin(answers, eq(answers.questionId, questions.id))
@@ -238,8 +335,48 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
           ),
         )
         .groupBy(questions.id)
-        .orderBy(asc(questions.closesAt), asc(questions.publishedAt), asc(questions.id));
+        .orderBy(asc(questions.closesAt), asc(questions.id));
+      const rows = limit === undefined ? await query : await query.limit(limit).offset(offset);
       return rows.map(({ question, answerCount }) => ({ question, answerCount }));
+    },
+    async listRevealedQuestions(snapshotNow, limit, offset = 0) {
+      const query = db
+        .select({ question: questions, answerCount: count(answers.id) })
+        .from(questions)
+        .leftJoin(answers, eq(answers.questionId, questions.id))
+        .where(and(isNotNull(questions.publishedAt), lte(questions.revealsAt, snapshotNow)))
+        .groupBy(questions.id)
+        .orderBy(desc(questions.revealsAt), asc(questions.id));
+      const rows = limit === undefined ? await query : await query.limit(limit).offset(offset);
+      return rows.map(({ question, answerCount }) => ({ question, answerCount }));
+    },
+    async countOpenQuestions(snapshotNow) {
+      const [row] = await db
+        .select({ value: count() })
+        .from(questions)
+        .where(
+          and(
+            isNotNull(questions.publishedAt),
+            lte(questions.publishedAt, snapshotNow),
+            gt(questions.closesAt, snapshotNow),
+          ),
+        );
+      return row?.value ?? 0;
+    },
+    async countRevealedQuestions(snapshotNow) {
+      const [row] = await db
+        .select({ value: count() })
+        .from(questions)
+        .where(and(isNotNull(questions.publishedAt), lte(questions.revealsAt, snapshotNow)));
+      return row?.value ?? 0;
+    },
+    async listOwnAnsweredQuestionIds(questionIds, userId) {
+      if (questionIds.length === 0) return [];
+      const rows = await db
+        .select({ questionId: answers.questionId })
+        .from(answers)
+        .where(and(eq(answers.userId, userId), inArray(answers.questionId, questionIds)));
+      return rows.map(({ questionId }) => questionId);
     },
     async submit(questionId, userId, input, now) {
       const id = crypto.randomUUID();

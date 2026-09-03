@@ -47,4 +47,27 @@ describe('Agent prompt clipboard', () => {
     await Promise.resolve();
     expect(status.textContent).toBe('Copy failed. Select the prompt and copy it manually.');
   });
+
+  it('binds each question-card prompt to its own copy action', async () => {
+    const listeners: Array<() => void> = [];
+    const statuses = [{ textContent: '' }, { textContent: '' }];
+    const sections = ['first prompt', 'second prompt'].map((value, index) => ({
+      querySelector(selector: string) {
+        if (selector === '[data-copy-agent-prompt-status]') return statuses[index];
+        if (selector === '[data-agent-request-prompt]') return { value };
+        return {
+          addEventListener: (_event: string, callback: () => void) => listeners.push(callback),
+        };
+      },
+    }));
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    initializeAgentPromptClipboard(
+      { querySelector: () => null, querySelectorAll: () => sections } as unknown as Document,
+      { writeText },
+    );
+    listeners[1]?.();
+    await Promise.resolve();
+    expect(writeText).toHaveBeenCalledWith('second prompt');
+    expect(statuses[1]?.textContent).toBe('Copied');
+  });
 });

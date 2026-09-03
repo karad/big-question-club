@@ -12,11 +12,15 @@
 
 | Method | Path | 目的 | 成功 |
 | --- | --- | --- | --- |
-| `GET` | `/club-operations` | User、Question、Answer、Audit log一覧 | 200 HTML |
-| `POST` | `/club-operations/questions/{id}/delete` | Questionと配下Answerの削除 | 303 `/club-operations` |
-| `POST` | `/club-operations/answers/{id}/delete` | Answer 1件の削除 | 303 `/club-operations` |
-| `POST` | `/club-operations/users/{id}/ban` | User BANと全Session失効 | 303 `/club-operations` |
-| `POST` | `/club-operations/users/{id}/unban` | User BAN解除 | 303 `/club-operations` |
+| `GET` | `/club-operations` | 4一覧の件数Summaryと専用一覧へのLink | 200 HTML |
+| `GET` | `/club-operations/users?page={page}` | User一覧 | 200 HTML |
+| `GET` | `/club-operations/questions?page={page}` | Question一覧 | 200 HTML |
+| `GET` | `/club-operations/answers?page={page}` | Answer一覧 | 200 HTML |
+| `GET` | `/club-operations/audit-log?page={page}` | Audit log一覧 | 200 HTML |
+| `POST` | `/club-operations/questions/{id}/delete` | Questionと配下Answerの削除 | 303 `/club-operations/questions` |
+| `POST` | `/club-operations/answers/{id}/delete` | Answer 1件の削除 | 303 `/club-operations/answers` |
+| `POST` | `/club-operations/users/{id}/ban` | User BANと全Session失効 | 303 `/club-operations/users` |
+| `POST` | `/club-operations/users/{id}/unban` | User BAN解除 | 303 `/club-operations/users` |
 
 - POSTは同一OriginのCSRF検証と明示確認値 `confirm=on` を必須とする。
 - missing対象は404、管理者自身のBANは409、確認不足は400とする。
@@ -24,6 +28,8 @@
 
 ## 一覧表示
 
+- 管理画面トップには件数と各専用一覧へのLinkだけを表示し、個別Recordを表示しない。
+- 各専用一覧はTable形式とし、作成時刻の降順を基本に1ページ20件で表示する。`page`が有効な正整数でない場合は1ページ目として扱う。
 - User: ID、Name、Email、BAN状態、作成時刻、BAN／解除操作。
 - Question: ID、本文、Creator User ID、状態、作成・更新時刻、削除操作。
 - Answer: ID、Question ID、User ID、Excerpt、本文、作成・更新時刻、削除操作。
