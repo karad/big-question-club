@@ -1,105 +1,68 @@
 # Big Question Club
 
-Big Question Club lets personal agents answer a shared question independently. This repository currently contains the first technical validation: a WebMCP page that exposes one fixed, read-only verification question.
+Big Question Club lets personal agents answer a shared question independently. Some big questions are too much for one AI. With WebMCP, Big Question Club offers diverse answers from AIs shaped by each respondent’s unique perspective.
 
 ## Prerequisites
 
 - Node.js 22.13 or later LTS (or Node.js 24 or later)
-- A Cloudflare account for shared validation
+- A Cloudflare account for shared validation and deployment
 - A WebMCP-compatible Chrome configuration and personal agent
+
+## Installation
+
+```sh
+npm install
+cp .dev.vars.example .dev.vars
+```
+
+Configure the local secrets in `.dev.vars`, then apply the local D1 migrations:
+
+```sh
+npm run db:migrate:local
+```
+
+See the [development guide](docs/development-guide.md) for Google OAuth, Cloudflare, administrator, and D1 configuration.
 
 ## Local development
 
 ```sh
-npm install
 npm run dev
 ```
 
-Open the local URL shown by Vite in a top-level Chrome tab. For local WebMCP validation, enable `chrome://flags/#enable-webmcp-testing` before opening the page.
+Open the URL shown by Vite in a top-level Chrome tab. Enable `chrome://flags/#enable-webmcp-testing` before validating WebMCP locally.
 
-See the compact [developer manual](specs/009-answer-period-browsing/developer-manual.md) for setup, build, test, and deployment commands.
+To run the production build locally:
 
-## Validation commands
+```sh
+npm run build
+npm run preview
+```
+
+## Testing
 
 ```sh
 npm run typecheck
 npm run lint
 npm run format
 npm run test
+npm run test:d1
 npm run build
-npm run preview
 ```
 
-`npm run preview` runs the built Worker locally. Check `GET /health` for `{ "status": "ok" }` and `GET /api/verification-question` for the fixed verification question.
+Manual and end-to-end test procedures are documented in the [development guide](docs/development-guide.md#manual-validation).
 
-## Shared validation
+## Deployment
 
-Deploy a build to the initial `workers.dev` address:
+Review and apply the remote D1 migrations before deploying:
 
 ```sh
+npm run db:migrate:remote
 npm run deploy
 ```
 
-For a shared WebMCP validation, configure an active WebMCP Origin Trial for the deployed HTTPS origin. See [the feature quickstart](specs/001-minimal-webmcp-connection/quickstart.md) for the browser and personal-agent verification procedure.
+Follow the [deployment procedure](docs/development-guide.md#deployment) before running these commands against shared data.
 
-## Google OAuth validation preparation
+## Documentation
 
-SPEC 002 adds Google OAuth and a `who_am_i` WebMCP validation tool. Before running its end-to-end validation, follow the [Google OAuth and Cloudflare preparation guide](specs/002-google-oauth-identity/oauth-cloudflare-setup.md).
-
-Copy `.dev.vars.example` to `.dev.vars` for local development. Keep `BETTER_AUTH_SECRET` and `GOOGLE_CLIENT_SECRET` outside version control; set their deployed values with Cloudflare Workers Secrets. The `db:migrate:auth` script is reserved for the authentication migration after the D1 database has been created and bound.
-
-Set `ADMIN_EMAIL` to the one Google account allowed to use `/club-operations`. The comparison is case-insensitive after trimming. Leave no placeholder value in a deployed environment: a missing or invalid value keeps all administration routes unavailable. Do not store the administrator's password or OAuth tokens in this setting.
-
-## D1 migrations
-
-The authentication and Question/Answer bindings refer to the same D1 database so Answer foreign keys can reference authenticated users. Apply migrations locally before validating Answer features with `npm run db:migrate:local`. Apply them to the shared database only after review with `npm run db:migrate:remote`.
-
-Before a shared migration, inspect the remote ledger and domain-data counts, then create a recoverable export:
-
-```sh
-npx wrangler d1 migrations list big-question-club-auth --remote
-npx wrangler d1 execute big-question-club-auth --remote --command "SELECT COUNT(*) AS question_count FROM questions; SELECT COUNT(*) AS answer_count FROM answers;"
-npx wrangler d1 export big-question-club-auth --remote --output ./big-question-club-auth-backup.sql
-```
-
-Stop before applying the migration if the ledger cannot be read, if Question/Answer rows contain anything other than disposable validation data, if the export fails, or if any fresh, legacy-upgrade, rollback, schema-contract, or quality-gate test fails. SPEC 005 does not automatically apply remote migrations. See [the SPEC 005 quickstart](specs/005-domain-data-lifecycle/quickstart.md) for the complete preflight and validation procedure.
-
-For the compact SPEC 009 administration migration procedure, see [the D1 migration manual](specs/009-answer-period-browsing/migration-manual.md).
-
-## Sealed Answers manual validation
-
-After applying the local D1 migrations, create a test Question and sign in as two separate test users in separate browser profiles. Before its deadline, use each user's personal agent to submit one body and one single-line excerpt, then verify that `get_my_submission` returns only that user's submission. At and after the deadline, confirm that `/questions/:questionId` initially renders excerpts only; clicking an excerpt must load only its corresponding body. Direct pre-deadline or unauthenticated calls to `/api/questions/:questionId/answers/:answerId` must return `404` with `ANSWER_UNAVAILABLE` and no answer content. Do not place private context, session cookies, or OAuth values in test answers or validation records. The complete matrix is in [SPEC 004 quickstart](specs/004-sealed-answer-verification/quickstart.md).
-
-## Question management
-
-Authenticated people can open `/questions/new` to save a question in any language as a draft. The personal agent decides the answer language from the question text. Question text must contain 10–1,000 user-perceived characters, and the answer deadline must be between 1 hour and 30 days from the current server time. The review page shows the local and UTC deadline, explains that answers remain sealed, and requires explicit confirmation before publishing. Publishing is immediate and irreversible.
-
-`/my/questions` lists only questions created by the signed-in user. Drafts provide edit and review actions; published questions link to their details. The list exposes answer counts but never answer bodies, excerpts, or participant identifiers. Human form submissions use same-origin CSRF checks, and missing questions and drafts owned by someone else share the same unavailable response.
-
-Run the automated quality gates before performing the two-user and keyboard-only manual flow described in the [SPEC 006 quickstart](specs/006-question-publishing/quickstart.md). SPEC 006 does not add a database migration or a WebMCP question-management tool.
-
-SPEC 010 adds a local-midnight default deadline, separate `Save as draft` and `Publish question` actions, and a creation token that makes identical form retries idempotent. Owners can permanently delete any of their questions from `My Questions` or a published question detail page after explicit confirmation. The question, cascading answers, and a content-free `QUESTION_DELETED` audit record are updated as one D1 batch.
-
-## Browsing and reveal experience
-
-The home page shows up to five open questions and ten revealed questions. Each section links to a dedicated list with twenty questions per page. Open-question cards can switch every visible deadline between relative and absolute time together. Signed-in people who have not answered can expand and copy a question-specific personal-agent prompt directly from an open-question card.
-
-Revealed question pages state that every answer came from a signed-in participant and that each account can submit one answer. They order answers by initial submission time and stable answer ID, label them anonymously as `Answer 1`, `Answer 2`, and so on, and pair each answer with `Authenticated participant` and a question-scoped generated icon. The icon uses no user ID, Google display name, profile image, or public cross-question identifier. Excerpts render without embedding bodies; each full body is fetched only when selected, and multiple bodies can remain open for comparison. Other-user answers remain unavailable to WebMCP and unauthenticated requests.
-
-Open Question cards contain independent agent actions, so only their `View question` button navigates to the detail page. Results cards keep the full-card detail link.
-
-Tailwind CSS supplies the shared responsive visual system. React Icons are converted at build time into the fixed SVG allowlist in `src/generated/icons.ts`; the Worker does not run React. Regenerate and verify these assets with `npm run generate:icons` and `npm run build:client`.
-
-## WebMCP answer workflow
-
-An authenticated person selects an open Question in the human-facing UI. When that person has not submitted an answer, the Question page shows a one-line copyable prompt containing that page's absolute URL. The URL follows the current origin in local and production environments and omits query parameters and fragments. The prompt is `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}`; detailed context-grounding instructions and safety boundaries come from the page's WebMCP tool contracts. The prompt does not include the Question text, identity data, authentication data, or any Answer.
-
-The production page registers exactly five WebMCP tools: `get_question`, `submit_answer`, `update_answer`, `remove_answer`, and `get_my_submission`. There is no discovery, search, recommendation, or other-user Answer tool. The tool contract tells the agent to ground its answer in relevant user-authored context available from the current conversation, accessible past conversations, and project context; it must not turn assistant suggestions or considered options into user facts. If that evidence is insufficient, the agent asks the person instead of guessing or submitting. Sending the initial prompt authorizes the answer and submission without an additional preview or approval, and the agent verifies the result with `get_my_submission`. Answers and excerpts use user-perceived character limits of 5,000 and 160 respectively. The current user's Answer can be updated or removed before the deadline; removal permits one new submission while the Question remains open. All Answer mutations are frozen at the deadline.
-
-Apply local migrations before validation, then follow the two-user, clipboard, Prompt Injection, update/remove/resubmit, and deadline matrix in the [SPEC 007 quickstart](specs/007-webmcp-mvp-tools/quickstart.md). Never put real private context, cookies, tokens, OAuth values, or secrets in validation Questions or Answers.
-
-## Answer access boundary
-
-The server derives `DRAFT`, `OPEN`, `CLOSED`, or `REVEALED` once per request from the Question schedule and uses that state as the only Answer-visibility source. Authenticated human SSR shows the Answer count in every published state and the caller's Answer before reveal. Before reveal, no other Answer ID, excerpt, body, user, or timestamp is projected. After reveal, initial SSR contains every `{ id, excerpt }` but no Answer body; selecting an excerpt fetches exactly one body from `/api/questions/:questionId/answers/:answerId`.
-
-`get_my_submission` continues to return only the caller's submission in every published state. The five production WebMCP tools never expose Answer counts, other-user submissions, lists, search, summaries, comparisons, or the human detail endpoint. User-dependent Question and Answer read responses use `Cache-Control: private, no-store` and `Vary: Cookie`; unavailable, missing, and cross-Question Answer IDs share the same non-enumerable response. Run the full automated and two-user validation matrix in the [SPEC 008 quickstart](specs/008-sealed-answer-access/quickstart.md).
+- [Development, validation, and deployment guide](docs/development-guide.md)
+- [Product behavior and security boundaries](docs/product-overview.md)
