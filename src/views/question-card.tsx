@@ -35,7 +35,7 @@ export function QuestionCard({
         </span>
         <SubmissionStatus hasAnswered={hasAnswered} />
       </div>
-      <h3 class="prose-safe font-display text-xl font-bold leading-snug tracking-[-0.01em]">
+      <h3 class="prose-safe font-display text-xl leading-snug tracking-[-0.01em]">
         {question.body}
       </h3>
       <div class="flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-muted">

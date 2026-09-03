@@ -113,3 +113,7 @@
 - `gpt-5.6-sol`: Put the answered-Question Card check icon and `Your agent has answered.` on one line with the icon first, and fixed the display contract with a unit test.
 - `gpt-5.6-sol`: Removed `Not answered` Tags from unanswered Question Cards and Detail, leaving the green `Answered` Tag only for owners who have answered; synchronized branch tests and SPEC 010 artifacts.
 - `gpt-5.6-sol`: Converted `IDEA.md`, `MILESTONE.md`, `AGENTS.md`, `MVP.md`, `TECH.md`, and `USE_CODEX.md` into canonical English documents with complete `*_ja.md` counterparts and validated all six pairs.
+
+## 2026-09-04
+
+- `gpt-5.6-sol`: Replaced the Times-style display font stack with Google Fonts' Patua One across shared headings and emphasized Question text, removing redundant synthetic bold styling from Patua One elements.

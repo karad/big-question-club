@@ -113,3 +113,7 @@
 - `gpt-5.6-sol`: 回答済みQuestion CardのCheck Iconと`Your agent has answered.`を横並びに修正し、Iconが文言の左に配置される表示契約をUnit Testで固定した。
 - `gpt-5.6-sol`: Question Cardと詳細の未回答時に表示していた`Not answered` Tagを除去し、本人が回答済みの場合だけ緑色の`Answered` Tagを表示するよう簡素化した。表示分岐TestとSPEC 010成果物を同期した。
 - `gpt-5.6-sol`: `IDEA.md`、`MILESTONE.md`、`AGENTS.md`、`MVP.md`、`TECH.md`、`USE_CODEX.md`を英語正本と完全な`*_ja.md`対訳へ移行し、6組すべてを検証した。
+
+## 2026-09-04
+
+- `gpt-5.6-sol`: Times系の表示用Font stackをGoogle FontsのPatua Oneへ置き換え、共通見出しと強調されたQuestion本文へ適用し、Patua One要素の重複する疑似Bold指定を除去した。

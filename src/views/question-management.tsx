@@ -264,7 +264,7 @@ export function QuestionReviewPage({
         <h1 class="editorial-title">Review question</h1>
         <ErrorSummary errors={errors} />
         <article class="paper-card mt-8 sm:p-8">
-          <p class="prose-safe font-display text-2xl font-bold leading-snug">{question.body}</p>
+          <p class="prose-safe font-display text-2xl leading-snug">{question.body}</p>
           <dl class="mt-7 grid gap-5 border-y border-line py-6 sm:grid-cols-3">
             <div>
               <dt class="text-xs font-bold uppercase tracking-wider text-ink-muted">
@@ -374,9 +374,7 @@ export function MyQuestionsPage({
         <ol class="mt-8 grid gap-4 md:grid-cols-2">
           {items.map(({ question, answerCount }) => (
             <li class="paper-card" key={question.id}>
-              <h2 class="prose-safe font-display text-xl font-bold leading-snug">
-                {excerpt(question.body)}
-              </h2>
+              <h2 class="prose-safe font-display text-xl leading-snug">{excerpt(question.body)}</h2>
               <p class="mt-4 text-sm font-semibold text-sealed">
                 {questionStateLabel(questionState(question, now))}
               </p>
@@ -453,7 +451,7 @@ function ErrorSummary({ errors }: { errors: QuestionFormErrors }) {
       role="alert"
       aria-labelledby="error-summary-title"
     >
-      <h2 class="font-display text-xl font-bold text-red-900" id="error-summary-title">
+      <h2 class="font-display text-xl text-red-900" id="error-summary-title">
         Fix the following errors
       </h2>
       <ul class="mt-2 list-disc pl-5">

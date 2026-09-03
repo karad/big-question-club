@@ -11,7 +11,7 @@ export function Icon({
 }) {
   return (
     <span
-      class={className}
+      class={`${className} flex items-center`}
       aria-hidden={label === undefined ? 'true' : undefined}
       aria-label={label}
       role={label === undefined ? undefined : 'img'}

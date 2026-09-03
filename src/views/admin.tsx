@@ -80,7 +80,7 @@ export function AdminDashboardPage({ summary }: { summary: AdminSummary }) {
                 <span class="block text-xs font-bold uppercase tracking-[0.18em] text-ink-muted">
                   {count} total
                 </span>
-                <span class="mt-2 block font-display text-3xl font-bold">{title}</span>
+                <span class="mt-2 block font-display text-3xl">{title}</span>
                 <span class="mt-2 block text-sm leading-6 text-ink-muted">{description}</span>
               </span>
               <span class="grid size-11 shrink-0 place-items-center rounded-full bg-action text-white transition group-hover:bg-action-deep">
@@ -184,7 +184,7 @@ function AdminHero({ summary }: { summary: AdminSummary }) {
       <p class="eyebrow">Private operations</p>
       <div class="mt-3 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
-          <h1 class="font-display break-words text-3xl font-bold tracking-tight min-[360px]:text-4xl sm:text-6xl">
+          <h1 class="font-display break-words text-3xl tracking-tight min-[360px]:text-4xl sm:text-6xl">
             Administration
           </h1>
           <p class="mt-4 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">
