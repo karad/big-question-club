@@ -1,237 +1,237 @@
-# タスク: WebMCP MVP Tool群
+# Tasks: WebMCP MVP Tools
 
-**入力**: `specs/007-webmcp-mvp-tools/` の設計文書  
-**前提**: [plan.md](./plan.md)、[spec.md](./spec.md)、[research.md](./research.md)、[data-model.md](./data-model.md)、[contracts/](./contracts/)、[quickstart.md](./quickstart.md)
+**Input**: Design documents in `specs/007-webmcp-mvp-tools/`
+**Prerequisites**: [plan.md](./plan.md), [spec.md](./spec.md), [research.md](./research.md), [data-model.md](./data-model.md), [contracts/](./contracts/), [quickstart.md](./quickstart.md)
 
-**テスト方針**: 1行Prompt、環境追従URL、書記素境界、Tool SchemaはUnit Test、認証・HTTP・SSR・WebMCP導線はIntegration Test、D1 Migration・本人限定更新削除・競合はWorkers D1 Integration Testで失敗先行にする。最後に実ブラウザーとPersonal AgentでQuickstartを確認する。
+**Testing Policy**: Use failing-first unit tests for the one-line prompt, environment-aware URL, grapheme boundaries, and tool schemas; integration tests for authentication, HTTP, SSR, and WebMCP flows; and Workers D1 integration tests for migration, owner-only update/delete, and concurrency. Finally verify the quickstart with a real browser and Personal Agent.
 
-**構成**: 6つのユーザーストーリーを独立検証可能なPhaseに分け、全40タスクを依存順に実行する。
+**Organization**: Split six user stories into independently verifiable phases and execute all tasks in dependency order.
 
-## Phase 1: セットアップと現状固定
+## Phase 1: Setup and Baseline
 
-**目的**: 既存のSPEC 004〜006実装を壊さず、SPEC 007の検証記録と共通テスト補助を準備する。
+**Purpose**: Prepare SPEC 007 validation records and shared test helpers without breaking SPEC 004–006.
 
-- [X] T001 現在のブランチ、既存4 Tool登録、Node／D1テスト、型検査、Lint、Buildの基準結果を `specs/007-webmcp-mvp-tools/validation-record.md` に記録する
-- [X] T002 [P] WebMCP Tool登録定義とfetch応答を検査する共通テスト補助を `tests/helpers/webmcp.ts` に追加する
-- [X] T003 [P] SPEC 007のQuestion・Answer・2利用者・締切境界fixtureを `tests/helpers/question-repository.ts` に追加する
-
----
-
-## Phase 2: 共通基盤
-
-**目的**: 全ユーザーストーリーを支えるAnswer更新時刻、表示文字契約、共通エラー、Repository境界を確立する。
-
-**⚠️ 重要**: このPhaseが完了するまでユーザーストーリー実装へ進まない。
-
-- [X] T004 [P] `tests/d1/schema-contract.test.ts` と `tests/d1/legacy-upgrade.test.ts` に `answers.updated_at`、既存Answer保持、表示文字CHECK移管の失敗先行Migrationテストを追加する
-- [X] T005 `migrations/0005_answer_revisions.sql` と `src/db/schema.ts` にAnswer表再構築、`updated_at`、空白・改行・一意性・参照制約を実装する
-- [X] T006 [P] `tests/unit/answer-submission.test.ts` に本文1／5,000／5,001書記素、Excerpt 1／160／161書記素、結合文字、絵文字、改行、定義外項目の失敗先行テストを追加する
-- [X] T007 `src/domain/question-input.ts` と `src/domain/answer-submission.ts` に共通書記素カウントと投稿・更新共通入力契約を実装する
-- [X] T008 [P] `src/domain/answer-submission.ts` に `INVALID_INPUT`、`ANSWER_NOT_FOUND`、`TOOL_UNAVAILABLE` を含む英語共通エラー契約を追加し、既存コードとの移行を固定するUnit Testを `tests/unit/answer-submission.test.ts` に追加する
-- [X] T009 `src/domain/question.ts`、`src/repositories/question-repository.ts`、`tests/helpers/question-repository.ts` に `Answer.updatedAt` とsubmit／update／remove結果型・Repositoryメソッドを追加する
-- [X] T010 [P] 認証、Draft非列挙、非 `OPEN`、一時障害、`Cache-Control: no-store` の共通期待値を `tests/integration/webmcp-question-api.test.ts` と `tests/integration/answer-mutation-api.test.ts` に失敗先行で追加する
-
-**チェックポイント**: Migration、Domain入力、共通エラー、Repository Interfaceが全Storyから利用可能になる。
+- [X] T001 Record current branch, existing four-tool registration, Node/D1 tests, typecheck, lint, and build baseline in `specs/007-webmcp-mvp-tools/validation-record.md`
+- [X] T002 [P] Add shared helpers for inspecting WebMCP registration and fetch responses to `tests/helpers/webmcp.ts`
+- [X] T003 [P] Add SPEC 007 Question, Answer, two-User, and deadline-boundary fixtures to `tests/helpers/question-repository.ts`
 
 ---
 
-## Phase 3: ユーザーストーリー1 — Question画面からAgentへの依頼文をコピーする (P1) 🎯
+## Phase 2: Shared Foundation
 
-**目標**: 認証済み・未投稿・`OPEN` のQuestion画面だけに、ChatGPTの組み込みブラウザを指定して既存Chrome Tabを除外し、現在のOriginへ追従するQuestion絶対URLを含む1行Promptを表示して、コピー成功・失敗を英語で通知する。
+**Purpose**: Establish Answer update timestamps, display-character contracts, common errors, and repository boundaries for every story.
 
-**独立テスト**: Question本文にInjectionを含めてもPromptにはQueryとFragmentを除いたQuestion絶対URLだけが可変値として入り、コピー結果が表示と一致し、失敗時も手動コピーでき、コピーだけではToolを実行しない。
+**⚠️ CRITICAL**: Do not begin user-story implementation until this phase is complete.
 
-- [X] T011 [P] [US1] ChatGPTの組み込みブラウザ指定と既存Chrome Tab除外を含む1行の確定英語Prompt、現在のOriginを含むQuestion絶対URL、Query／Fragment／Question本文の非混入、HTML escapingを検証する失敗先行Unit Testを `tests/unit/agent-request-prompt.test.ts` に追加する
-- [X] T012 [US1] 環境追従するQuestion絶対URLと1行Promptの生成、および表示可否判定の純粋関数を `src/domain/agent-request-prompt.ts` に実装する
-- [X] T013 [P] [US1] 認証済み未投稿Open／未認証／投稿済み／Draft／Closed／RevealedのSSR表示分岐を `tests/integration/agent-request-prompt.test.ts` に失敗先行で追加する
-- [X] T014 [US1] `Ask your personal agent`、注意文、選択可能Prompt、`Copy prompt`、status領域を `src/views/question-detail.tsx` に実装し `src/routes/question.ts` から状態別に描画する
-- [X] T015 [P] [US1] Clipboard成功・API不在・拒否と副作用なしを検証する失敗先行Unit Testを `tests/unit/agent-request-prompt-client.test.ts` に追加する
-- [X] T016 [US1] Clipboard `writeText()` と `Copied`／手動コピー案内を `src/client/agent-request-prompt.ts` に実装し `src/client.ts` からQuestion画面だけで初期化する
+- [X] T004 [P] Add failing-first migration tests for `answers.updated_at`, existing Answer preservation, and transfer of display-character checks to `tests/d1/schema-contract.test.ts` and `tests/d1/legacy-upgrade.test.ts`
+- [X] T005 Implement Answer-table rebuilding, `updated_at`, whitespace/newline, uniqueness, and referential constraints in `migrations/0005_answer_revisions.sql` and `src/db/schema.ts`
+- [X] T006 [P] Add failing-first tests to `tests/unit/answer-submission.test.ts` for body 1/5,000/5,001 graphemes; excerpt 1/160/161; combining characters, emoji, newlines, and undefined fields
+- [X] T007 Implement shared grapheme counting and common submit/update input contracts in `src/domain/question-input.ts` and `src/domain/answer-submission.ts`
+- [X] T008 [P] Add the English common error contract including `INVALID_INPUT`, `ANSWER_NOT_FOUND`, and `TOOL_UNAVAILABLE` to `src/domain/answer-submission.ts`, plus migration-locking unit tests in `tests/unit/answer-submission.test.ts`
+- [X] T009 Add `Answer.updatedAt`, submit/update/remove result types, and repository methods to `src/domain/question.ts`, `src/repositories/question-repository.ts`, and `tests/helpers/question-repository.ts`
+- [X] T010 [P] Add failing-first shared expectations for authentication, Draft non-enumeration, non-`OPEN`, temporary failure, and `Cache-Control: no-store` to `tests/integration/webmcp-question-api.test.ts` and `tests/integration/answer-mutation-api.test.ts`
 
-**チェックポイント**: HumanがQuestionを明示選択し、安全な依頼Promptをコピーできる。
-
----
-
-## Phase 4: ユーザーストーリー2 — ユーザーが指定したQuestionを読む (P1)
-
-**目標**: 認証済みAgentがHuman指定の `OPEN` Questionだけを、固定instruction付きの未信頼DTOとして取得する。
-
-**独立テスト**: 指定IDのOpen Questionだけが返り、Draft／Closed／Revealedは拒否され、作成者・回答数・本人状態・他者Answerは出力されない。
-
-- [X] T017 [P] [US2] `get_question` の入力Schema、固定description、`readOnlyHint: true`、`untrustedContentHint: true`、AbortSignalを検証する失敗先行Unit Testを `tests/unit/register-get-question-tool.test.ts` に追加する
-- [X] T018 [P] [US2] Question DTO、固定instruction契約、認証・状態・非公開フィールドを検証する失敗先行Integration Testを `tests/integration/webmcp-question-api.test.ts` に追加する
-- [X] T019 [US2] `GET /api/questions/:questionId` をWebMCP Question契約へ更新し認証・`OPEN`・非列挙・no-storeを `src/routes/question.ts` と `src/app.tsx` に実装する
-- [X] T020 [US2] `get_question` の厳密入力、同一Origin fetch、キャンセル、共通エラー保持を `src/webmcp/register-get-question-tool.ts` に実装する
-- [X] T021 [US2] `get_question` を `src/client.ts` の本番Tool登録列へ追加し、US1のコピーPromptに含まれるQuestion URLを開いたページから指定IDを取得できる導線を `tests/integration/agent-request-prompt.test.ts` で確認する
-
-**チェックポイント**: AgentはHuman指定Questionだけを読み、探索Capabilityを持たない。
+**Checkpoint**: Migration, domain input, common errors, and repository interfaces are available to all stories.
 
 ---
 
-## Phase 5: ユーザーストーリー3 — 独立したAnswerを1件投稿する (P1)
+## Phase 3: User Story 1 — Copy an Agent Request from the Question Screen (P1) 🎯
 
-**目標**: 指定Questionへ本人Answerを1件だけ投稿し、表示文字・締切・重複・共通エラー契約を満たす。
+**Goal**: Only on authenticated, unanswered, `OPEN` Question screens, show a one-line prompt specifying ChatGPT's built-in browser instead of an existing Chrome tab, with a current-Origin absolute Question URL, and report copy success/failure in English.
 
-**独立テスト**: Open Questionへの有効投稿だけが成功し、重複・同時10件・締切境界・無効入力・未認証が期待コードとなる。
+**Independent Test**: Even with injection in the body, only the absolute Question URL without query/fragment is variable; copied and displayed text match; manual copy remains on failure; and copying alone invokes no tool.
 
-- [X] T022 [P] [US3] `submit_answer` の新しい `INVALID_INPUT`／`TOOL_UNAVAILABLE`、表示文字Schema、annotation、キャンセルを `tests/unit/register-submit-answer-tool.test.ts` に失敗先行で追加する
-- [X] T023 [P] [US3] 投稿成功、重複、同時10件、削除前の一意性、締切、認証、Draft非列挙を `tests/integration/answer-submission-api.test.ts` に失敗先行で追加する
-- [X] T024 [US3] 投稿RouteとRepositoryを共通Domain契約、`updatedAt === createdAt`、安定した英語エラーへ更新するため `src/routes/submit-answer.ts` と `src/repositories/question-repository.ts` を実装する
-- [X] T025 [US3] `submit_answer` のSchema、description、同一Origin fetch、AbortSignal、共通エラーを `src/webmcp/register-submit-answer-tool.ts` に同期する
+- [X] T011 [P] [US1] Add failing-first unit tests to `tests/unit/agent-request-prompt.test.ts` for the finalized one-line English prompt, built-in browser, exclusion of an existing Chrome tab, current-Origin absolute URL, no query/fragment/body, and HTML escaping
+- [X] T012 [US1] Implement pure environment-aware absolute URL, one-line prompt, and visibility functions in `src/domain/agent-request-prompt.ts`
+- [X] T013 [P] [US1] Add failing-first SSR branches for authenticated unanswered Open, unauthenticated, submitted, Draft, Closed, and Revealed to `tests/integration/agent-request-prompt.test.ts`
+- [X] T014 [US1] Implement `Ask your personal agent`, notice, selectable prompt, `Copy prompt`, and status region in `src/views/question-detail.tsx`, rendered by state from `src/routes/question.ts`
+- [X] T015 [P] [US1] Add failing-first unit tests for Clipboard success, absent API, denial, and no side effects to `tests/unit/agent-request-prompt-client.test.ts`
+- [X] T016 [US1] Implement Clipboard `writeText()` and `Copied`/manual-copy guidance in `src/client/agent-request-prompt.ts`, initialized only on Question screens from `src/client.ts`
 
-**チェックポイント**: Human指定Questionへ独立Answerが1件だけ投稿される。
-
----
-
-## Phase 6: ユーザーストーリー4 — 自分のAnswerを更新または削除する (P1)
-
-**目標**: Humanの明示依頼時だけ、締切前の本人Answerを更新・削除し、削除後再投稿と競合安全性を成立させる。
-
-**独立テスト**: 2利用者で本人更新・削除・削除後再投稿が成功し、他者操作・締切後操作・更新対削除競合・削除対再投稿競合が他者変更や複数Answerを生まない。
-
-- [X] T026 [P] [US4] 本人限定update/remove、`updatedAt`、Hard Delete、削除後再投稿、締切境界、他者非変更、各10件の競合を `tests/d1/answer-mutation-repository.test.ts` に失敗先行で追加する
-- [X] T027 [US4] 条件付きprepared `UPDATE`／`DELETE` と結果分類を `src/repositories/question-repository.ts` に実装し、remove後の遅延updateで復元しないことを保証する
-- [X] T028 [P] [US4] `PUT`／`DELETE /api/questions/:questionId/my-answer` の成功、無効入力、未認証、Questionなし、本人Answerなし、締切、一時障害を `tests/integration/answer-mutation-api.test.ts` に失敗先行で追加する
-- [X] T029 [US4] 更新・削除HTTP契約と英語エラー分類を `src/routes/answer-mutations.ts` に実装し `src/app.tsx` へ登録する
-- [X] T030 [P] [US4] `update_answer` と `remove_answer` のSchema、Human明示依頼description、書き込みannotation、キャンセル、エラー保持を `tests/unit/register-update-answer-tool.test.ts` と `tests/unit/register-remove-answer-tool.test.ts` に失敗先行で追加する
-- [X] T031 [P] [US4] `update_answer` の厳密入力と同一Origin PUTを `src/webmcp/register-update-answer-tool.ts` に実装する
-- [X] T032 [US4] `remove_answer` の厳密入力と同一Origin DELETEを `src/webmcp/register-remove-answer-tool.ts` に実装し、両Toolを `src/client.ts` の登録列へ追加する
-
-**チェックポイント**: 締切前の本人Answerだけが訂正・撤回でき、削除後に安全に再参加できる。
+**Checkpoint**: A Human can explicitly select a Question and copy a safe request prompt.
 
 ---
 
-## Phase 7: ユーザーストーリー5 — 自分の投稿状況を確認する (P1)
+## Phase 4: User Story 2 — Read a User-Selected Question (P1)
 
-**目標**: 投稿・更新・削除・締切後の各時点で、本人の最新状態だけを確認できる。
+**Goal**: An authenticated Agent retrieves only the Human-selected `OPEN` Question as an untrusted DTO with fixed instructions.
 
-**独立テスト**: 更新後は最新本文と2時刻、削除後は `not_submitted`、別Userしか投稿していない場合も `not_submitted` が返る。
+**Independent Test**: Only the specified Open Question is returned; Draft/Closed/Revealed are rejected; creator, counts, personal state, and other Answers are absent.
 
-- [X] T033 [P] [US5] 未投稿、投稿済み、更新済み、削除済み、Closed、Revealed、別User投稿ありの本人DTOを `tests/integration/webmcp-question-api.test.ts` に失敗先行で追加する
-- [X] T034 [US5] `get_my_submission` に本人の `submittedAt` と `updatedAt` を返し、Draft非列挙と他者状態非依存を `src/routes/question.ts` と `src/repositories/question-repository.ts` に実装する
-- [X] T035 [US5] `get_my_submission` の未信頼annotation、厳密入力、キャンセル、更新後・削除後応答を `tests/unit/register-my-submission-tool.test.ts` と `src/webmcp/register-my-submission-tool.ts` に同期する
+- [X] T017 [P] [US2] Add failing-first unit tests to `tests/unit/register-get-question-tool.test.ts` for `get_question` input schema, fixed description, `readOnlyHint: true`, `untrustedContentHint: true`, and AbortSignal
+- [X] T018 [P] [US2] Add failing-first integration tests to `tests/integration/webmcp-question-api.test.ts` for the Question DTO, fixed instructions, authentication, state, and private fields
+- [X] T019 [US2] Update `GET /api/questions/:questionId` to the WebMCP Question contract and implement authentication, `OPEN`, non-enumeration, and no-store in `src/routes/question.ts` and `src/app.tsx`
+- [X] T020 [US2] Implement strict input, same-origin fetch, cancellation, and common-error preservation for `get_question` in `src/webmcp/register-get-question-tool.ts`
+- [X] T021 [US2] Add `get_question` to production registration in `src/client.ts` and verify in `tests/integration/agent-request-prompt.test.ts` that the page opened from US1's URL can derive the specified ID
 
-**チェックポイント**: Agentは本人の現在状態だけを確実に再確認できる。
-
----
-
-## Phase 8: ユーザーストーリー6 — 一貫した安全なTool契約を利用する (P2)
-
-**目標**: 5 Toolの公開面、認証、annotation、エラー、他者非露出・非変更を横断して固定する。
-
-**独立テスト**: 利用可能Toolが5件だけで、2利用者・全Question状態・全Toolを組み合わせても他者情報露出と他者変更が0件になる。
-
-- [X] T036 [P] [US6] 本番Toolが5件だけでQuestion探索・P0検証・他者Answer Toolが登録されない失敗先行テストを `tests/integration/verification-page.test.ts` と `tests/unit/register-tool.test.ts` に追加する
-- [X] T037 [US6] P0検証用Toolと `who_am_i` のWebMCP登録を `src/client.ts` から外し、5 Toolの逐次登録、失敗status、英語description、annotationを最終化する
-- [X] T038 [US6] 2利用者、Draft／Open／Closed／Revealed、5 Tool、直接HTTPを横断する他者Answer非露出・非変更回帰テストを `tests/integration/question-visibility.test.ts` と `tests/d1/answer-mutation-repository.test.ts` に追加する
-
-**チェックポイント**: 最小CapabilityとSealed境界を持つ本番WebMCP面が完成する。
+**Checkpoint**: The Agent reads only the Human-selected Question and has no discovery capability.
 
 ---
 
-## Phase 9: 仕上げと横断検証
+## Phase 5: User Story 3 — Submit One Independent Answer (P1)
 
-**目的**: 文書、品質ゲート、実ブラウザーE2E、完了記録を同期する。
+**Goal**: Submit exactly one current-User Answer to the selected Question while satisfying display-character, deadline, duplicate, and error contracts.
 
-- [X] T039 [P] `README.md`、`specs/007-webmcp-mvp-tools/quickstart.md`、`specs/007-webmcp-mvp-tools/validation-record.md` に5 Tool、Promptコピー、更新・削除・再投稿、2利用者、Injectionの安全な検証手順と結果欄を同期する
-- [X] T040 `npm run typecheck`、`npm run lint`、`npm run format`、`npm test`、`npm run test:d1`、`npm run build`、`npm run db:schema:check` とQuickstartの実機E2Eを完了し、結果を `specs/007-webmcp-mvp-tools/validation-record.md`、`USE_CODEX.md`、成功時のみ `MILESTONE.md` に記録する
+**Independent Test**: Only valid Open submission succeeds; duplicate, ten concurrent, deadline, invalid-input, and unauthenticated cases return expected codes.
 
----
+- [X] T022 [P] [US3] Add failing-first tests to `tests/unit/register-submit-answer-tool.test.ts` for new `INVALID_INPUT`/`TOOL_UNAVAILABLE`, display-character schema, annotations, and cancellation
+- [X] T023 [P] [US3] Add failing-first tests to `tests/integration/answer-submission-api.test.ts` for success, duplicate, ten concurrent submissions, pre-deletion uniqueness, deadline, authentication, and Draft non-enumeration
+- [X] T024 [US3] Implement common domain input, `updatedAt === createdAt`, and stable English errors for the submission route/repository in `src/routes/submit-answer.ts` and `src/repositories/question-repository.ts`
+- [X] T025 [US3] Synchronize `submit_answer` schema, description, same-origin fetch, AbortSignal, and common errors in `src/webmcp/register-submit-answer-tool.ts`
 
-## Phase 10: Context根拠付き回答契約
-
-- [X] T041 [P] 確定した1行Promptと `get_question` の固定Context instructionをUnit／Integration Testで固定する
-- [X] T042 User自身の記述を優先し、Assistant提案・検討候補を事実とみなさず、明示的な個人見解がない場合は未確認事実を断定しない最善の代理回答を作成・投稿して、その不足だけを理由にHumanへ確認しない汎用規則をTool description、Schema、返却データへ実装する。初回Promptは投稿許可を含み、追加Previewや承認は要求せず、投稿後は本人状態を確認する
-- [X] T043 SPEC 007・009、README、MILESTONE、検証記録を確定契約へ同期し、全自動品質Gateを実行する
+**Checkpoint**: Exactly one independent Answer is submitted to the Human-selected Question.
 
 ---
 
-## 依存関係と実行順
+## Phase 6: User Story 4 — Update or Remove My Answer (P1)
 
-### Phase依存関係
+**Goal**: Only on explicit Human request, update/delete the current User's Answer before the deadline, supporting safe resubmission and concurrency.
 
-- **Phase 1**: 依存なし。
-- **Phase 2**: Phase 1完了後。全ユーザーストーリーをブロックする。
-- **US1 (Phase 3)**: Phase 2完了後に開始できる。
-- **US2 (Phase 4)**: Phase 2完了後に開始できる。US1と統合するとコピペから取得まで確認できる。
-- **US3 (Phase 5)**: Phase 2完了後に開始できる。US2完了後なら初回Promptの主経路を通せる。
-- **US4 (Phase 6)**: Phase 2とUS3完了後。既存Answerを前提とする。
-- **US5 (Phase 7)**: Phase 2完了後に開始できるが、更新後・削除後ケースはUS4に依存する。
-- **US6 (Phase 8)**: US2〜US5完了後。5 Toolの横断面を固定する。
-- **Phase 9**: 実装対象の全Story完了後。
-- **Phase 10**: Phase 9完了後。確定したPromptとContext根拠契約を既存5 Toolへ反映する。
+**Independent Test**: With two Users, current-User update/delete/resubmit succeeds while unauthorized, post-deadline, update-vs-delete, and delete-vs-resubmit cases produce no other-User changes or multiple Answers.
 
-### ユーザーストーリー依存グラフ
+- [X] T026 [P] [US4] Add failing-first D1 tests to `tests/d1/answer-mutation-repository.test.ts` for owner-only update/remove, `updatedAt`, hard delete, resubmission, deadline, no other-User changes, and ten-case concurrency groups
+- [X] T027 [US4] Implement conditional prepared `UPDATE`/`DELETE` and result classification in `src/repositories/question-repository.ts`, ensuring late update cannot restore after remove
+- [X] T028 [P] [US4] Add failing-first integration tests to `tests/integration/answer-mutation-api.test.ts` for successful `PUT`/`DELETE /api/questions/:questionId/my-answer`, invalid input, authentication, missing Question, missing personal Answer, deadline, and temporary failure
+- [X] T029 [US4] Implement update/delete HTTP contracts and English error classification in `src/routes/answer-mutations.ts` and register them in `src/app.tsx`
+- [X] T030 [P] [US4] Add failing-first tests for `update_answer` and `remove_answer` schemas, explicit-Human-request descriptions, write annotations, cancellation, and error preservation to `tests/unit/register-update-answer-tool.test.ts` and `tests/unit/register-remove-answer-tool.test.ts`
+- [X] T031 [P] [US4] Implement strict `update_answer` input and same-origin PUT in `src/webmcp/register-update-answer-tool.ts`
+- [X] T032 [US4] Implement strict `remove_answer` input and same-origin DELETE in `src/webmcp/register-remove-answer-tool.ts`, then register both in `src/client.ts`
+
+**Checkpoint**: Only the current User's Answer can be corrected or withdrawn before the deadline, with safe re-entry after deletion.
+
+---
+
+## Phase 7: User Story 5 — Check My Submission State (P1)
+
+**Goal**: Verify only the current User's latest state after submission, update, deletion, and deadline.
+
+**Independent Test**: Updated state returns latest body and two timestamps, deleted state returns `not_submitted`, and a Question answered only by another User still returns `not_submitted`.
+
+- [X] T033 [P] [US5] Add failing-first personal DTO integration tests to `tests/integration/webmcp-question-api.test.ts` for unsubmitted, submitted, updated, deleted, Closed, Revealed, and another User submitted
+- [X] T034 [US5] Return current User `submittedAt`/`updatedAt`, preserve Draft non-enumeration and independence from other-User state in `src/routes/question.ts` and `src/repositories/question-repository.ts`
+- [X] T035 [US5] Synchronize untrusted annotations, strict input, cancellation, and updated/deleted responses for `get_my_submission` in `tests/unit/register-my-submission-tool.test.ts` and `src/webmcp/register-my-submission-tool.ts`
+
+**Checkpoint**: The Agent can reliably recheck only the current User's state.
+
+---
+
+## Phase 8: User Story 6 — Use Consistent, Safe Tool Contracts (P2)
+
+**Goal**: Lock down the five-tool surface, authentication, annotations, errors, and absence of other-User exposure/change across all tools.
+
+**Independent Test**: Exactly five tools are available, and combining two Users, all Question states, and all tools exposes or changes zero other-User data.
+
+- [X] T036 [P] [US6] Add failing-first tests to `tests/integration/verification-page.test.ts` and `tests/unit/register-tool.test.ts` confirming production registers exactly five tools and no discovery, P0 validation, or other-User Answer tools
+- [X] T037 [US6] Remove P0 validation tools and `who_am_i` registration from `src/client.ts`; finalize sequential registration, failure status, English descriptions, and annotations for five tools
+- [X] T038 [US6] Add cross-cutting regression tests to `tests/integration/question-visibility.test.ts` and `tests/d1/answer-mutation-repository.test.ts` for no other-User Answer exposure/change across two Users, Draft/Open/Closed/Revealed, five tools, and direct HTTP
+
+**Checkpoint**: The production WebMCP surface has minimum capability and sealed boundaries.
+
+---
+
+## Phase 9: Polish and Cross-Cutting Verification
+
+**Purpose**: Synchronize documentation, quality gates, real-browser E2E, and completion records.
+
+- [X] T039 [P] Synchronize safe verification procedures and result sections for five tools, prompt copy, update/delete/resubmit, two Users, and injection in `README.md`, `specs/007-webmcp-mvp-tools/quickstart.md`, and `specs/007-webmcp-mvp-tools/validation-record.md`
+- [X] T040 Complete `npm run typecheck`, `npm run lint`, `npm run format`, `npm test`, `npm run test:d1`, `npm run build`, `npm run db:schema:check`, and quickstart real-device E2E; record results in `specs/007-webmcp-mvp-tools/validation-record.md`, `USE_CODEX.md`, and only on success `MILESTONE.md`
+
+---
+
+## Phase 10: Context-Grounded Answer Contract
+
+- [X] T041 [P] Lock the finalized one-line prompt and fixed `get_question` context instructions with unit and integration tests
+- [X] T042 Implement across tool descriptions, schemas, and returned data the rule to prioritize User-authored statements, avoid treating Assistant suggestions/options as facts, and when no explicit personal view exists create and submit a best-effort proxy without asserting unverified facts and without asking solely for that missing view. The initial prompt authorizes submission without another preview or approval; verify personal state afterward
+- [X] T043 Synchronize SPEC 007/009, README, MILESTONE, and validation records with the finalized contract, and run every automated quality gate
+
+---
+
+## Dependencies and Execution Order
+
+### Phase Dependencies
+
+- **Phase 1**: No dependencies.
+- **Phase 2**: After Phase 1; blocks all stories.
+- **US1 (Phase 3)**: After Phase 2.
+- **US2 (Phase 4)**: After Phase 2; integrating US1 verifies copy-to-retrieval.
+- **US3 (Phase 5)**: After Phase 2; after US2 it covers the initial prompt's primary path.
+- **US4 (Phase 6)**: After Phase 2 and US3 because an existing Answer is required.
+- **US5 (Phase 7)**: Can start after Phase 2; post-update/delete cases depend on US4.
+- **US6 (Phase 8)**: After US2–US5; locks down the cross-tool surface.
+- **Phase 9**: After all implementation stories.
+- **Phase 10**: After Phase 9; applies the finalized prompt and context-grounding contract to the five tools.
+
+### User Story Dependency Graph
 
 ```text
 Foundation
-├── US1 Prompt表示・コピー
-├── US2 指定Question取得 ──> US3 初回投稿 ──> US4 更新・削除
-│                                  └──────────> US5 本人状態
-└────────────────────────────────────────────> US6 横断安全性
+├── US1 Prompt display/copy
+├── US2 Selected Question retrieval ──> US3 First submission ──> US4 Update/delete
+│                                         └───────────────────> US5 Personal state
+└─────────────────────────────────────────────────────────────> US6 Cross-cutting safety
 ```
 
-### Story内の順序
+### Order Within Each Story
 
-- 失敗先行テストを作成し、期待どおり失敗することを確認してから実装する。
-- Domain／Schema／RepositoryをRouteより先に実装する。
-- HTTP契約をWebMCP登録より先に成立させる。
-- Storyの独立テストを通してから次の依存Storyへ進む。
+- Create failing-first tests and confirm expected failure before implementation.
+- Implement domain/schema/repository before routes.
+- Establish HTTP contracts before WebMCP registration.
+- Pass the story's independent tests before the next dependent story.
 
-## 並行実行例
+## Parallel Execution Examples
 
 ### US1
 
 ```text
-T011 Prompt Unit Test
-T013 SSR表示Integration Test
-T015 Clipboard Unit Test
+T011 Prompt unit test
+T013 SSR display integration test
+T015 Clipboard unit test
 ```
 
-### US2・US3
+### US2 and US3
 
 ```text
-T017 get_question Tool Test
-T018 Question API Integration Test
-T022 submit_answer Tool Test
-T023 Submission API Integration Test
+T017 get_question tool test
+T018 Question API integration test
+T022 submit_answer tool test
+T023 Submission API integration test
 ```
 
 ### US4
 
 ```text
-T026 D1更新削除・競合Test
-T028 HTTP更新削除Integration Test
-T030 WebMCP更新削除Unit Test
+T026 D1 update/delete and concurrency test
+T028 HTTP update/delete integration test
+T030 WebMCP update/delete unit test
 ```
 
-### US5・US6
+### US5 and US6
 
 ```text
-T033 本人状態Integration Test
-T036 5 Tool公開面Test
-T038 他者非露出・非変更回帰Test
+T033 Personal-state integration test
+T036 Five-tool surface test
+T038 No-other-User-exposure/change regression test
 ```
 
-## 実装戦略
+## Implementation Strategy
 
-### 推奨MVP
+### Recommended MVP
 
-HumanがQuestionを選んでAgentへ回答させる最小価値は、Phase 1〜2とUS1、US2、US3、US5で成立する。これによりPromptコピー、指定Question取得、1件投稿、本人確認が完成する。
+The minimum Human-selected Agent Answer value is complete with Phases 1–2 and US1, US2, US3, and US5: prompt copy, selected Question retrieval, one submission, and personal verification.
 
-### 段階的提供
+### Incremental Delivery
 
-1. Phase 1〜2でMigration・Domain・Repository基盤を固定する。
-2. US1でHumanの明示起点を提供する。
-3. US2・US3・US5で初回回答のE2Eを完成する。
-4. US4で締切前の訂正・撤回・再投稿を追加する。
-5. US6でTool面とSealed境界を横断固定する。
-6. Phase 9で全品質ゲートと実機E2Eを完了する。
-7. Phase 10でPrompt、Context根拠、明示的な個人見解がない場合の代理回答、未確認事実の非断定、不要な確認質問の禁止、追加承認不要、投稿結果確認を同期する。
+1. Fix migration, domain, and repository foundations in Phases 1–2.
+2. Add the explicit Human starting point in US1.
+3. Complete first-Answer E2E in US2, US3, and US5.
+4. Add pre-deadline correction, withdrawal, and resubmission in US4.
+5. Lock down tool surface and sealed boundaries in US6.
+6. Complete all gates and real-device E2E in Phase 9.
+7. In Phase 10, synchronize the prompt, context grounding, proxy answers when no explicit view exists, no unverified claims, no unnecessary questions, no extra approval, and submission-result verification.
 
-## タスク集計
+## Task Count
 
-| 区分 | タスク数 |
+| Category | Tasks |
 | --- | ---: |
 | Setup | 3 |
 | Foundational | 7 |
@@ -242,5 +242,5 @@ HumanがQuestionを選んでAgentへ回答させる最小価値は、Phase 1〜2
 | US5 | 3 |
 | US6 | 3 |
 | Polish | 2 |
-| Context契約 | 3 |
-| **合計** | **43** |
+| Context contract | 3 |
+| **Total** | **43** |

@@ -14,6 +14,8 @@
 - Submitted documents use the English version as the canonical source. When a Japanese version is also provided, name it `*_ja.md`; use the corresponding `*.md` filename for the English version.
 - When a SpecKit agent-context update occurs, update the content between `<!-- SPECKIT START -->` and `<!-- SPECKIT END -->` to reference the latest `plan.md` for the applicable SPEC. If the automated update cannot run, update it manually.
 - If escalation is required, escalate without considering detours or alternatives.
+- By default, do not use services or models other than ChatGPT or Codex, including external services, external LLMs, local LLMs, and OS-provided AI or translation tools.
+- If using another service or model is genuinely necessary, explain what will be used, why it is needed, and what data it will process, then obtain the user's explicit approval before using it.
 - Avoid Python when the task can be completed without it. If Python software must be installed, do not install it directly into the system; use a venv virtual environment.
 
 ## Spec Implement Workflow

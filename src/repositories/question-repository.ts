@@ -76,6 +76,7 @@ export type RemoveAnswerResult =
   | { kind: 'not-open' }
   | { kind: 'unavailable' };
 
+/** Defines persistence operations for questions and answers. */
 export interface QuestionRepository {
   getQuestion(id: string): Promise<Question | null>;
   getOwnedQuestion(id: string, creatorUserId: string): Promise<Question | null>;
@@ -131,6 +132,11 @@ export interface QuestionRepository {
   getRevealedAnswerBody(questionId: string, answerId: string): Promise<RevealedBodyView | null>;
 }
 
+/**
+ * Creates a question repository backed by Cloudflare D1.
+ * @param database - D1 database binding.
+ * @returns The question repository implementation.
+ */
 export function createQuestionRepository(database: D1Database): QuestionRepository {
   const db = createDatabase(database);
   // Conditional mutations stay as prepared D1 statements because ORM read-then-write sequences
@@ -205,6 +211,7 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
         await db.insert(questions).values(question);
         return { kind: 'created', question };
       } catch {
+        // A repeated creation token is safe only when every persisted input still matches the request.
         const current = await repository.getQuestion(input.questionId);
         if (current !== null) {
           const same =
@@ -226,6 +233,7 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
     },
     async deleteOwnedQuestion(questionId, creatorUserId, expectedUpdatedAt, now) {
       try {
+        // Keep the audit predicate identical to the delete predicate so stale drafts leave no success record.
         const [, deletion] = await database.batch([
           database
             .prepare(
@@ -284,6 +292,7 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
     },
     async publish(questionId, creatorUserId, now, expectedUpdatedAt) {
       try {
+        // Enforce ownership, schedule bounds, draft state, and optimistic locking in the write itself to avoid TOCTOU races.
         const updatedAtCondition = expectedUpdatedAt === undefined ? '' : ' AND updated_at = ?';
         const bindings: unknown[] = [
           now,
@@ -444,6 +453,7 @@ export function createQuestionRepository(database: D1Database): QuestionReposito
     },
     async removeAnswer(questionId, userId, now) {
       try {
+        // Record success only for the same open answer selected by the guarded deletion.
         const [, result] = await database.batch([
           database
             .prepare(

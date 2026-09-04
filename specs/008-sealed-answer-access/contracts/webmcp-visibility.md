@@ -1,15 +1,15 @@
-# WebMCP Answer公開契約
+# WebMCP Answer Disclosure Contract
 
-## Capability境界
+## Capability Boundary
 
-本番WebMCPは既存5 Toolだけを維持し、Answer一覧、他者詳細、検索、要約、比較、回答数のToolを追加しない。
+Production WebMCP retains only the existing five tools and adds no tool for Answer lists, other-User details, search, summaries, comparisons, or answer counts.
 
-## 読み取りTool
+## Read Tools
 
-- `get_question` はHuman指定の `OPEN` Questionだけを返し、回答数、本人状態、Answer ID・内容・投稿者・時刻を返さない。
-- `get_my_submission` は公開済みQuestionの全状態で本人状態を返す。投稿済みなら本人本文、Excerpt、投稿時刻、更新時刻だけを返す。
-- 未投稿応答は他者の投稿有無・件数で変化しない。
+- `get_question` returns only a Human-selected `OPEN` Question, with no answer count, own state, Answer ID/content/submitter/time.
+- `get_my_submission` returns the current User's state for every published Question state. If submitted, it returns only that User's body, excerpt, submission time, and update time.
+- The unsubmitted response does not vary with another User's submission existence or count.
 
-## 書き込みToolとReveal後
+## Write Tools and Post-Reveal
 
-`submit_answer`、`update_answer`、`remove_answer` はSPEC 007契約を維持し、失敗へ他者Answerを含めない。Questionが `REVEALED` でもWebMCPへ他者Answer、回答数、他者の投稿有無を返さず、Human向け詳細HTTPをToolから呼び出さない。
+`submit_answer`, `update_answer`, and `remove_answer` retain the SPEC 007 contract and include no other-User Answer in failures. Even when a Question is `REVEALED`, WebMCP returns no other-User Answer, answer count, or submission existence and does not call Human-facing detail HTTP.

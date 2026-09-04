@@ -4,6 +4,14 @@ import { answerError, parseSubmissionInput } from '../domain/answer-submission';
 import { toIsoTimestamp } from '../domain/question';
 import type { QuestionRepository } from '../repositories/question-repository';
 
+/**
+ * Validates and updates the current user's answer.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the session.
+ * @param repository - Question repository used to update the answer.
+ * @param now - Current timestamp provider.
+ * @returns An HTTP response containing the update result.
+ */
 export async function updateAnswerRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -29,6 +37,14 @@ export async function updateAnswerRoute(
   return mutationError(context, result.kind);
 }
 
+/**
+ * Removes the current user's answer.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the session.
+ * @param repository - Question repository used to remove the answer.
+ * @param now - Current timestamp provider.
+ * @returns An HTTP response containing the removal result.
+ */
 export async function removeAnswerRoute(
   context: Context,
   authentication: Authentication | undefined,

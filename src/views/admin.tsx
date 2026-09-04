@@ -6,6 +6,7 @@ import type { AdminSummary, AdminUserView, AuditLogView } from '../repositories/
 import { Icon } from './icon';
 import { SiteHeader } from './site-header';
 
+/** Headers that prevent administration pages from being cached. */
 export const ADMIN_RESPONSE_HEADERS = {
   'Cache-Control': 'private, no-store',
   Vary: 'Cookie',
@@ -39,6 +40,11 @@ const listConfig: Record<
   },
 };
 
+/**
+ * Renders a simple administration status or error page.
+ * @param props - Page title and message.
+ * @returns Administration message-page markup.
+ */
 export function AdminMessagePage({ title, message }: { title: string; message: string }) {
   return (
     <AdminLayout title={title}>
@@ -54,6 +60,11 @@ export function AdminMessagePage({ title, message }: { title: string; message: s
   );
 }
 
+/**
+ * Renders aggregate counts and navigation for the administration dashboard.
+ * @param props - Administration summary counts.
+ * @returns Administration dashboard markup.
+ */
 export function AdminDashboardPage({ summary }: { summary: AdminSummary }) {
   const destinations = [
     ['users', 'Users', summary.userCount, 'Review account status and control access.'],
@@ -94,6 +105,11 @@ export function AdminDashboardPage({ summary }: { summary: AdminSummary }) {
   );
 }
 
+/**
+ * Renders a paginated administration list for one resource category.
+ * @param props - Resource kind, page data, administrator identity, and time snapshot.
+ * @returns Administration list-page markup.
+ */
 export function AdminListPage({
   kind,
   result,

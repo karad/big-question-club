@@ -1,146 +1,146 @@
-# タスク: 最小WebMCP接続
+# Tasks: Minimal WebMCP Connection
 
-**入力**: `specs/001-minimal-webmcp-connection/` の設計成果物
+**Input**: Design artifacts in `specs/001-minimal-webmcp-connection/`
 
-**前提成果物**: `plan.md`、`spec.md`、`research.md`、`data-model.md`、`contracts/get-verification-question.md`、`quickstart.md`
+**Prerequisite Artifacts**: `plan.md`, `spec.md`, `research.md`, `data-model.md`, `contracts/get-verification-question.md`, `quickstart.md`
 
-**テスト方針**: 固定Question契約、入力検証、ブラウザ対応判定にはUnit Testを作成する。Worker経路と検証ページはIntegration Testで確認し、WebMCPの実ブラウザ・Personal Agent連携は手動E2Eで確認する。
+**Testing Policy**: Create Unit Tests for the fixed Question contract, input validation, and browser-support decisions. Verify Worker routes and the verification page with Integration Tests, and verify actual WebMCP browser and Personal Agent integration with manual E2E testing.
 
-**形式**: 各タスクは`- [ ] [TaskID] [P?] [Story?] 説明（ファイルパス）`に従う。
+**Format**: Each task follows `- [ ] [TaskID] [P?] [Story?] Description (file path)`.
 
-## Phase 1: セットアップ
+## Phase 1: Setup
 
-**目的**: Cloudflare Workers上で動作する最小のTypeScript Webアプリを初期化する。
+**Purpose**: Initialize a minimal TypeScript web application running on Cloudflare Workers.
 
-- [x] T001 Node.jsの対象バージョンとパッケージ管理方針を`package.json`へ定義する
-- [x] T002 Cloudflare Workers、Hono、Hono JSX、Vite、Cloudflare Vite pluginの依存関係を`package.json`へ追加する
-- [x] T003 [P] TypeScriptの厳格なコンパイル設定を`tsconfig.json`へ、lint・format設定を`eslint.config.js`と`.prettierrc.json`へ追加する
-- [x] T004 [P] Cloudflare Workerのエントリポイントと互換日を`wrangler.jsonc`へ設定する
-- [x] T005 [P] ViteとCloudflare Vite pluginを`vite.config.ts`へ設定する
-- [x] T006 [P] Vitestの実行設定とテスト対象を`vitest.config.ts`へ追加する
-- [x] T007 開発・ビルド・プレビュー・テスト・デプロイ用のnpm scriptsを`package.json`へ追加する
-
----
-
-## Phase 2: 共通基盤
-
-**目的**: すべてのユーザーストーリーを支えるWorker、Hono、固定Question契約、エラー表現を用意する。
-
-**⚠️ CRITICAL**: このPhaseが完了するまでユーザーストーリーの実装を開始しない。
-
-- [x] T008 WorkerからHonoアプリを公開するエントリポイントを`src/index.tsx`へ作成する
-- [x] T009 Honoアプリの共通初期化とエラーハンドリングを`src/app.tsx`へ作成する
-- [x] T010 [P] 成功結果・失敗結果・Tool入力の型を`src/domain/verification-question.ts`へ定義する
-- [x] T011 [P] 固定Questionの必須項目を検証する純粋関数を`src/domain/verification-question.ts`へ実装する
-- [x] T012 [P] WebMCP browser APIの最小型定義を`src/types/webmcp.d.ts`へ追加する
-- [x] T013 [P] 稼働確認を返すhealth routeを`src/routes/health.ts`へ実装する
-- [x] T014 Honoアプリへhealth routeと共通エラーハンドリングを接続する`src/app.tsx`を更新する
-
-**Checkpoint**: Workerが起動し、固定Question契約とhealth checkを後続実装で利用できる。
+- [x] T001 Define the target Node.js version and package-management policy in `package.json`
+- [x] T002 Add Cloudflare Workers, Hono, Hono JSX, Vite, and Cloudflare Vite plugin dependencies to `package.json`
+- [x] T003 [P] Add strict TypeScript compiler settings to `tsconfig.json`, and lint and format settings to `eslint.config.js` and `.prettierrc.json`
+- [x] T004 [P] Configure the Cloudflare Worker entry point and compatibility date in `wrangler.jsonc`
+- [x] T005 [P] Configure Vite and the Cloudflare Vite plugin in `vite.config.ts`
+- [x] T006 [P] Add Vitest execution settings and test targets to `vitest.config.ts`
+- [x] T007 Add npm scripts for development, build, preview, test, and deployment to `package.json`
 
 ---
 
-## Phase 3: ユーザーストーリー1 — 検証用Questionを取得する (優先度: P1) 🎯 MVP
+## Phase 2: Shared Foundation
 
-**Goal**: Personal Agentがページで公開されたToolを発見し、固定の英語Questionを取得できるようにする。
+**Purpose**: Prepare the Worker, Hono, fixed Question contract, and error representation that support all user stories.
 
-**Independent Test**: 対応Chromeで検証ページを開き、`get_verification_question`を呼び出して、契約どおりのQuestionを10回連続で取得できる。
+**⚠️ CRITICAL**: Do not begin implementing user stories until this Phase is complete.
 
-### テスト
+- [x] T008 Create the entry point that exposes the Hono application from the Worker in `src/index.tsx`
+- [x] T009 Create shared Hono application initialization and error handling in `src/app.tsx`
+- [x] T010 [P] Define success-result, failure-result, and Tool-input types in `src/domain/verification-question.ts`
+- [x] T011 [P] Implement a pure function that validates required fixed Question fields in `src/domain/verification-question.ts`
+- [x] T012 [P] Add minimal type definitions for the WebMCP browser API to `src/types/webmcp.d.ts`
+- [x] T013 [P] Implement a health route in `src/routes/health.ts`
+- [x] T014 Update `src/app.tsx` to connect the health route and shared error handling to the Hono application
 
-- [x] T015 [P] [US1] 固定Questionの必須項目・`language: en`・決定性を確認するUnit Testを`tests/unit/verification-question.test.ts`へ作成する
-- [x] T016 [P] [US1] 空・不正・余分な入力を拒否するUnit Testを`tests/unit/verification-question.test.ts`へ追加する
-- [x] T017 [P] [US1] WebMCP未対応・対応・登録失敗を判定するUnit Testを`tests/unit/browser-support.test.ts`へ作成する
-- [x] T018 [P] [US1] 固定Question APIの成功・設定不備・障害結果を確認するIntegration Testを`tests/integration/verification-question-api.test.ts`へ作成する
-- [x] T019 [P] [US1] 検証ページがTool登録状態を表示するIntegration Testを`tests/integration/verification-page.test.ts`へ作成する
-
-### 実装
-
-- [x] T020 [US1] 固定Question定数と成功結果の生成処理を`src/domain/verification-question.ts`へ実装する
-- [x] T021 [US1] 入力・設定・取消・サービス障害を判別可能な失敗結果へ変換する処理を`src/domain/verification-question.ts`へ実装する
-- [x] T022 [US1] 同一Originで固定Questionを返すAPI routeを`src/routes/verification-question.ts`へ実装する
-- [x] T023 [US1] 固定Question API routeをHonoアプリへ接続する`src/app.tsx`を更新する
-- [x] T024 [US1] WebMCPの利用可否と登録失敗理由を判定するアダプターを`src/webmcp/browser-support.ts`へ実装する
-- [x] T025 [US1] `get_verification_question`を入力なし・読み取り専用として静的登録し、固定Question APIを呼び出すアダプターを`src/webmcp/register-tool.ts`へ実装する
-- [x] T026 [US1] WebMCP Toolの登録・未対応・登録失敗を英語で可視化する検証ページを`src/app.tsx`へ実装する
-- [x] T027 [US1] Tool名・入力Schema・成功／失敗結果を`specs/001-minimal-webmcp-connection/contracts/get-verification-question.md`に照らして確認し、契約差分を解消する`src/webmcp/register-tool.ts`を更新する
-- [x] T028 [US1] Unit／Integration Testを実行し、失敗するテストを修正後にすべて成功させる`tests/unit/`と`tests/integration/`を更新する
-
-**Checkpoint**: 対応ChromeでToolが1件だけ発見され、Question取得と失敗結果が契約どおりに動作する。
+**Checkpoint**: The Worker starts, and the fixed Question contract and health check are available to subsequent implementation.
 
 ---
 
-## Phase 4: ユーザーストーリー2 — 接続手順を再現する (優先度: P2)
+## Phase 3: User Story 1 — Retrieve the Verification Question (Priority: P1) 🎯 MVP
 
-**Goal**: 開発担当者が環境を起動・公開し、WebMCP接続の成功と失敗を同じ手順で再現できるようにする。
+**Goal**: Allow a Personal Agent to discover the Tool exposed by the page and retrieve the fixed English Question.
 
-**Independent Test**: 初見の開発担当者が`quickstart.md`のみを使い、30分以内にローカル環境でQuestionを取得し、共有検証の準備条件を確認できる。
+**Independent Test**: Open the verification page in supported Chrome, invoke `get_verification_question`, and retrieve a contract-compliant Question ten consecutive times.
 
-### テスト
+### Tests
 
-- [x] T029 [P] [US2] health routeの成功結果とエラー境界を確認するIntegration Testを`tests/integration/health.test.ts`へ作成する
-- [x] T030 [P] [US2] 検証ページのWebMCP未対応状態がQuestion成功として表示されないことを確認するIntegration Testを`tests/integration/verification-page.test.ts`へ追加する
+- [x] T015 [P] [US1] Create Unit Tests for required fixed Question fields, `language: en`, and determinism in `tests/unit/verification-question.test.ts`
+- [x] T016 [P] [US1] Add Unit Tests rejecting empty, invalid, and additional input to `tests/unit/verification-question.test.ts`
+- [x] T017 [P] [US1] Create Unit Tests for unsupported WebMCP, supported WebMCP, and registration failure in `tests/unit/browser-support.test.ts`
+- [x] T018 [P] [US1] Create Integration Tests for success, invalid configuration, and failure results from the fixed Question API in `tests/integration/verification-question-api.test.ts`
+- [x] T019 [P] [US1] Create an Integration Test showing Tool registration status on the verification page in `tests/integration/verification-page.test.ts`
 
-### 実装と手順
+### Implementation
 
-- [x] T031 [US2] health routeをHonoアプリへ接続する`src/app.tsx`を更新する
-- [x] T032 [US2] ローカル開発・ビルド・プレビュー・`workers.dev`公開の実行手順を`README.md`へ追加する
-- [x] T033 [US2] Chrome flag、Origin Trial、DevToolsのTool確認、Personal Agent接続を含む検証手順を`specs/001-minimal-webmcp-connection/quickstart.md`へ具体化する
-- [x] T034 [US2] 対応Chromeのバージョン、WebMCP flagまたはOrigin Trialの状態、検証URLを記録するテンプレートを`specs/001-minimal-webmcp-connection/validation-record.md`へ作成する
-- [x] T035 [US2] 手動E2EでTool発見・10回連続取得・API障害・設定不備・取消を検証し、結果を`specs/001-minimal-webmcp-connection/validation-record.md`へ記録する
+- [x] T020 [US1] Implement the fixed Question constant and success-result creation in `src/domain/verification-question.ts`
+- [x] T021 [US1] Implement conversion of invalid input, invalid configuration, cancellation, and service failure into distinguishable failure results in `src/domain/verification-question.ts`
+- [x] T022 [US1] Implement a same-Origin API route returning the fixed Question in `src/routes/verification-question.ts`
+- [x] T023 [US1] Update `src/app.tsx` to connect the fixed Question API route to the Hono application
+- [x] T024 [US1] Implement an adapter that determines WebMCP availability and registration-failure causes in `src/webmcp/browser-support.ts`
+- [x] T025 [US1] Implement an adapter in `src/webmcp/register-tool.ts` that statically registers `get_verification_question` as a no-input, read-only Tool and calls the fixed Question API
+- [x] T026 [US1] Implement the verification page in `src/app.tsx`, displaying WebMCP Tool registration, unsupported, and registration-failure states in English
+- [x] T027 [US1] Compare the Tool name, input Schema, and success/failure results against `specs/001-minimal-webmcp-connection/contracts/get-verification-question.md`, then update `src/webmcp/register-tool.ts` to resolve contract differences
+- [x] T028 [US1] Run Unit and Integration Tests, fix failures, and update `tests/unit/` and `tests/integration/` until all tests pass
 
-**Checkpoint**: 文書化された手順だけでローカル・共有検証を再現でき、WebMCP非対応や障害を成功と誤認しない。
+**Checkpoint**: Supported Chrome discovers exactly one Tool, and Question retrieval and failure results comply with the contract.
 
 ---
 
-## Phase 5: 仕上げと横断的確認
+## Phase 4: User Story 2 — Reproduce the Connection Procedure (Priority: P2)
 
-**目的**: 品質、設定、ドキュメントの整合性を最終確認する。
+**Goal**: Allow a developer to start and deploy the environment, then reproduce successful and failed WebMCP connections using the same procedure.
 
-- [x] T036 [P] 固定Questionの内容、Tool description、英語の画面表示を`src/domain/verification-question.ts`と`src/app.tsx`でレビューする
-- [x] T037 [P] Secretを設定ファイルへ含めず、ローカル秘密情報とWorker生成物を除外する`.gitignore`を追加・更新する
-- [x] T038 `npm run lint`、`npm run test`、`npm run build`、`npm run preview`を実行し、結果を`specs/001-minimal-webmcp-connection/validation-record.md`へ記録する
-- [x] T039 [P] `quickstart.md`の合格判定を最終確認し、再現性に関する未解決事項を`specs/001-minimal-webmcp-connection/validation-record.md`へ記録する
-- [x] T040 `MILESTONE.md`のSPEC 001を、すべての完了条件と検証記録がそろった場合にのみ`[x]`へ更新する
+**Independent Test**: A developer unfamiliar with the project can use only `quickstart.md` to retrieve the Question in a local environment within 30 minutes and confirm the prerequisites for shared verification.
 
-## 依存関係と実行順
+### Tests
 
-### Phase依存関係
+- [x] T029 [P] [US2] Create an Integration Test for the health route's success result and error boundary in `tests/integration/health.test.ts`
+- [x] T030 [P] [US2] Add an Integration Test to `tests/integration/verification-page.test.ts` confirming the page's unsupported WebMCP state is not shown as a successful Question
 
-- **Phase 1**: 依存なし。すぐに開始できる。
-- **Phase 2**: Phase 1完了後。すべてのユーザーストーリーをブロックする。
-- **US1 (P1)**: Phase 2完了後に開始できる。最小価値を提供するMVPである。
-- **US2 (P2)**: US1の動作する検証ページに依存する。
-- **Phase 5**: US1とUS2の完了後に実施する。
+### Implementation and Procedure
 
-### ユーザーストーリーの依存関係
+- [x] T031 [US2] Update `src/app.tsx` to connect the health route to the Hono application
+- [x] T032 [US2] Add local development, build, preview, and `workers.dev` deployment instructions to `README.md`
+- [x] T033 [US2] Detail the verification procedure—including the Chrome flag, Origin Trial, DevTools Tool inspection, and Personal Agent connection—in `specs/001-minimal-webmcp-connection/quickstart.md`
+- [x] T034 [US2] Create a template in `specs/001-minimal-webmcp-connection/validation-record.md` for recording the supported Chrome version, WebMCP flag or Origin Trial status, and verification URL
+- [x] T035 [US2] Manually verify Tool discovery, ten consecutive retrievals, API failure, invalid configuration, and cancellation by E2E, then record the results in `specs/001-minimal-webmcp-connection/validation-record.md`
 
-- **US1**: 他のユーザーストーリーに依存しない。
-- **US2**: US1が提供するToolと検証ページを使う。
+**Checkpoint**: The documented procedure reproduces local and shared verification without mistaking an unsupported WebMCP environment or failure for success.
 
-### 並行実行の機会
+---
 
-- Phase 1のT003〜T006はT001、T002の後に並行可能。
-- Phase 2のT010〜T013はT008、T009と並行可能。
-- US1のT015〜T019は実装前に並行可能。
-- US2のT029、T030は並行可能。
-- Phase 5のT036、T037、T039は並行可能。
+## Phase 5: Polish and Cross-Cutting Verification
 
-## 実装戦略
+**Purpose**: Perform final checks of quality, configuration, and documentation consistency.
 
-### MVP優先
+- [x] T036 [P] Review the fixed Question content, Tool description, and English UI text in `src/domain/verification-question.ts` and `src/app.tsx`
+- [x] T037 [P] Add or update `.gitignore` to keep Secrets out of configuration files and exclude local secret information and Worker-generated artifacts
+- [x] T038 Run `npm run lint`, `npm run test`, `npm run build`, and `npm run preview`, then record the results in `specs/001-minimal-webmcp-connection/validation-record.md`
+- [x] T039 [P] Perform a final check of the acceptance criteria in `quickstart.md` and record unresolved reproducibility concerns in `specs/001-minimal-webmcp-connection/validation-record.md`
+- [x] T040 Update SPEC 001 in `MILESTONE.md` to `[x]` only when all completion criteria and verification records are present
 
-1. Phase 1とPhase 2を完了する。
-2. US1を実装し、対応Chromeで固定Questionが取得できることを確認する。
-3. ここで停止し、US1を単独で検証する。
+## Dependencies and Execution Order
 
-### 段階的な提供
+### Phase Dependencies
 
-1. US1でWebMCP Toolの発見と固定Question取得を実証する。
-2. US2で手順・公開・失敗確認を再現可能にする。
-3. Phase 5のすべてを完了し、SPEC 001の完了判定を行う。
+- **Phase 1**: No dependencies; can start immediately.
+- **Phase 2**: Starts after Phase 1 and blocks all user stories.
+- **US1 (P1)**: Starts after Phase 2 and provides the minimum-value MVP.
+- **US2 (P2)**: Depends on the working Tool and verification page from US1.
+- **Phase 5**: Starts after US1 and US2 are complete.
 
-## 注記
+### User Story Dependencies
 
-- すべてのタスクはチェックボックス、連番ID、必要時の並行マーカー、ユーザーストーリーラベル、対象パスを持つ。
-- WebMCPの実ブラウザ検証は、提案段階APIの変更に備えてChromeバージョンとOrigin Trial状態を必ず記録する。
+- **US1**: Does not depend on other user stories.
+- **US2**: Uses the Tool and verification page provided by US1.
+
+### Parallel Opportunities
+
+- T003 through T006 in Phase 1 can run in parallel after T001 and T002.
+- T010 through T013 in Phase 2 can run in parallel with T008 and T009.
+- T015 through T019 for US1 can run in parallel before implementation.
+- T029 and T030 for US2 can run in parallel.
+- T036, T037, and T039 in Phase 5 can run in parallel.
+
+## Implementation Strategy
+
+### MVP First
+
+1. Complete Phase 1 and Phase 2.
+2. Implement US1 and confirm that supported Chrome can retrieve the fixed Question.
+3. Stop here and verify US1 independently.
+
+### Incremental Delivery
+
+1. Demonstrate WebMCP Tool discovery and fixed Question retrieval with US1.
+2. Make procedures, deployment, and failure checks reproducible with US2.
+3. Complete all of Phase 5 and determine whether SPEC 001 is complete.
+
+## Notes
+
+- Every task has a checkbox, sequential ID, parallel marker when applicable, user-story label, and target path.
+- Because the actual browser verification uses a proposed API, always record the Chrome version and Origin Trial status.

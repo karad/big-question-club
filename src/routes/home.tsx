@@ -5,6 +5,15 @@ import type { OpenQuestionSummary, QuestionRepository } from '../repositories/qu
 import { HomePage } from '../views/home';
 import { PRIVATE_RESPONSE_HEADERS } from './question';
 
+/**
+ * Renders the home page with open and recently revealed questions.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the viewer.
+ * @param repository - Question repository used to load page data.
+ * @param now - Current timestamp provider.
+ * @param clientScriptUrl - URL of the browser-side application bundle.
+ * @returns The rendered home-page response.
+ */
 export async function homeRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -28,6 +37,7 @@ export async function homeRoute(
     );
   const identity = await readCurrentIdentity(authentication, context.req.raw);
   const userId = 'code' in identity ? undefined : identity.userId;
+  // Preserve whichever section remains available when one independent list query fails.
   const [openResult, revealedResult] = await Promise.allSettled([
     repository.listOpenQuestions(snapshotNow, 5),
     repository.listRevealedQuestions(snapshotNow, 10),

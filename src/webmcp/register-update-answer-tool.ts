@@ -2,6 +2,7 @@ import { answerError, parseSubmissionInput, type AnswerError } from '../domain/a
 import { getWebMcpSupport } from './browser-support';
 import { registrationFailure } from './register-get-question-tool';
 
+/** Public WebMCP name for updating the viewer's answer. */
 export const UPDATE_ANSWER_TOOL_NAME = 'update_answer';
 type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -15,6 +16,14 @@ function parseInput(input: unknown) {
   return 'code' in submission ? submission : { questionId: value.questionId, ...submission };
 }
 
+/**
+ * Executes an answer update against the application endpoint.
+ * @param input - Untrusted tool input.
+ * @param signal - Abort signal supplied by the WebMCP runtime.
+ * @param fetchLike - Fetch implementation used for the request.
+ * @param endpoint - Answer-update endpoint base path.
+ * @returns The parsed endpoint payload or a structured answer error.
+ */
 export async function executeUpdateAnswerTool(
   input: unknown,
   signal: AbortSignal | undefined,
@@ -40,6 +49,12 @@ export async function executeUpdateAnswerTool(
   }
 }
 
+/**
+ * Registers the answer-update WebMCP tool when browser support is available.
+ * @param documentLike - Document-like object that exposes the model context.
+ * @param fetchLike - Fetch implementation used by the tool.
+ * @returns The registration outcome.
+ */
 export async function registerUpdateAnswerTool(
   documentLike: Pick<Document, 'modelContext'>,
   fetchLike: FetchLike,

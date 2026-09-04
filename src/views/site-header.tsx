@@ -1,6 +1,11 @@
 import type { Child } from 'hono/jsx';
 import logoUrl from '../assets/images/big-question-club-logo.svg';
 
+/**
+ * Renders the site header and its optional navigation controls.
+ * @param props - Header content, navigation label, and authentication-control settings.
+ * @returns The site-header markup.
+ */
 export function SiteHeader({
   children,
   navigationLabel = 'Site navigation',

@@ -1,166 +1,166 @@
-# 機能仕様: Question作成・公開フロー
+# Feature Specification: Question Creation and Publication Flow
 
-**機能ブランチ**: `006-question-publishing`
+**Feature Branch**: `006-question-publishing`
 
-**作成日**: 2026-09-02
+**Created**: 2026-09-02
 
-**ステータス**: ドラフト
+**Status**: Draft
 
-**入力**: 「MILESTONE.md の SPEC 006 — Question作成・公開フローを実施」
+**Input**: "Implement SPEC 006 — Question Creation and Publication Flow from MILESTONE.md"
 
-## ユーザーシナリオとテスト *(必須)*
+## User Scenarios and Testing *(mandatory)*
 
-### ユーザーストーリー 1 - Questionを下書きとして作成する (優先度: P1)
+### User Story 1 - Create a Question as a Draft (Priority: P1)
 
-認証済みHumanは、Question本文と回答締切を入力し、公開前の下書きとして保存する。入力中に誤りがある場合は、どの項目を直す必要があるかを理解でき、入力済みの有効な内容を失わずに修正できる。
+An authenticated Human enters a Question body and answer deadline and saves it as an unpublished draft. When input contains errors, the Human can understand which fields need correction and fix them without losing valid entered content.
 
-**この優先度である理由**: 有効なQuestionを安全に作成できなければ、公開、Agent回答、Revealという後続の利用価値が成立しないため。
+**Why this priority**: Without safely creating a valid Question, later value from publication, Agent answers, and Reveal cannot exist.
 
-**独立テスト**: 認証済みHumanが有効な3項目と公開内容の確認を入力して保存し、本人の下書きとして同じ内容を再表示できることを確認する。
+**Independent Test**: An authenticated Human enters the three valid fields plus the public-content acknowledgment, saves, and can redisplay the same content as their own draft.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** 認証済みHumanが作成画面を開いている、**操作** 10〜1,000文字のQuestion本文、現在から1時間以上30日以内の回答締切を入力し、公開内容の確認を選択して保存する、**結果** Questionは本人所有の `DRAFT` として1件保存され、公開Questionとしては表示されない。
-2. **前提** 認証済みHumanが作成画面へ有効な値を入力している、**操作** 本文、締切、または公開内容の確認を無効な値にして保存する、**結果** 保存は行われず、各該当項目の近くに英語のエラーが表示され、有効な入力値は保持される。
-3. **前提** 未認証の利用者がQuestion作成先へアクセスする、**操作** 作成画面の表示または保存を試みる、**結果** Questionは作成されず、ログインが必要であることが英語で案内される。
-
----
-
-### ユーザーストーリー 2 - 下書きを確認して公開する (優先度: P1)
-
-Question作成者は、自分の下書きの本文と回答締切を確認・修正し、公開を明示的に確定する。公開後はPersonal Agentが回答対象として扱える状態になり、問いの意味や回答条件が後から変わらない。
-
-**この優先度である理由**: 公開操作はQuestionを回答可能にする不可逆な境界であり、作成者の意図と回答者が見る条件を一致させる必要があるため。
-
-**独立テスト**: 本人所有の下書きを編集して公開し、公開時刻が確定して `OPEN` となること、再公開および公開後の編集が拒否されることを確認する。
-
-**受け入れシナリオ**:
-
-1. **前提** 本人所有の有効な下書きがあり締切まで1時間以上ある、**操作** 内容を確認して `Publish question` を実行する、**結果** 確認画面を経てQuestionが1回だけ公開され、公開時点から `OPEN` となる。
-2. **前提** 本人所有の下書きがある、**操作** 公開前に本文または締切を有効な値へ変更して保存する、**結果** 更新内容が同じ下書きへ反映され、公開前の確認に表示される。
-3. **前提** Questionが公開済みである、**操作** 作成者が本文、締切の変更または再公開を試みる、**結果** 既存内容と公開時刻は変わらず、公開済みのため操作できないことが英語で表示される。
-4. **前提** 下書き保存後に時間が経過し締切まで1時間未満になっている、**操作** 作成者が公開する、**結果** 公開は拒否され、新しい有効な締切への修正が英語で求められる。
+1. **Given** an authenticated Human has opened the creation screen, **When** they enter a Question body of 10–1,000 characters, an answer deadline between one hour and thirty days from now, acknowledge the public content, and save, **Then** exactly one Question is saved as their `DRAFT` and is not shown as a public Question.
+2. **Given** an authenticated Human has entered valid values, **When** they make the body, deadline, or public-content acknowledgment invalid and save, **Then** nothing is saved, an English error appears near each affected field, and valid input values remain.
+3. **Given** an unauthenticated User accesses Question creation, **When** they try to display or save the form, **Then** no Question is created and English guidance explains that sign-in is required.
 
 ---
 
-### ユーザーストーリー 3 - My Questionsで自分のQuestionを管理する (優先度: P2)
+### User Story 2 - Review and Publish a Draft (Priority: P1)
 
-認証済みHumanは `My Questions` で自分が作成したQuestionを新しい順に確認し、状態、締切、回答数を把握する。下書きからは編集または公開へ進み、公開済みQuestionからは詳細へ進める。
+The Question creator reviews and corrects the body and answer deadline of their own draft and explicitly confirms publication. After publication, Personal Agents can treat it as answerable, and the meaning of the Question and answer conditions cannot change later.
 
-**この優先度である理由**: 作成済みQuestionを再発見できなければ、下書きの完成、公開結果の確認、回答状況の追跡が困難になるため。
+**Why this priority**: Publication is the irreversible boundary that makes a Question answerable, so the creator's intent must match the conditions seen by respondents.
 
-**独立テスト**: 1人の利用者に各状態のQuestionを用意し、一覧が本人所有分だけを新しい順で表示し、状態ごとに許可された導線だけを示すことを確認する。
+**Independent Test**: Edit and publish the owner's draft, confirm its publication time is fixed and it becomes `OPEN`, and verify republishing and post-publication editing are rejected.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** 認証済みHumanが複数のQuestionを作成している、**操作** `My Questions` を開く、**結果** 本人所有のQuestionだけが作成日時の新しい順で表示され、本文の先頭、状態、回答締切、回答数が各項目に表示される。
-2. **前提** 一覧に `DRAFT` と公開済みQuestionがある、**操作** 各項目を確認する、**結果** `DRAFT` には `Edit` と `Review and publish`、公開済みQuestionには `View question` の導線だけが表示される。
-3. **前提** 本人がQuestionをまだ作成していない、**操作** `My Questions` を開く、**結果** `You haven't created any questions yet.` と `Create a question` の導線が表示される。
+1. **Given** the owner has a valid draft with at least one hour before its deadline, **When** they review it and select `Publish question`, **Then** it is published exactly once through the review screen and is `OPEN` from publication.
+2. **Given** the owner has a draft, **When** they change the body or deadline to another valid value before publication and save, **Then** the same draft is updated and the changes appear in pre-publication Review.
+3. **Given** a Question is published, **When** its creator attempts to change the body or deadline or publish again, **Then** existing content and publication time do not change and English copy explains that the operation is unavailable because it is already published.
+4. **Given** enough time passes after saving a draft that less than one hour remains, **When** the creator publishes it, **Then** publication is rejected and English guidance asks for a new valid deadline.
 
 ---
 
-### ユーザーストーリー 4 - 権限外の閲覧・変更を拒否する (優先度: P2)
+### User Story 3 - Manage Personal Questions in My Questions (Priority: P2)
 
-利用者は、他人の下書きの存在や内容を閲覧できず、他人のQuestionを編集または公開できない。権限外の操作を試みても、対象が存在するかどうかを推測できる情報は返されない。
+An authenticated Human uses `My Questions` to see their Questions newest first and understand state, deadline, and answer count. Drafts link to editing or publication, while published Questions link to details.
 
-**この優先度である理由**: 非公開の下書き漏えいと所有者以外による公開は、利用者の信頼と公開内容の完全性を損なうため。
+**Why this priority**: Without rediscovering created Questions, completing drafts, checking publication, and tracking answer activity becomes difficult.
 
-**独立テスト**: 2人の認証済みHumanを用意し、一方が他方の下書きおよび公開済みQuestionの管理操作へ直接アクセスしても、内容の取得・変更・公開が一切できないことを確認する。
+**Independent Test**: Prepare a Question in every state for one User and confirm the list shows only that User's Questions newest first with only the actions allowed for each state.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** 他人所有の下書きがある、**操作** 認証済みHumanが識別子を指定して閲覧、編集、公開を試みる、**結果** 下書きの存在と内容を明かさない英語の共通エラーとなり、データは変化しない。
-2. **前提** 他人所有の公開済みQuestionがある、**操作** 認証済みHumanが管理用の変更または公開操作を試みる、**結果** 操作は拒否され、Questionの本文、締切、公開時刻は変化しない。
-3. **前提** Personal Agent向け経路から作成・編集・公開操作が要求される、**操作** いずれかの管理操作を試みる、**結果** Questionは変更されず、Human向け機能であることを示す英語のエラーとなる。
+1. **Given** an authenticated Human created multiple Questions, **When** they open `My Questions`, **Then** only their Questions appear newest first, and each item shows the beginning of the body, state, answer deadline, and answer count.
+2. **Given** the list contains `DRAFT` and published Questions, **When** the Human reviews each item, **Then** `DRAFT` shows `Edit` and `Review and publish`, while published Questions show only `View question`.
+3. **Given** the Human has not created a Question, **When** they open `My Questions`, **Then** `You haven't created any questions yet.` and a `Create a question` link appear.
 
-### エッジケース
+---
 
-- 本文は前後の空白を除いたUnicode文字数で判定し、改行は1文字として数える。絵文字や結合文字を含む場合も、画面表示上の文字単位で上限判定が一貫する。
-- 本文が空白だけ、9文字以下、1,001文字以上の場合は保存も公開もできない。
-- Questionは任意の言語で入力でき、作成者に主言語を指定させない。回答言語はPersonal AgentがQuestion本文から判断する。
-- 回答締切がサービス側現在時刻からちょうど1時間後または30日後なら有効とし、それより近い、遠い、または解釈不能な値は拒否する。
-- 利用者端末の時刻やタイムゾーンが不正確でも、保存・公開可否はサービス側現在時刻で判定する。画面では入力時に選択したローカル時刻とタイムゾーン、および対応する絶対時刻を確認できる。
-- 同じ公開操作が二重送信または同時送信されても、公開時刻は1回だけ確定し、Questionは複製されない。
-- 編集中に別の操作で同じ下書きが公開された場合、遅れて届いた編集で公開済み内容を上書きしない。
-- 公開確認画面を開いた後に締切条件を満たさなくなった場合、確認画面の古い情報では公開せず、実行時点で再検証する。
-- 保存または公開中に一時的な障害が起きた場合、成功と誤認させず、再試行可能な英語のエラーを表示する。公開結果が不明な場合は最新状態を再確認して二重公開を防ぐ。
-- `My Questions` の回答数はAnswer本文や他者の識別情報を含まず、Reveal前後を問わず件数だけを表示する。
+### User Story 4 - Reject Unauthorized Viewing and Changes (Priority: P2)
 
-## 要件 *(必須)*
+A User cannot view the existence or content of another User's draft, nor edit or publish another User's Question. An unauthorized attempt returns no information that reveals whether the target exists.
 
-### 機能要件
+**Why this priority**: Leaking unpublished drafts or publication by a non-owner would damage trust and content integrity.
 
-- **FR-001**: システムは、Questionの作成画面、下書き保存、下書き編集、公開確認、公開確定、`My Questions` を、認証済みHumanだけに提供しなければならない。
-- **FR-002**: システムは、Question入力として本文、回答締切、および公開内容に機密・個人情報を含めないことの確認を必須にしなければならない。
-- **FR-003**: システムは、Question本文を前後の空白を除いた10〜1,000文字に制限し、空白だけの本文、制御目的だけの文字列、範囲外の本文を保存してはならない。
-- **FR-004**: システムは、Questionを特定の言語へ制限せず、作成者へ主言語の選択を要求してはならない。
-- **FR-005**: システムは、Questionの言語を入力・表示・WebMCPのメタデータとして扱わず、Personal AgentがQuestion本文から回答言語を判断できるようにしなければならない。
-- **FR-006**: システムは、回答締切を作成または更新時のサービス側現在時刻から1時間以上30日以内の未来に制限し、公開実行時にも同じ条件を再検証しなければならない。
-- **FR-007**: システムは、回答締切を絶対時刻として保存し、入力・確認画面では利用者が選択したローカル日時、タイムゾーン、および絶対時刻との対応を確認できるようにしなければならない。
-- **FR-008**: システムは、MVPではReveal開始時刻を回答締切と同じ値に設定し、作成者が別のReveal時刻を入力または変更する機能を提供してはならない。
-- **FR-009**: システムは、有効な入力を本人所有の `DRAFT` として保存し、下書き保存時には公開時刻を確定してはならない。
-- **FR-010**: システムは、本人所有の `DRAFT` に限って本文、回答締切、および公開内容の確認を更新できるようにしなければならない。
-- **FR-011**: システムは、公開前に本文、回答締切、公開後は編集できないこと、および回答が締切までsealedであることを示す確認画面を提供しなければならない。
-- **FR-012**: システムは、本人が確認画面から明示的に `Publish question` を実行した場合に限って公開時刻をサービス側現在時刻で1回だけ確定し、有効なQuestionを `OPEN` にしなければならない。
-- **FR-013**: システムは、二重送信、再試行、同時操作があっても、同じ下書きの公開確定を最大1回とし、Questionを複製してはならない。
-- **FR-014**: システムは、公開済みQuestionの本文、回答締切、Reveal時刻、作成者を、画面および直接の管理操作のいずれからも変更できないようにしなければならない。
-- **FR-015**: システムは、`My Questions` に本人所有のQuestionだけを作成日時の新しい順で表示し、各項目に本文の先頭、現在状態、回答締切、回答数を含めなければならない。
-- **FR-016**: システムは、`My Questions` の `DRAFT` に編集・公開確認の導線、公開済みQuestionに詳細閲覧の導線を表示し、状態に合わない管理操作を表示してはならない。
-- **FR-017**: システムは、本人所有のQuestionがない場合に英語の空状態メッセージと作成画面への導線を表示しなければならない。
-- **FR-018**: システムは、未認証、所有者不一致、存在しないQuestion、無効入力、不正な状態、締切条件違反、一時的障害を区別して処理し、利用者が次に取れる行動を英語で示さなければならない。
-- **FR-019**: システムは、他人の下書きへの閲覧・編集・公開要求に対して、存在の有無を区別できない同一の外部結果を返し、本文その他の下書き情報を開示してはならない。
-- **FR-020**: システムは、所有者判定とQuestionの最新状態確認を変更確定時に行い、競合する編集または公開操作が公開済み内容を上書きしないようにしなければならない。
-- **FR-021**: システムは、入力エラーを該当項目と関連付けて英語で表示し、エラー後も機密値を除く有効な入力値を保持しなければならない。
-- **FR-022**: システムは、Question本文を未信頼の利用者生成コンテンツとして扱い、表示時に命令、マークアップ、または実行可能な内容として解釈してはならない。
-- **FR-023**: 初期Moderation方針として、システムは公開前の編集審査や自動的な意味判定を行わず、作成者にQuestionが公開情報になること、個人情報・機密情報・第三者への危害を目的とする内容を含めないことの確認を求めなければならない。
-- **FR-024**: システムは、報告、管理者審査、Question削除、自動翻訳、Application側の言語判定を本SPECで提供してはならない。
-- **FR-025**: システムは、Question作成・公開機能から他者のAnswer本文、Excerpt、投稿者識別情報を返してはならず、`My Questions` では集計された回答数だけを扱わなければならない。
+**Independent Test**: With two authenticated Humans, directly access management operations for the other User's draft and published Question and confirm no content can be retrieved, changed, or published.
 
-### 主要エンティティ
+**Acceptance Scenarios**:
 
-- **Question**: 認証済みHumanが作成する問い。作成者、本文、公開時刻、回答締切、Reveal時刻、作成・更新時刻を持ち、公開時刻の有無と時刻境界から現在状態が決まる。
-- **Question Draft Input**: 下書き作成・編集時にHumanが提示する本文、ローカル回答締切とタイムゾーン、公開内容の確認。Questionとして確定する前にすべての入力規則を満たす必要がある。
-- **Question Ownership**: Questionと作成者Userの変更不可能な関係。下書きの閲覧・編集・公開、および `My Questions` への掲載可否を決める。
-- **Publication Confirmation**: 作成者が公開内容、不可逆性、sealed期間を確認し、明示的な公開操作を行った事実。公開時刻を1回だけ確定する境界となる。
-- **My Questions Item**: 本人所有のQuestionを管理するための要約。本文の先頭、現在状態、回答締切、回答数、および状態に応じた導線を持つが、Answer内容や投稿者情報は持たない。
+1. **Given** another User owns a draft, **When** an authenticated Human attempts to view, edit, or publish it by identifier, **Then** a common English error reveals neither existence nor content and data remains unchanged.
+2. **Given** another User owns a published Question, **When** an authenticated Human attempts a management change or publication, **Then** the operation is rejected and the Question body, deadline, and publication time remain unchanged.
+3. **Given** creation, editing, or publication is requested through a Personal Agent path, **When** any management operation is attempted, **Then** the Question remains unchanged and an English error states that this is a Human-facing feature.
 
-## 成功基準 *(必須)*
+### Edge Cases
 
-### 測定可能な成果
+- Evaluate body length after trimming surrounding whitespace, count newlines as one character, and consistently enforce display-character boundaries for emoji and combining characters.
+- A whitespace-only body, 9 or fewer characters, or 1,001 or more characters cannot be saved or published.
+- Questions may use any language; creators are not asked to specify a primary language. The Personal Agent infers answer language from the body.
+- A deadline exactly one hour or thirty days after service time is valid; closer, later, or uninterpretable values are rejected.
+- Even if the User device time or time zone is wrong, service time determines whether save and publication are allowed. The screen shows the selected local time and time zone and corresponding absolute time.
+- Duplicate or concurrent publication submissions establish one publication time and never duplicate the Question.
+- If another operation publishes a draft while it is being edited, a late edit never overwrites published content.
+- If a deadline becomes invalid after Review opens, publication revalidates at execution rather than trusting stale Review data.
+- A temporary save/publication failure is not presented as success; show a retryable English error. If publication outcome is uncertain, recheck the latest state to prevent duplicate publication.
+- `My Questions` shows only answer counts before and after Reveal, never Answer bodies or another User's identifying information.
 
-- **SC-001**: 初回利用者の90%以上が、ログイン済みの状態から5分以内に有効なQuestionを下書き保存し、確認画面から公開まで完了できる。
-- **SC-002**: 本文の下限・上限、任意言語の本文、締切の両境界、確認有無を含む30件以上の入力検証ケースで、期待する受理・拒否結果との一致率が100%となる。
-- **SC-003**: 未認証、所有者不一致、公開済み、存在しないQuestionを対象とする20件以上の管理操作で、不正な作成・閲覧・変更・公開が成立する件数が0件である。
-- **SC-004**: 同じ下書きへの公開要求を逐次10回および同時10件で実行しても、Questionは1件、公開時刻は1つだけで、公開内容の差異は0件である。
-- **SC-005**: `My Questions` の各状態、空状態、複数利用者を含む15件以上の表示ケースで、他人のQuestionまたはAnswer内容が表示される件数が0件で、状態と許可導線の一致率が100%となる。
-- **SC-006**: 無効入力を受け取った利用者の90%以上が、表示された英語の項目別エラーだけを参照して2回以内の再試行で有効な下書きを保存できる。
-- **SC-007**: 公開前確認を行った検証参加者の100%が、Question本文、回答締切、公開後に編集できないこと、Answerが締切までsealedであることを公開前に正しく説明できる。
-- **SC-008**: キーボードだけを使う利用者が、作成、項目エラーの特定、確認、公開、`My Questions` への復帰を10分以内に完了でき、操作不能な必須項目が0件である。
+## Requirements *(mandatory)*
 
-## 前提
+### Functional Requirements
 
-- SPEC 002で確立したGoogle OAuthの認証済みUserとHuman向けブラウザーSessionを継続利用し、Question作成者の識別源とする。
-- SPEC 005で確立したQuestion Schema、Repository境界、`DRAFT → OPEN → CLOSED → REVEALED` の状態判定、サービス側時刻、公開の一方向性を変更せず利用する。
-- Questionは任意の言語で入力でき、Personal Agentが本文から回答言語を判断する。特定言語への最適化を要件としない。
-- 利用者のローカルタイムゾーンは既定表示に利用できるが、保存と締切判定は世界共通の絶対時刻を正とする。
-- 公開は即時であり、予約公開は行わない。下書きの回答締切は保存時と公開時の両方で検証する。
-- 公開内容の確認は、初期Moderationにおける作成者の自己確認であり、法的判断、編集審査、または公開可否の意味判定を代替しない。
-- 画面上の表示文言、ボタン名、項目ラベル、エラーメッセージは英語とし、Question本文自体は任意の言語で入力できる。
-- `My Questions` はMVPの管理一覧であり、検索、絞り込み、並べ替え変更、ページ分割、削除、複製は初期件数では不要とする。
+- **FR-001**: The system MUST provide Question creation, draft save, draft edit, publication review, publication confirmation, and `My Questions` only to authenticated Humans.
+- **FR-002**: The system MUST require a body, answer deadline, and acknowledgment that public content contains no confidential or personal information.
+- **FR-003**: The system MUST restrict Question bodies to 10–1,000 characters after trimming, and MUST NOT save whitespace-only, control-only, or out-of-range bodies.
+- **FR-004**: The system MUST NOT restrict Questions to a specific language or require creators to choose a primary language.
+- **FR-005**: The system MUST NOT treat Question language as user input, display data, or WebMCP metadata, and MUST allow Personal Agents to infer answer language from the Question body.
+- **FR-006**: The system MUST restrict answer deadlines to the future from one hour through thirty days after service time at creation or update and MUST revalidate the same condition at publication.
+- **FR-007**: The system MUST store the answer deadline as an absolute time and show the correspondence among the selected local date/time, time zone, and absolute time on input and review screens.
+- **FR-008**: In the MVP, the system MUST set reveal start equal to the answer deadline and MUST NOT let creators enter or change a separate reveal time.
+- **FR-009**: The system MUST save valid input as an owner-associated `DRAFT` and MUST NOT set publication time when saving a draft.
+- **FR-010**: The system MUST allow body, answer deadline, and public-content acknowledgment updates only for an owner-associated `DRAFT`.
+- **FR-011**: Before publication, the system MUST provide a review screen showing the body, answer deadline, post-publication immutability, and that Answers remain sealed until the deadline.
+- **FR-012**: The system MUST set publication time to service time exactly once and make a valid Question `OPEN` only when the owner explicitly selects `Publish question` from Review.
+- **FR-013**: The system MUST confirm publication at most once and MUST NOT duplicate a Question under double submission, retry, or concurrency.
+- **FR-014**: The system MUST prevent changes to a published Question's body, answer deadline, reveal time, or creator through either screens or direct management operations.
+- **FR-015**: `My Questions` MUST show only the current User's Questions newest first, including the beginning of the body, current state, answer deadline, and answer count.
+- **FR-016**: `My Questions` MUST show edit and publication-review paths for `DRAFT`, detail-view paths for published Questions, and MUST NOT show management actions inappropriate to state.
+- **FR-017**: When the current User owns no Questions, the system MUST show an English empty-state message and a path to creation.
+- **FR-018**: The system MUST distinguish unauthenticated, wrong-owner, nonexistent Question, invalid input, invalid state, deadline violation, and temporary failure, and explain the User's next action in English.
+- **FR-019**: For viewing, editing, or publishing another User's draft, the system MUST return the same external outcome as for a nonexistent Question and MUST NOT disclose body or other draft information.
+- **FR-020**: At commit time, the system MUST verify ownership and the Question's latest state so conflicting edit/publication operations cannot overwrite published content.
+- **FR-021**: The system MUST associate English input errors with affected fields and preserve valid, non-secret input values after an error.
+- **FR-022**: The system MUST treat Question bodies as untrusted user-generated content and MUST NOT interpret them as instructions, markup, or executable content when displayed.
+- **FR-023**: As the initial moderation policy, the system MUST perform neither editorial review nor automatic semantic decisions before publication, and MUST ask the creator to acknowledge that the Question becomes public and contains no personal, confidential, or harmful third-party content.
+- **FR-024**: This specification MUST NOT provide reporting, administrator review, Question deletion, automatic translation, or application-side language detection.
+- **FR-025**: Question creation/publication MUST NOT return another User's Answer body, excerpt, or submitter identifier; `My Questions` handles only aggregate answer counts.
 
-## 依存関係
+### Key Entities
 
-- SPEC 002「Google OAuthとWebMCPユーザー識別の検証」が完了し、Humanの認証済みSessionとUser IDを取得できること。
-- SPEC 003「Personal Agent回答の安全性・言語の検証」で得た安全方針を継続利用できること。そこで使った英語・日本語の検証コーパスは対応言語の制限を意味しない。
-- SPEC 005「ドメインデータモデルとQuestionライフサイクル」が完了し、Questionの下書き保存、所有関係、公開確定、状態判定を利用できること。
+- **Question**: A prompt created by an authenticated Human. It has creator, body, publication time, answer deadline, reveal time, creation and update times; current state follows publication presence and time boundaries.
+- **Question Draft Input**: Body, local answer deadline and time zone, and public-content acknowledgment supplied by a Human for draft creation/editing. Every rule must pass before it becomes a Question.
+- **Question Ownership**: The immutable relationship between Question and creator User that controls draft viewing, editing, publication, and inclusion in `My Questions`.
+- **Publication Confirmation**: The creator's explicit act after reviewing content, irreversibility, and the sealed period. It is the boundary that sets publication time exactly once.
+- **My Questions Item**: A management summary containing the beginning of the body, current state, answer deadline, answer count, and state-appropriate actions, but no Answer content or submitter information.
 
-## 対象外
+## Success Criteria *(mandatory)*
 
-- Personal Agent向けQuestion取得・Answer投稿Toolの契約と導線（SPEC 007）
-- Reveal前後のAnswerアクセス制御の全経路統一（SPEC 008）
-- HomeやQuestion Detailを含む一般閲覧体験、および公開Questionの発見機能（SPEC 009）
-- Reveal後のAnswer一覧・比較体験（SPEC 010）
-- Questionの削除、非公開化、公開後編集、複製、予約公開、共同編集
-- 自動翻訳、Application側の言語判定、言語別の入力制限
-- 自動Moderation、公開前の運営審査、通報、異議申立て、管理者機能、監査ログ
-- 投票、順位付け、要約、検索、Agent間の会話、Personal Contextの保存
+### Measurable Outcomes
+
+- **SC-001**: At least 90% of first-time Users can save a valid Question draft and publish it from Review within five minutes while already signed in.
+- **SC-002**: At least thirty input cases covering body limits, arbitrary-language bodies, both deadline boundaries, and acknowledgment presence match expected acceptance/rejection 100%.
+- **SC-003**: Across at least twenty management operations targeting unauthenticated, wrong-owner, published, or nonexistent Questions, zero unauthorized creations, views, changes, or publications succeed.
+- **SC-004**: After ten sequential and ten concurrent publication requests for the same draft, exactly one Question and one publication time exist, with zero content differences.
+- **SC-005**: Across at least fifteen `My Questions` cases covering every state, empty state, and multiple Users, zero other-User Questions or Answer contents appear, and state/action matching is 100%.
+- **SC-006**: At least 90% of Users receiving invalid input can save a valid draft within two retries using only the displayed English field errors.
+- **SC-007**: Every verification participant reviewing before publication can correctly explain the body, answer deadline, post-publication immutability, and sealed-until-deadline behavior before publishing.
+- **SC-008**: A keyboard-only User can create, identify field errors, review, publish, and return to `My Questions` within ten minutes, with zero inoperable required controls.
+
+## Assumptions
+
+- Continue using the authenticated Google OAuth User and Human browser Session established in SPEC 002 as the source of Question creator identity.
+- Reuse without modification the Question schema, repository boundary, `DRAFT → OPEN → CLOSED → REVEALED` state evaluation, service time, and one-way publication established in SPEC 005.
+- Questions may use any language, and Personal Agents infer answer language from the body. Optimization for any specific language is not required.
+- The User's local time zone may provide the default display, but universal absolute time governs storage and deadline decisions.
+- Publication is immediate, not scheduled. Validate a draft's answer deadline both when saving and when publishing.
+- The public-content acknowledgment is creator self-attestation for initial moderation, not a substitute for legal judgment, editorial review, or semantic publication decisions.
+- Screen copy, button names, field labels, and errors are English; the Question body may use any language.
+- `My Questions` is the MVP management list. Search, filters, sort changes, pagination, deletion, and duplication are unnecessary at initial scale.
+
+## Dependencies
+
+- SPEC 002 is complete and provides the authenticated Human Session and User ID.
+- The safety policy from SPEC 003 remains usable. Its English/Japanese validation corpus does not limit supported languages.
+- SPEC 005 is complete and provides draft persistence, ownership, publication, and state evaluation.
+
+## Out of Scope
+
+- Personal Agent Question-retrieval and Answer-submission tool contracts and flows (SPEC 007)
+- Unified Answer access control across every pre-/post-Reveal path (SPEC 008)
+- General browsing, including Home and Question Detail, and public Question discovery (SPEC 009)
+- Post-Reveal Answer listing and comparison (SPEC 010)
+- Question deletion, unpublishing, post-publication editing, duplication, scheduled publication, and collaborative editing
+- Automatic translation, application-side language detection, and language-specific input restrictions
+- Automated moderation, pre-publication operator review, reporting, appeals, administration, and audit logs
+- Voting, ranking, summarization, search, Agent-to-Agent conversation, and Personal Context storage

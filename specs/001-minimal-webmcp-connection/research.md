@@ -1,83 +1,83 @@
-# 調査結果: 最小WebMCP接続
+# Research Findings: Minimal WebMCP Connection
 
-## WebMCP Toolの公開方法
-
-### Decision
-
-ページ読み込み時に、入力なし・読み取り専用の`get_verification_question` Toolをimperative APIで静的登録する。実行時には同一Originの固定Question APIを呼び出す。
-
-### Rationale
-
-WebMCPはページ側のJavaScript機能をToolとして公開する。固定Questionを返すだけの機能にはフォーム送信は不要であり、1 Toolを1責務に保てる。同一Origin APIを経由すると、ページToolの登録だけでなくWorkerの可用性も検証できる。
-
-### Alternatives considered
-
-- Declarative API: フォーム送信向けであり、固定データ取得には不要なUIと入力を持ち込む。
-- QuestionをJSバンドルに埋め込む: 最も単純だが、Worker/API接続の失敗を検証できない。
-- MCPサーバーへの直接接続: ブラウザページでのWebMCP検証という本SPECの対象と異なる。
-
-## Question契約と安全境界
+## How to Expose the WebMCP Tool
 
 ### Decision
 
-入力を受け付けず、`id`、`question`、`language`を持つ固定JSONだけを返す。入力Schemaは空のオブジェクトかつ余分なプロパティを許可しないものとし、実行関数側でも入力を再検証する。
+At page load, statically register the no-input, read-only `get_verification_question` Tool using the imperative API. At runtime, it calls the fixed Question API on the same Origin.
 
 ### Rationale
 
-入力をなくすことで、個人情報・Personal Context・Question選択値を受け取らない。返却値を固定化すると、10回連続取得時の決定性を自動テストできる。固定の管理下データはUser Generated Contentではないため、untrusted contentとして扱わない。
+WebMCP exposes JavaScript functionality from a page as Tools. A feature that only returns a fixed Question does not need form submission and can keep one responsibility per Tool. Going through a same-Origin API verifies Worker availability as well as page-level Tool registration.
 
 ### Alternatives considered
 
-- Question IDまたは言語を入力に持つ: 将来の複数Questionには有用だが、本SPECには不要な分岐と誤入力を増やす。
-- 複数Questionを返す: Questionの公開・管理を扱う後続SPECの責務となる。
+- Declarative API: Intended for form submission and would introduce unnecessary UI and input for retrieving fixed data.
+- Embed the Question in the JS bundle: Simplest, but cannot verify Worker/API connection failures.
+- Connect directly to an MCP server: Outside this SPEC's scope of verifying WebMCP through a browser page.
 
-## 成功・失敗の契約
+## Question Contract and Safety Boundary
 
 ### Decision
 
-成功時はQuestionだけを返し、設定不備・サービス障害・入力不備・取消は、Questionを含まない判別可能なエラー結果にする。
+Accept no input and return only fixed JSON containing `id`, `question`, and `language`. Define the input Schema as an empty object that disallows additional properties, and validate the input again in the execution function.
 
 ### Rationale
 
-空文字や`null`をQuestionとして返すと、失敗を成功と誤認しうる。予測できる障害を固定のコードと再試行可否で返すことで、Agentと開発担当者が原因を区別できる。実行中止時には成功結果を返さない。
+Having no input prevents receipt of personal information, Personal Context, or a Question selection value. Fixing the result makes determinism across ten consecutive retrievals automatically testable. Fixed, managed data is not User Generated Content and is therefore not treated as untrusted content.
 
 ### Alternatives considered
 
-- 例外を投げるだけ: Agentへ安定した再試行根拠を示しにくい。
-- HTTP APIのレスポンスをそのまま返す: ページToolの契約がHTTP詳細へ不必要に依存する。
+- Accept a Question ID or language as input: Useful for multiple Questions in the future, but adds unnecessary branches and invalid-input cases to this SPEC.
+- Return multiple Questions: That is the responsibility of a subsequent SPEC covering Question publishing and management.
 
-## 対応ブラウザと公開形態
+## Success and Failure Contract
 
 ### Decision
 
-ローカル検証ではWebMCP testing flagを有効にした対応Chromeを使い、共有検証ではOrigin Trialが有効なHTTPSのトップレベル同一Originページを使う。非対応環境はWebMCP検証の失敗として明示する。
+On success, return only the Question. Represent invalid configuration, service failure, invalid input, and cancellation as distinguishable error results that do not contain a Question.
 
 ### Rationale
 
-WebMCPは提案段階のブラウザ機能であり、Chrome公式はローカルではtesting flag、共有環境ではOrigin Trialを案内している。通常HTTP APIへ自動フォールバックすると、WebMCP経由の接続性を検証したことにならない。クロスOrigin iframeを使わなければ、権限委譲などの不要な変数を避けられる。
+Returning an empty string or `null` as a Question could make a failure look like success. Fixed error codes and retryability for anticipated failures let Agents and developers distinguish causes. Never return a success result after execution is cancelled.
 
 ### Alternatives considered
 
-- HTTP APIへの静かなフォールバック: 接続失敗を成功として誤認させるため採用しない。
-- クロスOrigin iframe公開: 必要な権限設定と攻撃面を増やし、最初の接続検証には不要。
+- Only throw exceptions: Makes it difficult to give the Agent stable grounds for retrying.
+- Return the HTTP API response unchanged: Makes the page Tool contract unnecessarily dependent on HTTP details.
 
-## 実行基盤と検証戦略
+## Supported Browser and Exposure Model
 
 ### Decision
 
-Cloudflare Workers、Hono、Hono JSX、ViteとCloudflare Vite pluginで単一のWebアプリとして構成し、初回の共有先には`workers.dev`を使用する。固定Questionの契約は自動テストし、Chrome DevToolsと対応Personal AgentによるTool発見・10回連続呼び出しを手動E2Eで確認する。
+Use supported Chrome with the WebMCP testing flag for local verification. For shared verification, use a top-level, same-Origin HTTPS page with an active Origin Trial. Explicitly report unsupported environments as WebMCP verification failures.
 
 ### Rationale
 
-プロジェクトの技術仕様に一致し、ローカルと本番に近いWorker runtimeで確認できる。固定の出力契約、エラー、登録条件は自動テストに向き、実Agentでの発見・呼び出しはブラウザ統合の確認が必要である。
+WebMCP is a proposed browser feature. Chrome's official guidance specifies the testing flag for local use and the Origin Trial for shared environments. Automatically falling back to an ordinary HTTP API would not verify connectivity through WebMCP. Avoiding a cross-Origin iframe eliminates unnecessary variables such as permission delegation.
 
 ### Alternatives considered
 
-- 独自ドメインの初期導入: DNS設定を増やし、SPEC 001の目的から外れる。
-- データベースを先に導入: 固定Questionの接続性だけを検証するには不要。
-- Agentの自然言語操作だけで自動合否を判定する: Tool選択の確率性が接続検証と混ざる。
+- Silent fallback to an HTTP API: Rejected because it would misrepresent a connection failure as success.
+- Exposure in a cross-Origin iframe: Adds required permission configuration and attack surface that the initial connection verification does not need.
 
-## 参考資料
+## Runtime and Verification Strategy
+
+### Decision
+
+Build a single web application with Cloudflare Workers, Hono, Hono JSX, Vite, and the Cloudflare Vite plugin, using `workers.dev` as the first shared destination. Automatically test the fixed Question contract; manually verify Tool discovery and ten consecutive invocations using Chrome DevTools and a supported Personal Agent.
+
+### Rationale
+
+This matches the project's technical specification and supports testing in both local and production-like Worker runtimes. The fixed output contract, error cases, and registration conditions suit automated tests, while discovery and invocation by a real Agent require browser-integration verification.
+
+### Alternatives considered
+
+- Introduce a custom domain initially: Adds DNS configuration and falls outside the purpose of SPEC 001.
+- Introduce a database first: Unnecessary when only verifying connectivity for a fixed Question.
+- Determine automated pass/fail solely through natural-language Agent interaction: Mixes the probabilistic nature of Tool selection into connection verification.
+
+## References
 
 - [WebMCP overview](https://developer.chrome.com/docs/ai/webmcp)
 - [Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)

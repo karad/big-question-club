@@ -9,6 +9,7 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 
+/** Better Auth user table. */
 export const users = sqliteTable('user', {
   id: text('id').primaryKey().notNull(),
   name: text('name').notNull(),
@@ -19,6 +20,7 @@ export const users = sqliteTable('user', {
   updatedAt: integer('updatedAt').notNull(),
 });
 
+/** Better Auth session table. */
 export const sessions = sqliteTable('session', {
   id: text('id').primaryKey().notNull(),
   expiresAt: integer('expiresAt').notNull(),
@@ -32,6 +34,7 @@ export const sessions = sqliteTable('session', {
     .references(() => users.id, { onDelete: 'cascade' }),
 });
 
+/** Better Auth external-account table. */
 export const accounts = sqliteTable(
   'account',
   {
@@ -58,6 +61,7 @@ export const accounts = sqliteTable(
   ],
 );
 
+/** Better Auth verification-token table. */
 export const verifications = sqliteTable('verification', {
   id: text('id').primaryKey().notNull(),
   identifier: text('identifier').notNull(),
@@ -67,6 +71,7 @@ export const verifications = sqliteTable('verification', {
   updatedAt: integer('updatedAt'),
 });
 
+/** Question records and their publication schedule. */
 export const questions = sqliteTable(
   'questions',
   {
@@ -94,6 +99,7 @@ export const questions = sqliteTable(
   ],
 );
 
+/** Participant answers, with one answer allowed per user and question. */
 export const answers = sqliteTable(
   'answers',
   {
@@ -120,6 +126,7 @@ export const answers = sqliteTable(
   ],
 );
 
+/** Users denied access to authenticated application features. */
 export const bannedUsers = sqliteTable(
   'banned_users',
   {
@@ -136,6 +143,7 @@ export const bannedUsers = sqliteTable(
   (table) => [index('banned_users_banned_at').on(table.bannedAt)],
 );
 
+/** Immutable records of administrator actions. */
 export const auditLogs = sqliteTable(
   'audit_logs',
   {

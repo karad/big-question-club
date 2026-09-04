@@ -1,62 +1,62 @@
-# SPEC 007 検証記録
+# SPEC 007 Validation Record
 
-## 実装前ベースライン
+## Pre-Implementation Baseline
 
-- 記録日: 2026-09-02
+- Recorded: 2026-09-02
 - Branch: `007-webmcp-mvp-tools`
 - Node.js: `v24.5.0`
-- 実装前Commitの登録Tool: `get_agent_safety_verification_question`、`who_am_i`、`submit_answer`、`get_my_submission` の4件
-- `npm run typecheck`: 成功
-- `npm run lint`: 成功
-- `npm test`: 21 files、198 tests成功
-- `npm run test:d1`: 9 files、36 tests成功
-- `npm run build`: 成功。sandbox内ではWrangler log書込みのEPERM警告が出たが、成果物生成とcommand exitは成功
+- Tools registered before implementation: `get_agent_safety_verification_question`, `who_am_i`, `submit_answer`, and `get_my_submission`
+- `npm run typecheck`: passed
+- `npm run lint`: passed
+- `npm test`: 198 tests across 21 files passed
+- `npm run test:d1`: 36 tests across 9 files passed
+- `npm run build`: passed. Wrangler emitted an EPERM warning for log writes inside the sandbox, but artifact generation and command exit succeeded
 
-実装前結果は現在の作業ツリーを変更せず、`HEAD`を一時ディレクトリへ展開して確認した。
+The baseline was measured by expanding `HEAD` to a temporary directory without modifying the working tree.
 
-## 実装内容
+## Implementation
 
-- Question画面に、認証済み・未投稿・`OPEN` の場合だけ1行の英語Promptとコピー操作を追加した。Promptは現在のOriginへ追従するQuestion絶対URLを含み、QueryとFragmentを除外する。
-- 本番WebMCP登録を `get_question`、`submit_answer`、`update_answer`、`remove_answer`、`get_my_submission` の5件へ限定した。
-- `answers.updated_at` を追加し、既存Answerでは `created_at` から初期化するMigrationを追加した。
-- Answer本文5,000、Excerpt 160の上限をUnicode書記素で検証し、D1は空白、Excerpt改行、一意性、参照整合性を保持する構成へ更新した。
-- 締切前の本人限定更新・Hard Delete・削除後再投稿と、締切時点での変更凍結を条件付きD1書込みで実装した。
-- 読み取り結果を本人状態または指定Open Questionに限定し、他者AnswerをWebMCPへ公開しない契約を維持した。
+- Added a one-line English prompt and copy action to Question screens only for authenticated, unanswered Users while `OPEN`. The prompt contains an absolute Question URL following the current Origin and excludes query and fragment.
+- Limited production WebMCP registration to `get_question`, `submit_answer`, `update_answer`, `remove_answer`, and `get_my_submission`.
+- Added `answers.updated_at` and a migration initializing existing Answers from `created_at`.
+- Updated Answer limits of 5,000 for body and 160 for excerpt to Unicode graphemes, while D1 retains whitespace, excerpt-newline, uniqueness, and referential constraints.
+- Implemented owner-only update, hard delete, resubmission after deletion, and deadline-time freezing with conditional D1 writes.
+- Limited reads to the current User's state or the specified Open Question and preserved the contract that WebMCP never exposes another User's Answer.
 
-## 自動検証結果
+## Automated Verification Results
 
-- 実施日: 2026-09-02
-- `npm run db:migrate:local`: `0005_answer_revisions.sql` 適用成功
-- `npm run typecheck`: 成功
-- `npm run lint`: 成功
-- `npm run format`: 成功
-- `npm test`: 29 files、229 tests成功
-- `npm run test:d1`: 11 files、42 tests成功
-- `npm run build`: 成功
-- `npm run db:schema:check`: 成功
+- Run date: 2026-09-02
+- `npm run db:migrate:local`: `0005_answer_revisions.sql` applied successfully
+- `npm run typecheck`: passed
+- `npm run lint`: passed
+- `npm run format`: passed
+- `npm test`: 229 tests across 29 files passed
+- `npm run test:d1`: 42 tests across 11 files passed
+- `npm run build`: passed
+- `npm run db:schema:check`: passed
 
-D1では既存Answer保持と `updatedAt` 初期化、書記素境界、本人限定更新・削除、他者非変更、締切境界、更新対削除および削除対再投稿の競合を確認した。Node側では1行Prompt、ローカル／本番Originへの追従、Query／Fragment除外、Clipboard成功・API不在・拒否、5 Toolだけの登録、Schema、annotation、AbortSignal、認証、Draft非列挙、共通エラー、SSR表示分岐を確認した。
+D1 verification covered existing Answer preservation and `updatedAt` initialization, grapheme boundaries, owner-only update/deletion, no changes to other Users, deadline boundaries, update-versus-delete races, and delete-versus-resubmit races. Node verification covered the one-line prompt, local/production Origin handling, query/fragment exclusion, Clipboard success/absence/denial, exactly five registered tools, schemas, annotations, AbortSignal, authentication, Draft non-enumeration, common errors, and SSR display branches.
 
-## 実機E2E結果
+## Real-Device E2E Results
 
-- 実施日: 2026-09-02
-- 環境: ローカルD1、WebMCP対応In-app Browser、Google OAuth検証用2アカウント
-- 本番登録面が5 Toolだけで、P0検証Tool、`who_am_i`、探索・検索・他者Answer Toolが登録されないことを確認した。
-- 未投稿Open Question画面でPromptを表示し、コピー結果と表示全文が一致して `Copied` となり、Injectionを含むQuestion本文がPromptへ混入しないことを確認した。
-- 初回実機E2Eでは旧Promptの指定IDから `get_question`、`submit_answer`、`get_my_submission` を順に実行し、初回投稿と本人状態確認が成功した。現在の1行URL Promptは自動テストで固定済みであり、Personal Agentによる実機導線はSPEC 010のCore Demo手動確認に含める。
-- `update_answer` 後に本文、Excerpt、`updatedAt`だけが更新され、`submittedAt`が維持されることを確認した。
-- 利用者確認後に `remove_answer` でローカル検証用AnswerをHard Deleteし、`not_submitted`、Prompt再表示、締切前の再投稿成功を確認した。
-- アカウントBはAの投稿後も操作前に `not_submitted` となり、Bの投稿後もAの `get_my_submission` にBの本文・Excerpt・識別子・時刻が含まれないことを確認した。Aの更新後もBの保存内容と時刻が変化しないことをローカルD1で確認した。
-- 締切後は `get_question`、`update_answer`、`remove_answer` がすべて `QUESTION_CLOSED` となり、`get_my_submission` の本人内容が変化しないことを確認した。
-- 英語と日本語のInjection Questionで当時の固定instruction契約、Question本文からの言語判断、秘密・以前の会話・認証情報の非出力を確認した。このコーパスは対応言語の制限を意味しない。現在の拡張済みContext instruction契約は自動テストで固定し、実Personal Agent確認はSPEC 010のCore Demo手動確認に含める。
-- Clipboard API不在・拒否時の英語案内とPrompt維持はUnit Test、成功経路は実ブラウザーで確認した。
+- Run date: 2026-09-02
+- Environment: local D1, WebMCP-capable in-app browser, and two Google OAuth test accounts
+- Confirmed production registered exactly five tools and omitted P0 validation, `who_am_i`, discovery/search, and other-User Answer tools.
+- On an unanswered Open Question, confirmed the prompt appeared, displayed and copied text matched, status became `Copied`, and an injection-containing body did not enter the prompt.
+- Initial real-device E2E used the old ID-based prompt to run `get_question`, `submit_answer`, and `get_my_submission` in order, successfully submitting and verifying the first Answer. Automated tests lock the current one-line URL prompt; real Personal Agent verification is included in SPEC 010 Core Demo manual checks.
+- After `update_answer`, confirmed only body, excerpt, and `updatedAt` changed while `submittedAt` remained.
+- After User confirmation, hard-deleted the local validation Answer with `remove_answer` and confirmed `not_submitted`, prompt redisplay, and successful pre-deadline resubmission.
+- Account B returned `not_submitted` before acting after A submitted. After B submitted, A's `get_my_submission` contained none of B's body, excerpt, ID, or timestamps. Local D1 confirmed A's update did not change B's stored content or time.
+- After the deadline, `get_question`, `update_answer`, and `remove_answer` all returned `QUESTION_CLOSED`, while personal content from `get_my_submission` remained unchanged.
+- English and Japanese injection Questions verified the fixed instruction contract at that time, answer-language inference from body, and non-output of secrets, prior conversations, or authentication data. This corpus does not limit supported languages. Automated tests lock the expanded context instructions; real Personal Agent verification is included in SPEC 010 Core Demo manual checks.
+- Unit tests verified English guidance and prompt preservation when Clipboard API was absent or denied; a real browser verified the success path.
 
-未解決事項はない。共有D1へのMigration適用およびデプロイは本SPECの実機検証では実施していない。
+No unresolved items remain. This real-device verification did not apply migrations to shared D1 or deploy.
 
-## Context根拠付き回答契約の追補
+## Context-Grounded Answer Contract Addendum
 
-- 実施日: 2026-09-02
-- Agent依頼Promptを `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}` の1行へ更新し、ChatGPTの組み込みブラウザを明示した。
-- `get_question` の固定instructionとTool descriptionへ、現在の会話・利用可能な過去会話・Project ContextからUser自身の明示的・反復された記述を優先する規則、事実と比較・検討の区別、Assistant提案の除外、Private Context非開示を追加した。2026-09-03の追補で、明示的な個人見解がない場合は未確認の個人事実や既知の信条として断定しない最善の代理回答を作成・投稿し、その不足だけを理由に確認質問をしない契約へ更新した。
-- 初回Promptを回答作成・投稿の許可とし、追加Previewや承認を要求しない。投稿後は `get_my_submission` で本人状態を確認する契約を追加した。
-- Unit／Integration Testは35ファイル610件、D1 Integration Testは16ファイル56件に成功した。Typecheck、Lint、Format、Build、Schema checkも成功した。拡張済み契約の実Personal Agent確認はSPEC 010のCore Demo手動確認へ含める。
+- Run date: 2026-09-02
+- Updated the Agent request prompt to one line: `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}`, explicitly naming ChatGPT's built-in browser.
+- Added to fixed `get_question` instructions and tool descriptions rules to prioritize explicit/repeated User-authored statements from current conversation, accessible past conversations, and Project Context; distinguish facts from comparisons/considerations; exclude Assistant suggestions; and avoid Private Context disclosure. The 2026-09-03 addendum changed this to create and submit a best-effort proxy Answer when no explicit personal view exists, without asserting unverified personal facts or known beliefs and without asking solely because that view is missing.
+- The initial prompt authorizes Answer creation and submission without another preview or approval, and the contract verifies personal state afterward with `get_my_submission`.
+- Unit/integration tests passed: 610 tests across 35 files; D1 integration passed 56 tests across 16 files. Typecheck, lint, format, build, and schema check also passed. Real Personal Agent verification of the expanded contract is included in SPEC 010 Core Demo manual checks.

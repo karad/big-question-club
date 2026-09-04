@@ -3,9 +3,18 @@ import { getWebMcpSupport } from './browser-support';
 import { questionIdSchema, registrationFailure } from './register-get-question-tool';
 import { parseQuestionIdInput } from './tool-input';
 
+/** Public WebMCP name for removing the viewer's answer. */
 export const REMOVE_ANSWER_TOOL_NAME = 'remove_answer';
 type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
+/**
+ * Executes an answer removal against the application endpoint.
+ * @param input - Untrusted tool input.
+ * @param signal - Abort signal supplied by the WebMCP runtime.
+ * @param fetchLike - Fetch implementation used for the request.
+ * @param endpoint - Answer-removal endpoint base path.
+ * @returns The parsed endpoint payload or a structured answer error.
+ */
 export async function executeRemoveAnswerTool(
   input: unknown,
   signal: AbortSignal | undefined,
@@ -30,6 +39,12 @@ export async function executeRemoveAnswerTool(
   }
 }
 
+/**
+ * Registers the answer-removal WebMCP tool when browser support is available.
+ * @param documentLike - Document-like object that exposes the model context.
+ * @param fetchLike - Fetch implementation used by the tool.
+ * @returns The registration outcome.
+ */
 export async function registerRemoveAnswerTool(
   documentLike: Pick<Document, 'modelContext'>,
   fetchLike: FetchLike,

@@ -1,16 +1,16 @@
-# `who_am_i` 本人確認契約
+# `who_am_i` Identity Verification Contract
 
-## 目的
+## Purpose
 
-ログイン済みブラウザとWebMCP Toolが同じBig Question Clubユーザーを識別できることを検証する。公開する個人情報はサービス内ユーザーIDだけとする。
+Verify that the logged-in browser and WebMCP Tool identify the same Big Question Club user. The only personal information exposed is the service-internal user ID.
 
-## ブラウザ本人確認API
+## Browser Identity Verification API
 
 ### `GET /api/who-am-i`
 
-ブラウザCookieで現在のログイン状態を確認する。レスポンスは`Cache-Control: no-store`とする。
+Check the browser's current login state using its Cookie. The response uses `Cache-Control: no-store`.
 
-#### 認証済みレスポンス — `200 OK`
+#### Authenticated Response — `200 OK`
 
 ```json
 {
@@ -18,7 +18,7 @@
 }
 ```
 
-#### 未認証レスポンス — `401 Unauthorized`
+#### Unauthenticated Response — `401 Unauthorized`
 
 ```json
 {
@@ -27,7 +27,7 @@
 }
 ```
 
-#### サーバーエラーレスポンス — `500 Internal Server Error`
+#### Server Error Response — `500 Internal Server Error`
 
 ```json
 {
@@ -36,21 +36,21 @@
 }
 ```
 
-`userId`以外のUser属性、Cookie、OAuthトークン、Secretは、どのレスポンスにも含めない。
+No response includes User attributes other than `userId`, Cookies, OAuth tokens, or Secrets.
 
 ## WebMCP Tool
 
-### Tool definition
+### Tool Definition
 
-| 項目 | 契約 |
+| Field | Contract |
 | --- | --- |
-| 名前 | `who_am_i` |
-| 入力 | 空のobject。追加プロパティを許可しない |
-| 読み取り専用 | はい |
-| 実行先 | 同一オリジンの相対パス`/api/who-am-i` |
-| 認証情報 | ブラウザの通常の同一オリジンCookieに限る。入力やTool結果でトークンを受け渡ししない |
+| Name | `who_am_i` |
+| Input | Empty object. Additional properties are not allowed |
+| Read-only | Yes |
+| Execution target | Same-origin relative path `/api/who-am-i` |
+| Authentication information | Limited to ordinary same-origin browser Cookies. Tokens are not passed through input or Tool results |
 
-#### 認証済み結果
+#### Authenticated Result
 
 ```json
 {
@@ -58,7 +58,7 @@
 }
 ```
 
-#### 未認証結果
+#### Unauthenticated Result
 
 ```json
 {
@@ -67,7 +67,7 @@
 }
 ```
 
-#### 実行不能結果
+#### Unavailable Result
 
 ```json
 {
@@ -76,9 +76,9 @@
 }
 ```
 
-## セキュリティと検証規則
+## Security and Verification Rules
 
-- `who_am_i`を登録・実行するページと本人確認APIは、scheme、host、portがすべて同じ正規オリジンでなければならない。
-- APIは、現在のリクエストに含まれた有効なセッションだけを検証する。過去のセッションや匿名の代替識別子を返してはならない。
-- WebMCP Toolの実装は、Cookie値を読み出し、ログ出力し、または別オリジンへ転送してはならない。
-- すべてのエラー応答は、特定のUserが存在するか、メールアドレス、OAuthプロバイダーのアカウント情報を推測できる情報を含めてはならない。
+- The page that registers and executes `who_am_i` and the identity verification API must share the same canonical Origin, including scheme, host, and port.
+- The API validates only the active Session included in the current request. It must not return past Sessions or an anonymous substitute identifier.
+- The WebMCP Tool implementation must not read or log Cookie values, or forward them to another Origin.
+- Error responses must not contain information that could reveal whether a particular User exists, an email address, or OAuth-provider account information.

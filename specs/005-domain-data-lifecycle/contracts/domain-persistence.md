@@ -1,12 +1,12 @@
-# 内部契約: Questionライフサイクルと永続化境界
+# Internal Contract: Question Lifecycle and Persistence Boundary
 
-## 範囲
+## Scope
 
-SPEC 005は新しいHTTP API、WebMCP Tool、画面を公開しない。この文書は、後続の画面・API・WebMCPが共通利用するDomainとRepositoryの内部契約を固定する。
+SPEC 005 exposes no new HTTP API, WebMCP Tool, or screen. This document fixes the internal Domain and Repository contract shared by subsequent screens, APIs, and WebMCP.
 
-## Question状態契約
+## Question State Contract
 
-### 入力
+### Input
 
 ```text
 QuestionSchedule {
@@ -18,87 +18,87 @@ QuestionSchedule {
 now: number
 ```
 
-すべてUTC Unixミリ秒とする。
+All values are UTC Unix milliseconds.
 
-### 出力
+### Output
 
 ```text
 QuestionState = "DRAFT" | "OPEN" | "CLOSED" | "REVEALED"
 ```
 
-### 判定
+### Decision
 
-1. `publishedAt === null`なら `DRAFT`。
-2. `now >= revealsAt`なら `REVEALED`。
-3. `now >= closesAt`なら `CLOSED`。
-4. それ以外は `OPEN`。
+1. If `publishedAt === null`, return `DRAFT`.
+2. If `now >= revealsAt`, return `REVEALED`.
+3. If `now >= closesAt`, return `CLOSED`.
+4. Otherwise, return `OPEN`.
 
-この関数は保存や現在時刻の取得を行わない。呼び出し側は1操作につき1つの `now` を渡す。
+This function neither persists data nor obtains the current time. The caller passes one `now` per operation.
 
-## Question時刻検証契約
+## Question Schedule Validation Contract
 
-公開済みQuestionは次をすべて満たす。
+A published Question satisfies all of the following:
 
 - `publishedAt <= now`
 - `publishedAt < closesAt`
 - `closesAt <= revealsAt`
 
-Draftは `publishedAt === null` とし、Answerを受け付けない。公開済みQuestionの `publishedAt` を `null`へ戻す変更と、変更前の状態より前へ戻る時刻変更を拒否する。
+A Draft has `publishedAt === null` and accepts no Answers. Reject a change that restores a published Question's `publishedAt` to `null`, or moves its schedule to a state earlier than its previous state.
 
-## Repository操作
+## Repository Operations
 
 ### `getQuestion(questionId)`
 
-- 存在すれば完全なQuestionを返す。
-- 存在しなければ `null` を返す。
-- 状態は返却時に固定せず、利用時の `now` でDomain契約から求める。
+- Return the complete Question when it exists.
+- Return `null` when it does not exist.
+- Do not freeze state at retrieval; derive it from the Domain contract using `now` at the point of use.
 
 ### `createDraft(input, now)`
 
-- 認証済み `creatorUserId`、本文、締切、Reveal時刻を持つDraftを作る。既存の言語列には内部互換値 `auto` を保存する。
-- `publishedAt`は必ず `null`。
-- 存在しないUser、空の本文・言語、不正な時刻順序を拒否する。
-- 詳細な本文・言語・締切入力規則はSPEC 006で追加する。
+- Create a Draft with an authenticated `creatorUserId`, Body, deadline, and Reveal time. Store the internal compatibility value `auto` in the existing language column.
+- `publishedAt` is always `null`.
+- Reject a nonexistent User, blank Body or language, and invalid time ordering.
+- SPEC 006 adds detailed rules for Body, language, and deadline input.
 
 ### `publish(questionId, creatorUserId, now)`
 
-- 対象Questionが存在し、指定Userが作成者で、現在 `DRAFT`、かつ `now < closesAt <= revealsAt` の場合だけ `publishedAt = now` を確定する。
-- 同時に複数回実行しても最初の1回だけが確定する。
-- 公開済み、締切到達済み、作成者不一致を区別可能な結果で拒否する。
+- Commit `publishedAt = now` only when the target Question exists, the specified User is its creator, its current state is `DRAFT`, and `now < closesAt <= revealsAt`.
+- Even when invoked concurrently, only the first operation commits.
+- Reject an already published Question, a reached deadline, and a creator mismatch with distinguishable results.
 
 ### `submit(questionId, userId, input, now)`
 
-- `publishedAt !== null && publishedAt <= now && now < closesAt`を満たすQuestionにだけAnswerを作成する。
-- `userId`は認証境界から受け取り、入力本文から取得しない。
-- 同じQuestionとUserのAnswerは1件だけ確定する。
-- Question状態条件、Answer保存、DB制約判定に同じ `now` を使う。
-- 重複、Question不存在、Question非公開・締切済み、参照先不存在、想定外保存障害を区別する。
+- Create an Answer only for a Question satisfying `publishedAt !== null && publishedAt <= now && now < closesAt`.
+- Receive `userId` from the authentication boundary, never from the input Body.
+- Commit exactly one Answer for the same Question and User.
+- Use the same `now` for the Question-state condition, Answer persistence, and DB-constraint decision.
+- Distinguish duplication, missing Question, unpublished or closed Question, missing reference, and unexpected persistence failure.
 
-### 既存読み取り操作
+### Existing Read Operations
 
-本人Answer、回答数、Excerpt一覧、Answer本文の取得操作は維持する。公開可否はSPEC 008で定義し、このRepositoryは呼び出し元の認可判断を代替しない。
+Preserve operations for retrieving the participant's own Answer, Answer count, Excerpt list, and Answer Body. SPEC 008 defines visibility; this Repository does not replace authorization decisions made by its caller.
 
-## 結果コード
+## Result Codes
 
-内部結果は少なくとも次を区別する。外部向け文言とHTTP／Tool errorへの変換は後続SPECの責務とする。
+Internal results distinguish at least the following. Subsequent SPECs are responsible for external messages and conversion to HTTP or Tool errors.
 
-| コード | 意味 | Retry |
+| Code | Meaning | Retry |
 | --- | --- | --- |
-| `QUESTION_NOT_FOUND` | 対象Questionが存在しない | 不可 |
-| `CREATOR_NOT_FOUND` | Draftの作成者Userが存在しない | 不可 |
-| `CREATOR_MISMATCH` | 公開要求者がQuestion作成者でない | 不可 |
-| `INVALID_QUESTION` | 本文、言語、時刻順序が不正 | 修正後可 |
-| `INVALID_TRANSITION` | 現在状態から許可されない変更 | 不可 |
-| `QUESTION_NOT_OPEN` | Draft、締切済み、Reveal済み | 不可 |
-| `ANSWER_ALREADY_SUBMITTED` | 同一Question・UserのAnswerが存在 | 不可 |
-| `REFERENCE_NOT_FOUND` | UserまたはQuestion参照が存在しない | 不可 |
-| `INVALID_ANSWER` | Answer本文またはExcerptがDB制約を満たさない | 修正後可 |
-| `PERSISTENCE_UNAVAILABLE` | 想定外のD1障害 | 可 |
+| `QUESTION_NOT_FOUND` | Target Question does not exist | No |
+| `CREATOR_NOT_FOUND` | Draft creator User does not exist | No |
+| `CREATOR_MISMATCH` | Publication requester is not the Question creator | No |
+| `INVALID_QUESTION` | Invalid Body, language, or time ordering | After correction |
+| `INVALID_TRANSITION` | Change not allowed from the current state | No |
+| `QUESTION_NOT_OPEN` | Draft, closed, or Revealed | No |
+| `ANSWER_ALREADY_SUBMITTED` | An Answer exists for the same Question and User | No |
+| `REFERENCE_NOT_FOUND` | Referenced User or Question does not exist | No |
+| `INVALID_ANSWER` | Answer Body or Excerpt violates a DB constraint | After correction |
+| `PERSISTENCE_UNAVAILABLE` | Unexpected D1 failure | Yes |
 
-## 一貫性
+## Consistency
 
-- DBの一意制約と外部キー制約を最終判定源とする。
-- 制約エラーをすべて重複扱いせず、必要な再照会で安定した結果へ分類する。
-- Answer作成の状態条件は書き込み文自体に含める。
-- 複数書き込みが不可欠な場合だけD1 `batch()`を使い、途中失敗時は一部成功を返さない。
-- Domain契約の状態判定とRepository内の状態条件を別の境界規則にしてはならない。
+- Use DB uniqueness and foreign-key constraints as the final decision source.
+- Do not treat every constraint error as a duplicate; classify stable outcomes with a follow-up query when necessary.
+- Include the Answer-creation state condition in the write statement itself.
+- Use D1 `batch()` only when multiple writes are indispensable, and never return partial success after an intermediate failure.
+- Do not define different boundary rules for Domain state decisions and Repository state conditions.

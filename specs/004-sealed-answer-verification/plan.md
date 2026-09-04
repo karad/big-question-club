@@ -1,37 +1,37 @@
-# 実装計画: Agent回答投稿の完全性・Sealed Answersの検証
+# Implementation Plan: Validating Agent Answer Submission Integrity and Sealed Answers
 
-**ブランチ**: `004-sealed-answer-verification` | **日付**: 2026-09-02 | **仕様**: [spec.md](./spec.md)
+**Branch**: `004-sealed-answer-verification` | **Date**: 2026-09-02 | **Spec**: [spec.md](./spec.md)
 
-## 概要
+## Summary
 
-認証済み利用者が締切前のQuestionに本文と1行Excerptを持つAnswerを1件だけ投稿でき、締切まで他者Answerを全経路で秘匿し、締切後は認証済みHuman向け画面だけで全Answerを閲覧できることを検証する。D1の`UNIQUE(question_id, user_id)`を最終的な重複判定源にし、Worker側時刻と共通の公開判定をSSR、HTTP API、WebMCPで共有する。
+Validate that an authenticated participant can submit exactly one Answer—with a Body and one-line Excerpt—to a Question before its deadline, that other participants' Answers remain hidden through every route until the deadline, and that all Answers become viewable only on the authenticated Human-facing screen after the deadline. Use D1 `UNIQUE(question_id, user_id)` as the final duplicate-decision source, and share a common Worker-time visibility decision across SSR, HTTP APIs, and WebMCP.
 
-## 技術コンテキスト
+## Technical Context
 
-**言語/バージョン**: TypeScript 6、Node.js 22.13以上（開発時）、ES2022  
-**主要依存関係**: Cloudflare Workers、Hono 4、Vite 8、Better Auth、Cloudflare D1、Vitest 4  
-**保存先**: Cloudflare D1。既存の認証テーブルに`questions`と`answers`を追加する。  
-**テスト**: VitestのUnit／Integration Test、WebMCP ToolのUnit Test、認証済み2利用者による手動E2E。  
-**対象プラットフォーム**: Cloudflare Workers、D1、ChromeのWebMCP対応環境。  
-**プロジェクト種別**: SSRを含む単一Webアプリケーション。  
-**性能目標**: 各操作を検証環境で2秒以内に完了し、10組の同時投稿で各組の確定Answerを1件に保つ。  
-**制約**: 投稿者はセッションからだけ決定し、Excerptは必須・改行なし・160文字以内とする。締切判定はWorker側時刻だけで行う。締切前は他者Answer本文・Excerpt・抜粋・要約・存在の手掛かりを全経路で返さない。締切後のSSR一覧はExcerptだけを表示し、認証済みHumanのクリックにより同一OriginのAnswer詳細APIから該当Bodyだけを展開する。WebMCPは締切後も他者Answerを返さない。D1照会はprepared statementを使う。  
-**規模/範囲**: 検証用Question、2利用者、投稿・重複・同時投稿・締切境界・3公開経路を対象にする。Question作成、編集、投票、要約、未認証公開は対象外。
+**Language/Version**: TypeScript 6, Node.js 22.13 or later for development, ES2022
+**Primary Dependencies**: Cloudflare Workers, Hono 4, Vite 8, Better Auth, Cloudflare D1, Vitest 4
+**Storage**: Cloudflare D1. Add `questions` and `answers` to the existing authentication tables.
+**Testing**: Unit and Integration Tests with Vitest, WebMCP Tool Unit Tests, and manual E2E with two authenticated participants.
+**Target Platform**: Cloudflare Workers, D1, and a WebMCP-compatible Chrome environment.
+**Project Type**: Single web application including SSR.
+**Performance Goals**: Complete each operation within two seconds in the verification environment and retain exactly one committed Answer for every pair across ten concurrent-submission pairs.
+**Constraints**: Determine the submitter only from the Session. Require an Excerpt with no line breaks and at most 160 characters. Evaluate the deadline only from Worker time. Before the deadline, return no other participant's Answer Body, Excerpt, extract, summary, or clue to existence through any route. After the deadline, the SSR list shows only Excerpts and expands only the selected Body from a same-Origin Answer detail API when an authenticated Human clicks. WebMCP never returns other participants' Answers, even after the deadline. Use D1 prepared statements.
+**Scale/Scope**: Cover a verification Question, two participants, submission, duplication, concurrent submission, the deadline boundary, and three visibility routes. Question creation and editing, voting, summarization, and unauthenticated publication are out of scope.
 
-## 構成原則チェック
+## Constitution Check
 
-`constitution.md`は未確定テンプレートのため、`AGENTS.md`と仕様をゲートとする。
+Because `constitution.md` is an undecided template, use `AGENTS.md` and this specification as gates.
 
-- D1一意制約、時刻境界、入力、公開範囲をUnit Testで固定する。
-- API、SSR、WebMCPの導線をIntegration Testで保証する。
-- 2利用者・締切前後・3経路の手動E2Eを行い、秘密情報を記録しない。
-- 表示文言、コメント、識別子は英語にする。
+- Fix the D1 uniqueness constraint, time boundary, input, and visibility with Unit Tests.
+- Cover API, SSR, and WebMCP flows with Integration Tests.
+- Run manual E2E across two participants, both sides of the deadline, and three routes without recording Secrets.
+- Write UI text, comments, and identifiers in English.
 
-**Phase 0後／Phase 1後の判定**: 適合。データベース制約を最終判定源とし、他者Answerを返すAPIやToolを設けない。
+**Decision After Phase 0 / Phase 1**: Pass. The database constraint is the final decision source, and no API or Tool returning other participants' Answers is provided.
 
-**完了判定（2026-09-02）**: 適合。リモートD1を用いる2利用者の手動E2Eで投稿、重複拒否、Sealed、Reveal、WebMCPの本人限定取得を確認し、自動品質ゲートも成功した。
+**Completion Decision (2026-09-02)**: Pass. Manual E2E with two participants and remote D1 confirmed submission, duplicate rejection, Sealed behavior, Reveal behavior, and WebMCP retrieval limited to the participant's own data. Automated quality gates also passed.
 
-## プロジェクト構成
+## Project Structure
 
 ```text
 specs/004-sealed-answer-verification/
@@ -53,8 +53,8 @@ src/webmcp/{register-submit-answer-tool.ts,register-my-submission-tool.ts}
 tests/{unit,integration}/
 ```
 
-**構成判断**: 単一Workerを維持する。`domain/`の共通判定と`repositories/`のD1アクセスを、SSR、HTTP API、WebMCPが共有する。
+**Structure Decision**: Retain the single Worker. SSR, HTTP APIs, and WebMCP share common decisions from `domain/` and D1 access from `repositories/`.
 
-## 複雑性の追跡
+## Complexity Tracking
 
-違反なし。
+No violations.

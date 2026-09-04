@@ -1,3 +1,8 @@
+/**
+ * Prevents guarded forms from being submitted more than once.
+ * @param root - Document containing forms to initialize.
+ * @returns Nothing.
+ */
 export function initializeSubmissionGuards(root: Document = document): void {
   root.querySelectorAll<HTMLFormElement>('form[data-submission-guard]').forEach((form) => {
     form.addEventListener('submit', (event) => {

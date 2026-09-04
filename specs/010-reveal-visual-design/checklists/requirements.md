@@ -1,38 +1,38 @@
-# 仕様品質チェックリスト: 回答公開体験とチャレンジ向け視覚設計
+# Specification Quality Checklist: Answer Reveal Experience and Challenge Visual Design
 
-**目的**: 計画フェーズへ進む前に仕様の完全性と品質を検証する
-**作成日**: 2026-09-03
-**対象仕様**: [spec.md](../spec.md)
+**Purpose**: Validate specification completeness and quality before planning
+**Created**: 2026-09-03
+**Specification**: [spec.md](../spec.md)
 
-## 内容の品質
+## Content Quality
 
-- [x] 言語、開発基盤、外部接続方式などの実装詳細を機能要件へ持ち込んでいない
-- [x] 利用者価値と事業上の必要性に焦点を当てている
-- [x] 非技術部門の関係者が理解できる表現で記述している
-- [x] 必須の章をすべて完成している
+- [x] Functional requirements do not contain implementation details such as language, development platform, or external integration method
+- [x] Focuses on user value and business need
+- [x] Uses language understandable to nontechnical stakeholders
+- [x] All required sections are complete
 
-## 要件の完全性
+## Requirement Completeness
 
-- [x] `[NEEDS CLARIFICATION]`が残っていない
-- [x] 要件がテスト可能かつ曖昧でない
-- [x] 成功基準が測定可能である
-- [x] 成功基準が実装技術に依存していない
-- [x] すべての受け入れシナリオが定義されている
-- [x] 境界条件が特定されている
-- [x] 対象範囲が明確に限定されている
-- [x] 依存関係と前提が特定されている
+- [x] No `[NEEDS CLARIFICATION]` remains
+- [x] Requirements are testable and unambiguous
+- [x] Success criteria are measurable
+- [x] Success criteria are implementation-independent
+- [x] All acceptance scenarios are defined
+- [x] Boundary conditions are identified
+- [x] Scope is clearly bounded
+- [x] Dependencies and assumptions are identified
 
-## 機能の準備状況
+## Feature Readiness
 
-- [x] すべての機能要件に明確な受け入れ基準がある
-- [x] ユーザーシナリオが主要な利用手順を網羅している
-- [x] 機能が成功基準に定義された測定可能な成果を満たす
-- [x] 実装詳細が機能要件や成功基準へ漏れ出していない
+- [x] Every functional requirement has clear acceptance criteria
+- [x] User scenarios cover the primary workflows
+- [x] The feature satisfies the measurable outcomes in the success criteria
+- [x] Implementation details do not leak into functional requirements or success criteria
 
-## 注記
+## Notes
 
-- 初回検証で全項目に合格した。確認待ちの事項は0件である。
-- Tailwind CSSとReact IconsはMILESTONEで明示された必須の実装制約であるため、「前提と依存関係」に限定して記録した。機能要件と成功基準は実装技術に依存しない内容としている。
-- MILESTONEの未完文「質問の詳細ページにある回答は」は、上位目的に沿って、公開後の要約文一覧、選択時の本文取得、複数本文を開いた比較体験として具体化した。
-- 2026-09-03に、認証済み回答者の質問単位匿名表示と追加UI改修を反映した仕様を再検証し、全項目に合格した。
-- 2026-09-03に、回答済みの場合だけ表示する本人回答Tag、公開前の本人回答限定表示、公開結果の本人回答Tagと利用者ID非露出を反映した仕様を再検証し、全項目に合格した。
+- All items passed on the first review; zero issues await clarification.
+- Tailwind CSS and React Icons are mandatory implementation constraints named by MILESTONE, so they are recorded only under assumptions and dependencies. Functional requirements and success criteria remain implementation-independent.
+- MILESTONE's unfinished phrase about Answers on Question Detail was made concrete as a post-Reveal excerpt list, on-demand body retrieval, and comparison with multiple bodies open.
+- On 2026-09-03, the specification was revalidated after adding per-Question anonymous presentation for authenticated participants and further UI changes; all items passed.
+- On 2026-09-03, it was revalidated after adding the current-user Answer tag only when answered, current-user-only pre-Reveal presentation, the post-Reveal current-user tag, and non-exposure of user IDs; all items passed.

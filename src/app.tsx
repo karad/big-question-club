@@ -1,6 +1,7 @@
-import { Hono } from 'hono';
+import { Hono, type MiddlewareHandler } from 'hono';
 import { csrf } from 'hono/csrf';
 import { HTTPException } from 'hono/http-exception';
+import { secureHeaders } from 'hono/secure-headers';
 
 import type { Authentication } from './auth/session';
 import type { AdminRepository } from './repositories/admin-repository';
@@ -41,6 +42,11 @@ import {
   unbanAdminUserRoute,
 } from './routes/admin';
 
+/**
+ * Creates the Hono application and wires its routes to services and repositories.
+ * @param options - Authentication, repositories, asset URL, and clock dependencies.
+ * @returns The configured Hono application.
+ */
 export function createApp({
   authentication,
   adminRepository,
@@ -55,6 +61,25 @@ export function createApp({
   now?: () => number;
 } = {}): Hono {
   const app = new Hono();
+
+  app.use(
+    secureHeaders({
+      contentSecurityPolicy: {
+        baseUri: ["'none'"],
+        connectSrc: ["'self'"],
+        defaultSrc: ["'self'"],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+        imgSrc: ["'self'", 'data:'],
+        objectSrc: ["'none'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", 'https://fonts.googleapis.com'],
+      },
+      referrerPolicy: 'strict-origin-when-cross-origin',
+      xFrameOptions: 'DENY',
+    }),
+  );
 
   app.onError((error, context) => {
     if (error instanceof HTTPException) return error.getResponse();
@@ -93,13 +118,13 @@ export function createApp({
   app.get('/api/agent-safety-verification-questions/:caseId', verificationQuestionRoute);
   app.all('/api/auth/*', (context) => authenticationRoute(context, authentication));
   app.get('/api/who-am-i', (context) => whoAmIRoute(context, authentication));
-  app.post('/api/questions/:questionId/answers', (context) =>
+  app.post('/api/questions/:questionId/answers', csrf(), requireJsonContentType, (context) =>
     submitAnswerRoute(context, authentication, repository, now ?? Date.now),
   );
-  app.put('/api/questions/:questionId/my-answer', (context) =>
+  app.put('/api/questions/:questionId/my-answer', csrf(), requireJsonContentType, (context) =>
     updateAnswerRoute(context, authentication, repository, now ?? Date.now),
   );
-  app.delete('/api/questions/:questionId/my-answer', (context) =>
+  app.delete('/api/questions/:questionId/my-answer', csrf(), (context) =>
     removeAnswerRoute(context, authentication, repository, now ?? Date.now),
   );
   app.get('/api/questions/:questionId', (context) =>
@@ -170,3 +195,11 @@ export function createApp({
 
   return app;
 }
+
+const requireJsonContentType: MiddlewareHandler = async (context, next) => {
+  const mediaType = context.req.header('Content-Type')?.split(';', 1)[0]?.trim().toLowerCase();
+  if (mediaType !== 'application/json') {
+    return context.json(answerError('INVALID_INPUT'), 415, { 'Cache-Control': 'no-store' });
+  }
+  await next();
+};

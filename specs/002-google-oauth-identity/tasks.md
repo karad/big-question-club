@@ -1,154 +1,154 @@
-# タスク: Google OAuthとWebMCPユーザー識別の検証
+# Tasks: Validating Google OAuth and WebMCP User Identification
 
-**入力**: `specs/002-google-oauth-identity/` の設計成果物
+**Input**: Design artifacts in `specs/002-google-oauth-identity/`
 
-**前提**: `plan.md`、`spec.md`、`research.md`、`data-model.md`、`contracts/who-am-i.md`、`quickstart.md`
+**Prerequisites**: `plan.md`, `spec.md`, `research.md`, `data-model.md`, `contracts/who-am-i.md`, `quickstart.md`
 
-**テスト**: プロジェクトのテスト方針に従い、純粋な認証結果・環境設定・WebMCP Toolの分岐はユニットテスト、HTTP導線は統合テストを作成する。Google OAuthとブラウザCookieの実際の引継ぎは手動E2Eで確認する。
+**Testing**: Following the project testing policy, create Unit Tests for pure authentication results, environment configuration, and WebMCP Tool branches, and Integration Tests for HTTP flows. Verify actual Google OAuth and browser Cookie propagation with manual E2E testing.
 
-**構成**: タスクは、各ユーザーストーリーを独立して実装・検証できるように整理している。
+**Organization**: Tasks are organized so each user story can be implemented and verified independently.
 
-## 形式: `[ID] [P?] [Story] 説明`
+## Format: `[ID] [P?] [Story] Description`
 
-- **[P]**: 未完了タスクと異なるファイルを扱い、並行して実行できる。
-- **[Story]**: 対応するユーザーストーリー（`US1`、`US2`、`US3`）。
-- 各タスクには変更対象となる正確なファイルパスを含める。
+- **[P]**: Can run in parallel because it touches files different from other unfinished tasks.
+- **[Story]**: The corresponding user story (`US1`, `US2`, or `US3`).
+- Every task includes the exact file path to change.
 
-## Phase 1: セットアップ（共有基盤）
+## Phase 1: Setup (Shared Foundation)
 
-**目的**: 認証検証に必要な依存関係、Cloudflare設定、Secret管理の土台を用意する。
+**Purpose**: Prepare dependencies, Cloudflare configuration, and Secret-management foundations required for authentication validation.
 
-- [X] T001 `package.json`でBetter AuthとD1用の依存関係・実行スクリプトを定義し、`package-lock.json`を更新する
-- [X] T002 [P] `wrangler.jsonc`にD1バインディングとBetter Authが必要とするWorkers互換性設定を追加する
-- [X] T003 [P] `.dev.vars.example`にSecretを含まない`BETTER_AUTH_URL`、`BETTER_AUTH_SECRET`、`GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`の設定名と説明を追加する
-- [X] T004 [P] `.gitignore`で`.dev.vars`、認証用のローカル設定、生成されたD1開発データを除外する
-- [X] T005 `README.md`に認証検証の前提、Secretをコミットしない運用、SPEC 002の検証ガイドへのリンクを追加する
-
----
-
-## Phase 2: 基盤機能（すべてのユーザーストーリーをブロックする前提）
-
-**目的**: 認証データ、環境設定、セッション検証、共通のエラー契約を実装する。
-
-**⚠️ 重要**: このPhaseが完了するまでユーザーストーリーの実装を開始しない。
-
-- [X] T006 Better Authの認証スキーマを生成し、`migrations/0001_better_auth.sql`にUser、Account、Session、VerificationのD1定義を追加する
-- [X] T007 [P] `src/types/env.d.ts`にD1バインディングと認証環境変数のWorkers型を追加する
-- [X] T008 [P] `tests/unit/auth-config.test.ts`に不足値、localhost、HTTPSの正規Origin、Secret値を出力しない設定検証テストを追加する
-- [X] T009 [P] `tests/unit/identity.test.ts`に認証済み、未認証、異常時の公開結果がUser ID以外を含まないテストを追加する
-- [X] T010 `src/auth/config.ts`に認証環境変数の読取り・正規Origin検証・安全な設定エラー変換を実装する
-- [X] T011 `src/domain/identity.ts`に`who_am_i` API/Tool共通の成功・未認証・一時失敗レスポンスと入力検証を実装する
-- [X] T012 `src/auth/auth.ts`にGoogle OAuth、D1永続セッション、Cookieキャッシュ無効、アカウント選択を設定したBetter Authインスタンスを実装する
-- [X] T013 `src/auth/session.ts`にリクエストの現在のセッションから公開可能なUser IDだけを抽出する関数を実装する
-- [X] T014 `src/routes/auth.ts`にBetter Authハンドラとログイン状態を安全に取得する共有ルート関数を実装する
-- [X] T015 `src/app.tsx`に`/api/auth/*`の認証ハンドラをcatch-allより前に登録し、認証用依存関係をWorker環境へ注入する
-
-**チェックポイント**: D1へ認証スキーマを適用でき、環境設定とセッション検証の共有基盤がテスト可能な状態になる。
+- [X] T001 Define Better Auth and D1 dependencies and execution scripts in `package.json`, then update `package-lock.json`
+- [X] T002 [P] Add the D1 binding and Workers compatibility settings required by Better Auth to `wrangler.jsonc`
+- [X] T003 [P] Add the names and descriptions of `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET`, without Secrets, to `.dev.vars.example`
+- [X] T004 [P] Exclude `.dev.vars`, local authentication configuration, and generated D1 development data in `.gitignore`
+- [X] T005 Add authentication-validation prerequisites, the policy against committing Secrets, and a link to the SPEC 002 validation guide to `README.md`
 
 ---
 
-## Phase 3: ユーザーストーリー1 — ログイン済みユーザーとしてWebMCPを利用する（優先度: P1）🎯 MVP
+## Phase 2: Foundation (Prerequisite Blocking All User Stories)
 
-**目標**: Google OAuthでログインしたブラウザと`who_am_i` Toolが同じサービス内User IDを返す。
+**Purpose**: Implement authentication data, environment configuration, Session validation, and the shared error contract.
 
-**独立テスト**: テスト用アカウントでログインし、ブラウザの本人確認表示、`GET /api/who-am-i`、WebMCPの`who_am_i`が同じUser IDを返すことを確認する。
+**⚠️ Important**: Do not begin implementing user stories until this Phase is complete.
 
-### ユーザーストーリー1のテスト
+- [X] T006 Generate the Better Auth authentication Schema and add D1 definitions for User, Account, Session, and Verification to `migrations/0001_better_auth.sql`
+- [X] T007 [P] Add Workers types for the D1 binding and authentication environment variables to `src/types/env.d.ts`
+- [X] T008 [P] Add tests to `tests/unit/auth-config.test.ts` for missing values, localhost and HTTPS canonical Origins, and configuration validation that does not output Secret values
+- [X] T009 [P] Add tests to `tests/unit/identity.test.ts` confirming that public results for authenticated, unauthenticated, and failure states contain nothing other than the User ID
+- [X] T010 Implement reading authentication environment variables, canonical-Origin validation, and safe conversion of configuration errors in `src/auth/config.ts`
+- [X] T011 Implement shared success, unauthenticated, and temporary-failure responses and input validation for the `who_am_i` API and Tool in `src/domain/identity.ts`
+- [X] T012 Implement a Better Auth instance configured with Google OAuth, persistent D1 Sessions, disabled Cookie caching, and account selection in `src/auth/auth.ts`
+- [X] T013 Implement a function in `src/auth/session.ts` that extracts only the publicly exposable User ID from the request's current Session
+- [X] T014 Implement the Better Auth handler and a shared route function that safely retrieves login state in `src/routes/auth.ts`
+- [X] T015 Register the `/api/auth/*` authentication handler before the catch-all route in `src/app.tsx` and inject authentication dependencies into the Worker environment
 
-- [X] T016 [P] [US1] `tests/integration/who-am-i-api.test.ts`に有効なセッションで`GET /api/who-am-i`が`200`とUser IDだけを返す統合テストを追加する
-- [X] T017 [P] [US1] `tests/unit/register-who-am-i-tool.test.ts`に空入力、同一オリジンfetch、成功結果、AbortSignalのToolユニットテストを追加する
-- [X] T018 [P] [US1] `tests/integration/auth-page.test.ts`に認証済みページがUser IDだけを表示し、メールアドレス・Cookie値を含めないテストを追加する
-
-### ユーザーストーリー1の実装
-
-- [X] T019 [P] [US1] `src/routes/who-am-i.ts`に現在のセッションを検証して`GET /api/who-am-i`を返すルートを実装する
-- [X] T020 [P] [US1] `src/webmcp/register-who-am-i-tool.ts`に空入力の読み取り専用`who_am_i` Toolと相対URL`/api/who-am-i`へのfetchを実装する
-- [X] T021 [US1] `src/app.tsx`に`GET /api/who-am-i`と認証済み状態を示すSSRページを登録する
-- [X] T022 [US1] `src/client.ts`に`who_am_i` Toolの登録と、WebMCP対応状況を英語で表示する処理を実装する
-- [X] T023 [US1] `src/types/webmcp.d.ts`に`who_am_i` Toolが使用する型を追加し、既存のQuestion Tool型との互換性を保つ
-- [X] T024 [US1] `tests/integration/who-am-i-api.test.ts`と`tests/unit/register-who-am-i-tool.test.ts`を通し、APIとToolの成功契約が`contracts/who-am-i.md`と一致することを確認する
-- [X] T025 [US1] `specs/002-google-oauth-identity/quickstart.md`の同一アカウント10回確認を実施し、結果を`specs/002-google-oauth-identity/validation-record.md`へ記録する
-
-**チェックポイント**: US1が独立して動作し、ログイン済みブラウザとWebMCP ToolのUser ID一致を検証できる。
+**Checkpoint**: The authentication Schema can be applied to D1, and the shared environment-configuration and Session-validation foundation is testable.
 
 ---
 
-## Phase 4: ユーザーストーリー2 — アカウントを混同せずに識別する（優先度: P2）
+## Phase 3: User Story 1 — Use WebMCP as the Logged-In User (Priority: P1) 🎯 MVP
 
-**目標**: 未認証状態、異なるGoogleアカウント、アカウント切替で、User IDの誤返却・混同を防ぐ。
+**Goal**: Make a browser signed in through Google OAuth and the `who_am_i` Tool return the same service-internal User ID.
 
-**独立テスト**: アカウントA・Bのセッション、未認証、失効セッションを模擬したHTTP/WebMCP確認で、認証済みの現在User IDだけが返ることを確認する。
+**Independent Test**: Sign in with a test account and confirm that the browser identity display, `GET /api/who-am-i`, and WebMCP `who_am_i` all return the same User ID.
 
-### ユーザーストーリー2のテスト
+### User Story 1 Tests
 
-- [X] T026 [P] [US2] `tests/integration/who-am-i-api.test.ts`に未認証・失効・破損Cookieが`401 AUTHENTICATION_REQUIRED`となりUser IDを返さないテストを追加する
-- [X] T027 [P] [US2] `tests/unit/identity.test.ts`に異なるUser ID、過去セッション、匿名代替識別子を公開しない変換テストを追加する
-- [X] T028 [P] [US2] `tests/unit/register-who-am-i-tool.test.ts`に`401`と`500`を安全なToolエラーへ変換するテストを追加する
+- [X] T016 [P] [US1] Add an Integration Test to `tests/integration/who-am-i-api.test.ts` confirming that `GET /api/who-am-i` returns `200` and only the User ID for a valid Session
+- [X] T017 [P] [US1] Add Tool Unit Tests for empty input, same-origin fetch, the success result, and AbortSignal to `tests/unit/register-who-am-i-tool.test.ts`
+- [X] T018 [P] [US1] Add an Integration Test to `tests/integration/auth-page.test.ts` confirming that the authenticated page displays only the User ID and contains no email address or Cookie value
 
-### ユーザーストーリー2の実装
+### User Story 1 Implementation
 
-- [X] T029 [US2] `src/auth/session.ts`と`src/routes/who-am-i.ts`で未認証・失効・破損した認証情報を`AUTHENTICATION_REQUIRED`へ統一して変換する
-- [X] T030 [US2] `src/webmcp/register-who-am-i-tool.ts`で未認証と一時失敗を契約どおりのTool結果へ変換し、例外・レスポンス本文に識別情報を出さない
-- [X] T031 [US2] `specs/002-google-oauth-identity/quickstart.md`のアカウント分離、未認証・失効、アカウント切替を実施し、結果を`specs/002-google-oauth-identity/validation-record.md`へ記録する
+- [X] T019 [P] [US1] Implement a route in `src/routes/who-am-i.ts` that validates the current Session and serves `GET /api/who-am-i`
+- [X] T020 [P] [US1] Implement a read-only, empty-input `who_am_i` Tool and fetch to the relative URL `/api/who-am-i` in `src/webmcp/register-who-am-i-tool.ts`
+- [X] T021 [US1] Register `GET /api/who-am-i` and an SSR page showing authenticated state in `src/app.tsx`
+- [X] T022 [US1] Implement `who_am_i` Tool registration and an English WebMCP-support status display in `src/client.ts`
+- [X] T023 [US1] Add types used by the `who_am_i` Tool to `src/types/webmcp.d.ts` while preserving compatibility with existing Question Tool types
+- [X] T024 [US1] Pass `tests/integration/who-am-i-api.test.ts` and `tests/unit/register-who-am-i-tool.test.ts`, and confirm that the API and Tool success contract matches `contracts/who-am-i.md`
+- [X] T025 [US1] Perform the ten same-account checks in `specs/002-google-oauth-identity/quickstart.md` and record the results in `specs/002-google-oauth-identity/validation-record.md`
 
-**チェックポイント**: US1の成功導線を損なわず、異なるアカウントや無効な認証状態でUser IDを誤返却しない。
-
----
-
-## Phase 5: ユーザーストーリー3 — 検証結果からGo/No-Goを判断する（優先度: P3）
-
-**目標**: 再現可能な記録から、WebMCPとGoogle OAuthのユーザー識別がP0を通過したかを判断できる。
-
-**独立テスト**: 全4ケースの期待・実測・判定を、Secretを含めない形式で記録し、1つでも失敗ならNo-Goと結論付けられることを確認する。
-
-### ユーザーストーリー3のテスト
-
-- [X] T032 [P] [US3] `tests/unit/identity.test.ts`に検証記録へ出力可能な値がUser ID・状態・安全なエラーコードだけであるテストを追加する
-
-### ユーザーストーリー3の実装
-
-- [X] T033 [US3] `specs/002-google-oauth-identity/validation-record.md`に4ケース、実行日時、Origin、HTTP状態、ID一致、Go/No-Goの秘密情報を含まない記録テンプレートを作成する
-- [X] T034 [US3] `specs/002-google-oauth-identity/quickstart.md`と`specs/002-google-oauth-identity/validation-record.md`で、いずれかのログイン済み不一致または未認証がNo-Goとなる判定規則を相互に一致させる
-- [X] T035 [US3] `specs/002-google-oauth-identity/validation-record.md`に自動テスト結果と手動E2Eの全結果を記録し、仕様のSC-001からSC-005に対するGo/No-Goを確定する
-
-**チェックポイント**: プロダクト責任者が検証記録だけでP0の結論を再確認できる。
+**Checkpoint**: US1 works independently, and User ID agreement between the logged-in browser and WebMCP Tool can be verified.
 
 ---
 
-## Phase 6: 仕上げと横断的な確認
+## Phase 4: User Story 2 — Identify Accounts Without Confusing Them (Priority: P2)
 
-**目的**: 実装・文書・品質ゲートを揃え、後続SPECへ進める状態を確定する。
+**Goal**: Prevent incorrect or mixed User IDs for unauthenticated states, different Google accounts, and account switching.
 
-- [X] T036 [P] `tests/integration/auth-route.test.ts`にGoogle OAuthの開始・コールバック失敗がSecret、トークン、メールアドレスを返さない統合テストを追加する
-- [X] T037 `src/app.tsx`と`src/routes/auth.ts`に認証エラーの安全なHTTP応答と、認証状態表示の英語文言を反映する
-- [X] T038 [P] `README.md`と`specs/002-google-oauth-identity/quickstart.md`の環境変数名、リダイレクトURI、手動検証手順を相互に照合して更新する
-- [X] T039 `package.json`の品質コマンドを使い、`npm test`、`npm run typecheck`、`npm run lint`、`npm run format`を実行して`specs/002-google-oauth-identity/validation-record.md`へ結果を記録する
-- [X] T040 `MILESTONE.md`のSPEC 002チェック、`USE_CODEX.md`、`specs/002-google-oauth-identity/validation-record.md`を更新し、Go/No-Go、受け入れ条件、未解決事項を記録する
+**Independent Test**: Simulate Sessions for Accounts A and B, an unauthenticated state, and an expired Session in HTTP/WebMCP checks, confirming that only the current authenticated User ID is returned.
+
+### User Story 2 Tests
+
+- [X] T026 [P] [US2] Add tests to `tests/integration/who-am-i-api.test.ts` confirming that unauthenticated, expired, and corrupted Cookies return `401 AUTHENTICATION_REQUIRED` without a User ID
+- [X] T027 [P] [US2] Add conversion tests to `tests/unit/identity.test.ts` that do not expose a different User ID, past Session, or anonymous substitute identifier
+- [X] T028 [P] [US2] Add tests to `tests/unit/register-who-am-i-tool.test.ts` converting `401` and `500` into safe Tool errors
+
+### User Story 2 Implementation
+
+- [X] T029 [US2] Unify conversion of unauthenticated, expired, and corrupted authentication information to `AUTHENTICATION_REQUIRED` in `src/auth/session.ts` and `src/routes/who-am-i.ts`
+- [X] T030 [US2] Convert unauthenticated and temporary failures to contract-compliant Tool results in `src/webmcp/register-who-am-i-tool.ts`, without exposing identifying information in exceptions or response bodies
+- [X] T031 [US2] Perform the account-isolation, unauthenticated/expired, and account-switching checks in `specs/002-google-oauth-identity/quickstart.md`, then record the results in `specs/002-google-oauth-identity/validation-record.md`
+
+**Checkpoint**: Without breaking the US1 success flow, invalid authentication states and different accounts never produce an incorrect User ID.
 
 ---
 
-## 依存関係と実行順
+## Phase 5: User Story 3 — Make a Go/No-Go Decision from Validation Results (Priority: P3)
 
-### Phase依存関係
+**Goal**: Determine from reproducible records whether WebMCP and Google OAuth user identification passed P0.
 
-- **Phase 1（セットアップ）**: 直ちに開始できる。
-- **Phase 2（基盤機能）**: Phase 1完了後に開始し、すべてのユーザーストーリーをブロックする。
-- **Phase 3（US1）**: Phase 2完了後に開始する。P0の最小価値を提供する。
-- **Phase 4（US2）**: Phase 2完了後に技術的には開始できるが、US1の本人確認API・Tool実装を再利用するためUS1のチェックポイント後に進める。
-- **Phase 5（US3）**: US1とUS2の実機検証結果に依存する。
-- **Phase 6（仕上げ）**: 必要なユーザーストーリーの完了後に実行する。
+**Independent Test**: Record expected results, observed results, and decisions for all four cases in a format containing no Secrets, and confirm that any failure produces a No-Go conclusion.
 
-### ユーザーストーリー依存関係
+### User Story 3 Tests
+
+- [X] T032 [P] [US3] Add a test to `tests/unit/identity.test.ts` confirming that validation records can output only the User ID, status, and safe error code
+
+### User Story 3 Implementation
+
+- [X] T033 [US3] Create a Secret-free template in `specs/002-google-oauth-identity/validation-record.md` for four cases, execution time, Origin, HTTP status, ID agreement, and Go/No-Go
+- [X] T034 [US3] Align the decision rule in `specs/002-google-oauth-identity/quickstart.md` and `specs/002-google-oauth-identity/validation-record.md` so any signed-in mismatch or unauthenticated result produces No-Go
+- [X] T035 [US3] Record all automated-test and manual-E2E results in `specs/002-google-oauth-identity/validation-record.md` and finalize Go/No-Go against SC-001 through SC-005
+
+**Checkpoint**: The product owner can independently confirm the P0 conclusion using only the validation record.
+
+---
+
+## Phase 6: Polish and Cross-Cutting Checks
+
+**Purpose**: Align implementation, documentation, and quality gates, and establish readiness for subsequent SPECs.
+
+- [X] T036 [P] Add Integration Tests to `tests/integration/auth-route.test.ts` confirming that Google OAuth initiation and callback failures do not return Secrets, tokens, or email addresses
+- [X] T037 Add safe HTTP responses for authentication errors and English authentication-status UI text to `src/app.tsx` and `src/routes/auth.ts`
+- [X] T038 [P] Cross-check and update environment-variable names, redirect URIs, and manual validation steps between `README.md` and `specs/002-google-oauth-identity/quickstart.md`
+- [X] T039 Run `npm test`, `npm run typecheck`, `npm run lint`, and `npm run format` through the quality commands in `package.json`, then record results in `specs/002-google-oauth-identity/validation-record.md`
+- [X] T040 Update the SPEC 002 checkbox in `MILESTONE.md`, `USE_CODEX.md`, and `specs/002-google-oauth-identity/validation-record.md` to record the Go/No-Go decision, acceptance criteria, and unresolved items
+
+---
+
+## Dependencies and Execution Order
+
+### Phase Dependencies
+
+- **Phase 1 (Setup)**: Can start immediately.
+- **Phase 2 (Foundation)**: Starts after Phase 1 and blocks all user stories.
+- **Phase 3 (US1)**: Starts after Phase 2 and provides the minimum value for P0.
+- **Phase 4 (US2)**: Could technically start after Phase 2, but follows the US1 checkpoint because it reuses the US1 identity API and Tool implementation.
+- **Phase 5 (US3)**: Depends on real-device validation results from US1 and US2.
+- **Phase 6 (Polish)**: Runs after the required user stories are complete.
+
+### User Story Dependencies
 
 ```text
-セットアップ → 基盤機能 → US1（ログイン済み識別） → US2（アカウント分離） → US3（Go/No-Go記録） → 仕上げ
+Setup → Foundation → US1 (signed-in identification) → US2 (account isolation) → US3 (Go/No-Go record) → Polish
 ```
 
-- **US1（P1）**: 基盤機能完了後に独立して検証できる。
-- **US2（P2）**: US1のAPI・Tool契約を再利用して、異常・切替状態を検証する。
-- **US3（P3）**: US1・US2の実測結果を記録して判定する。
+- **US1 (P1)**: Can be verified independently after the foundation is complete.
+- **US2 (P2)**: Reuses the US1 API and Tool contract to verify failure and switching states.
+- **US3 (P3)**: Records and evaluates observed results from US1 and US2.
 
-### 並行実行の例
+### Parallel Execution Examples
 
 #### US1
 
@@ -169,24 +169,24 @@ T027 tests/unit/identity.test.ts
 T028 tests/unit/register-who-am-i-tool.test.ts
 ```
 
-## 実装戦略
+## Implementation Strategy
 
-### MVPを先に実装する
+### Implement the MVP First
 
-1. Phase 1とPhase 2を完了する。
-2. Phase 3のUS1を完了する。
-3. 同一アカウントの10回確認を実機で実施し、User ID一致を確認する。
-4. US1の結果が不一致または未認証ならNo-Goとして止め、後続の回答投稿機能には進まない。
+1. Complete Phase 1 and Phase 2.
+2. Complete US1 in Phase 3.
+3. Perform ten same-account checks on a real device and confirm User ID agreement.
+4. If US1 produces a mismatch or unauthenticated result, stop with No-Go and do not proceed to subsequent Answer submission.
 
-### 段階的に提供する
+### Deliver Incrementally
 
-1. US1でログイン済みの同一ユーザー識別を成立させる。
-2. US2でアカウントの混同がないことを確認する。
-3. US3で全ケースを記録してP0のGo/No-Goを確定する。
-4. Goの場合のみ、SPEC 003以降のP0検証へ進む。
+1. Establish same-user identification for a logged-in account with US1.
+2. Confirm accounts are not confused with US2.
+3. Record every case and finalize the P0 Go/No-Go decision with US3.
+4. Proceed to P0 validation in SPEC 003 and later only after a Go decision.
 
-## 注記
+## Notes
 
-- `[P]`のタスクは、前提タスクの完了後に異なるファイルを扱う範囲で並行実行できる。
-- 本タスクのUI表示文言とコード内コメント・識別子は英語で作成する。
-- OAuth Secret、Cookie値、アクセストークン、Googleアカウントのメールアドレスをコミット、fixture、ログ、画面、Tool応答、検証記録に含めない。
+- Tasks marked `[P]` may run in parallel after prerequisites are complete, provided they touch different files.
+- UI text, code comments, and identifiers for this task are written in English.
+- Do not include OAuth Secrets, Cookie values, access tokens, or Google account email addresses in commits, fixtures, logs, screens, Tool responses, or validation records.

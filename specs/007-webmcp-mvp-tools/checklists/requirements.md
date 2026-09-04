@@ -1,39 +1,39 @@
-# 仕様品質チェックリスト: WebMCP MVP Tool群
+# Specification Quality Checklist: WebMCP MVP Tools
 
-**目的**: 計画へ進む前に仕様の完全性と品質を検証する
-**作成日**: 2026-09-02
-**対象機能**: [spec.md](../spec.md)
+**Purpose**: Verify specification completeness and quality before planning
+**Created**: 2026-09-02
+**Feature**: [spec.md](../spec.md)
 
-## 内容品質
+## Content Quality
 
-- [x] 実装詳細（言語、フレームワーク、API）が含まれていない
-- [x] ユーザー価値と事業上の必要性に焦点を当てている
-- [x] 非技術系ステークホルダーにも理解できる
-- [x] 必須セクションがすべて完成している
+- [x] Contains no implementation details such as languages, frameworks, or APIs
+- [x] Focuses on user value and business needs
+- [x] Is understandable to non-technical stakeholders
+- [x] All mandatory sections are complete
 
-## 要件の完全性
+## Requirement Completeness
 
-- [x] `[NEEDS CLARIFICATION]` マーカーが残っていない
-- [x] 要件がテスト可能で曖昧さがない
-- [x] 成功基準が測定可能である
-- [x] 成功基準が技術非依存である
-- [x] すべての受け入れシナリオが定義されている
-- [x] エッジケースが特定されている
-- [x] スコープ境界が明確である
-- [x] 依存関係と前提が特定されている
+- [x] No `[NEEDS CLARIFICATION]` markers remain
+- [x] Requirements are testable and unambiguous
+- [x] Success criteria are measurable
+- [x] Success criteria are technology-agnostic
+- [x] All acceptance scenarios are defined
+- [x] Edge cases are identified
+- [x] Scope boundaries are clear
+- [x] Dependencies and assumptions are identified
 
-## 機能の準備状況
+## Feature Readiness
 
-- [x] すべての機能要件に明確な受け入れ基準がある
-- [x] ユーザーシナリオが主要フローを網羅している
-- [x] 機能が成功基準で定義した測定可能な成果を満たせる
-- [x] 仕様へ実装詳細が漏れ込んでいない
+- [x] Every functional requirement has clear acceptance criteria
+- [x] User scenarios cover the primary flows
+- [x] The feature can satisfy the measurable outcomes in the success criteria
+- [x] No implementation details leak into the specification
 
-## 注記
+## Notes
 
-- 初回作成時、コピペ用プロンプト追加後、1行のQuestion URL Prompt確定後、およびContext根拠付き回答契約の追加後の再検証で、すべての項目に適合した。
-- Tool名、入出力フィールド、固定description、エラーコードは利用者向けの外部契約として記載し、内部の実装方式は指定していない。
-- SPEC 002〜006の完了済み契約を前提として明記し、SPEC 008〜010の公開制御・Human向けUIは対象外として分離した。
-- トークン消費をHumanが制御できるよう、Agent向けQuestion探索Toolを対象外とし、Humanが指定したQuestionだけを取得・回答する境界へ更新した。
-- HumanがAgent回答を明示的に開始できるよう、現在のOriginへ追従するQuestion絶対URLを含む1行の英語コピペ用プロンプト、コピー成功・失敗、表示条件、Question本文を埋め込まない安全境界を追加した。詳細なAgent向け説明はPromptへ重複させず各Tool契約から提供する。Tool契約はUser自身の記述を優先し、Assistant提案と検討候補を事実から分離する。明示的な個人見解がない場合は未確認事実を断定しない最善の代理回答を作成・投稿し、その不足だけを理由に質問しない。初回Promptは投稿許可を含み追加承認を不要とする。
-- `update_answer` と `remove_answer` を追加し、`OPEN` の間だけ本人Answerを変更・削除でき、削除後は再投稿可能、締切後は不変、他者Answerへの操作は常に不可とする境界を追加した。
+- All items passed during initial creation and revalidation after adding the copyable prompt, finalizing the one-line Question URL prompt, and adding the context-grounded answer contract.
+- Tool names, input/output fields, fixed descriptions, and error codes are documented as user-facing external contracts without prescribing internal implementation.
+- Completed SPEC 002–006 contracts are explicit prerequisites, while publication control and Human UI from SPEC 008–010 remain out of scope.
+- To keep token use under Human control, Question-discovery tools for Agents are out of scope. Agents retrieve and answer only a Human-selected Question.
+- To let Humans explicitly initiate Agent answering, the contract adds a one-line English copyable prompt containing an absolute Question URL based on the current Origin, copy success/failure behavior, display conditions, and a safety boundary excluding the Question body. Detailed Agent instructions remain in each tool contract rather than being duplicated in the prompt. Tool contracts prioritize the User's own writing and distinguish Assistant suggestions and options under consideration from facts. When no explicit personal view exists, the Agent creates and submits a thoughtful best-effort proxy answer without asserting unverified facts, and does not ask solely because that view is missing. The initial prompt authorizes submission without additional approval.
+- `update_answer` and `remove_answer` let a User change or delete only their own Answer while `OPEN`; deletion permits resubmission, the Answer is immutable after the deadline, and operations on another User's Answer are always forbidden.

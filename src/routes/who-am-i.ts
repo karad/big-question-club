@@ -3,6 +3,12 @@ import type { Context } from 'hono';
 import { readCurrentIdentity, type Authentication } from '../auth/session';
 import type { IdentityResult } from '../domain/identity';
 
+/**
+ * Returns the identity associated with the current request.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the session.
+ * @returns An HTTP response containing an identity result.
+ */
 export async function whoAmIRoute(
   context: Context,
   authentication: Pick<Authentication, 'getSession'> | undefined,

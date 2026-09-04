@@ -1,23 +1,23 @@
-# データモデル: 最小WebMCP接続
+# Data Model: Minimal WebMCP Connection
 
-このSPECは永続データを持たない。検証用Questionはアプリケーション内で固定値として扱う。
+This SPEC has no persistent data. The verification Question is treated as a fixed value within the application.
 
-## 検証用Question
+## Verification Question
 
-| 項目 | 型 | 必須 | ルール |
+| Field | Type | Required | Rule |
 | --- | --- | --- | --- |
-| `id` | 文字列 | はい | 検証期間中に変化しない一意の値。 |
-| `question` | 文字列 | はい | 空白だけでなく、AIによる仕事の自動化が進む未来への備えを問う英語文。 |
-| `language` | 文字列 | はい | `en` に固定する。 |
+| `id` | string | Yes | A unique value that does not change during the verification period. |
+| `question` | string | Yes | A non-blank English sentence asking how people should prepare for a future in which AI increasingly automates work. |
+| `language` | string | Yes | Fixed to `en`. |
 
-## 関係と状態
+## Relationships and State
 
-- 検証用Questionは常に1件だけ存在する。
-- User、Session、Answerとの関係は持たない。
-- Questionの作成、更新、削除、状態遷移は本SPECの対象外である。
+- Exactly one verification Question always exists.
+- It has no relationship to a User, Session, or Answer.
+- Creating, updating, deleting, or transitioning the state of a Question is outside the scope of this SPEC.
 
-## 検証ルール
+## Validation Rules
 
-- 3項目すべてが存在し、空でないこと。
-- 同一実行環境での取得結果は常に同じであること。
-- 契約にない入力をQuestionの内容へ反映しないこと。
+- All three fields must exist and be non-empty.
+- Retrieval must always return the same result within the same runtime environment.
+- Input not defined by the contract must not affect the Question content.

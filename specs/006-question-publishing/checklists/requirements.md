@@ -1,39 +1,39 @@
-# 仕様品質チェックリスト: Question作成・公開フロー
+# Specification Quality Checklist: Question Creation and Publication Flow
 
-**目的**: 計画へ進む前に仕様の完全性と品質を検証する
+**Purpose**: Verify specification completeness and quality before proceeding to planning
 
-**作成日**: 2026-09-02
+**Created**: 2026-09-02
 
-**対象仕様**: [spec.md](../spec.md)
+**Specification**: [spec.md](../spec.md)
 
-## 内容品質
+## Content Quality
 
-- [x] 言語、フレームワーク、APIなどの実装詳細がない
-- [x] 利用者価値と事業上の必要性に焦点を当てている
-- [x] 非技術系の関係者が理解できる内容である
-- [x] 必須セクションがすべて完成している
+- [x] Contains no implementation details such as languages, frameworks, or APIs
+- [x] Focuses on user value and business needs
+- [x] Is understandable to non-technical stakeholders
+- [x] All mandatory sections are complete
 
-## 要件の完全性
+## Requirement Completeness
 
-- [x] `[NEEDS CLARIFICATION]` マーカーが残っていない
-- [x] 要件がテスト可能で曖昧さがない
-- [x] 成功基準が測定可能である
-- [x] 成功基準が技術非依存である
-- [x] すべての受け入れシナリオが定義されている
-- [x] エッジケースが特定されている
-- [x] スコープが明確に限定されている
-- [x] 依存関係と前提が特定されている
+- [x] No `[NEEDS CLARIFICATION]` markers remain
+- [x] Requirements are testable and unambiguous
+- [x] Success criteria are measurable
+- [x] Success criteria are technology-agnostic
+- [x] All acceptance scenarios are defined
+- [x] Edge cases are identified
+- [x] Scope is clearly bounded
+- [x] Dependencies and assumptions are identified
 
-## 機能の準備状況
+## Feature Readiness
 
-- [x] すべての機能要件に明確な受け入れ基準がある
-- [x] ユーザーシナリオが主要フローを網羅している
-- [x] 成功基準で定義した測定可能な成果を満たせる仕様である
-- [x] 仕様に実装詳細が漏れ込んでいない
+- [x] Every functional requirement has clear acceptance criteria
+- [x] User scenarios cover the primary flows
+- [x] The specification can satisfy the measurable outcomes in the success criteria
+- [x] No implementation details leak into the specification
 
-## 注記
+## Notes
 
-- 第1回検証ですべての項目が合格した。
-- Question作成、下書き編集、不可逆な公開、`My Questions`、権限外操作の拒否を独立したシナリオとして定義し、FR-001〜FR-025およびSC-001〜SC-008へ対応付けた。
-- 本文を任意言語の10〜1,000文字、回答締切を1時間以上30日以内、Revealを回答締切と同時とするMVP境界を明記した。
-- 初期Moderationは公開情報と禁止内容に関する作成者の確認とし、自動判定、運営審査、通報、削除は対象外として明確に分離した。
+- Every item passed on the first review.
+- Question creation, draft editing, irreversible publication, `My Questions`, and rejection of unauthorized operations are defined as independent scenarios and mapped to FR-001–FR-025 and SC-001–SC-008.
+- The MVP boundaries specify a body of 10–1,000 characters in any language, an answer deadline between one hour and thirty days, and reveal simultaneous with the answer deadline.
+- Initial moderation is the creator's acknowledgment about public information and prohibited content. Automated decisions, operator review, reporting, and deletion are explicitly out of scope.

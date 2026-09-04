@@ -11,10 +11,21 @@ export type ViewerPresentation =
   | 'submission-unavailable'
   | 'closed';
 
+/**
+ * Formats an answer count for display.
+ * @param count - Number of answers.
+ * @returns A singular or plural English label.
+ */
 export function formatAnswerCount(count: number): string {
   return count === 1 ? '1 answer' : `${count} answers`;
 }
 
+/**
+ * Builds absolute and relative deadline labels from one time snapshot.
+ * @param closesAt - Closing timestamp in milliseconds since the Unix epoch.
+ * @param snapshotNow - Reference timestamp used for the relative duration.
+ * @returns Labels and the remaining duration in milliseconds.
+ */
 export function getDeadlinePresentation(
   closesAt: number,
   snapshotNow: number,
@@ -28,6 +39,11 @@ export function getDeadlinePresentation(
   };
 }
 
+/**
+ * Selects the question presentation visible to the current viewer.
+ * @param options - Authentication, lifecycle, and submission state.
+ * @returns The presentation state to render.
+ */
 export function getViewerPresentation({
   authenticated,
   state,

@@ -1,76 +1,76 @@
-# 契約: Challenge Core閲覧画面
+# Contract: Challenge Core Browsing Screens
 
-## Route
+## Routes
 
-| Method | Path | 認証 | 目的 | 成功 |
+| Method | Path | Authentication | Purpose | Success |
 | --- | --- | --- | --- | --- |
-| `GET` | `/` | 任意 | Open Question一覧 | 200 HTML |
-| `GET` | `/questions/{id}` | 任意 | Question Detail | 200 HTML |
+| `GET` | `/` | Optional | Open Question list | 200 HTML |
+| `GET` | `/questions/{id}` | Optional | Question Detail | 200 HTML |
 
-既存 `/api/auth/*`、Question管理Route、WebMCP Tool Routeは変更しない。
+Do not change existing `/api/auth/*`, Question-management routes, or WebMCP tool routes.
 
 ## Home
 
-- `OPEN` Questionだけを `closesAt ASC, publishedAt ASC, id ASC` で表示する。
-- 各項目: Question本文、`0 answers|1 answer|n answers`、`Answers are sealed`、UTC絶対締切、非負の残り時間、Detail link。
-- 空状態: `No open questions right now.`。
-- 取得障害: 503と `Questions are temporarily unavailable. Try again.`。空状態へ変換しない。
-- Answer本文、Excerpt、ID、User、個別時刻をHTMLへ含めない。
+- Show only `OPEN` Questions ordered by `closesAt ASC, publishedAt ASC, id ASC`.
+- Each item shows body, `0 answers|1 answer|n answers`, `Answers are sealed`, absolute UTC deadline, nonnegative remaining time, and detail link.
+- Empty state: `No open questions right now.`
+- Retrieval failure: 503 and `Questions are temporarily unavailable. Try again.`; never convert it to empty state.
+- Include no Answer body, excerpt, ID, User, or individual timestamp in HTML.
 
 ## Question Detail
 
-### 共通公開情報
+### Common Public Information
 
-- Question本文、状態、回答数、UTC絶対締切、残り時間。
-- 作成者本人には本人である表示、その他には個人情報を含まない一般表示。
-- Question本文は未信頼テキストとして表示する。
+- Question body, state, answer count, absolute UTC deadline, and remaining time.
+- Indicate ownership to the creator; show no personal information to others.
+- Render the body as untrusted text.
 
-### `OPEN`・未ログイン
+### `OPEN`, Signed Out
 
 - `Answers are sealed`
-- 独立回答のため締切まで非公開である説明
-- `Sign in to answer with your personal agent.` と既存Google Sign inへの導線
-- Agent Prompt、本人Submission、他者Answer情報は0件
+- Explanation that independent Answers remain private until the deadline
+- `Sign in to answer with your personal agent.` and existing Google sign-in path
+- Zero Agent prompts, personal submissions, or other-User Answer data
 
-### `OPEN`・認証済み未回答
+### `OPEN`, Authenticated and Unanswered
 
-- SPEC 007の `Ask your personal agent`、現在のOriginを含むQuestion絶対URL入りPrompt、`Copy prompt`、Clipboard status
-- Promptは `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}` の1行とする。
-- WebMCP Tool契約は、利用可能なUser自身の記述を優先し、Assistant提案や比較候補を事実とみなさない。明示的な個人見解がない場合は未確認の個人事実や既知の信条として断定しない最善の代理回答を作成・投稿し、その不足だけを理由にHumanへ確認しない。
-- 初回Promptは回答作成・投稿の許可を含むため、追加Previewや承認を要求しない。投稿後は本人Submissionを確認する。
-- 本人Submissionと他者Answer情報は0件
+- SPEC 007 `Ask your personal agent`, prompt containing current-Origin absolute URL, `Copy prompt`, and Clipboard status
+- One-line prompt: `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}`
+- WebMCP prioritizes available User-authored statements and does not treat Assistant suggestions/options as facts. With no explicit personal view, it creates and submits a best-effort proxy without asserting unverified facts or known beliefs and does not ask solely because that view is missing.
+- The initial prompt authorizes creation/submission without another preview or approval; verify personal submission afterward.
+- Zero personal submissions or other-User Answer data
 
-### `OPEN`・認証済み回答済み
+### `OPEN`, Authenticated and Answered
 
 - `Your agent has answered.`
 - `Your answer remains sealed until the deadline.`
-- 本人Answer
-- 新規Promptと他者Answer情報は0件
+- Own Answer
+- Zero new prompts or other-User Answer data
 
 ### `CLOSED`
 
-- 回答受付終了とsealed継続
-- 新規Promptと他者Answer情報は0件
-- 認証済み本人AnswerはSPEC 008どおり確認可能
+- Acceptance closed and sealing continues
+- Zero new prompts or other-User Answer data
+- Authenticated Users can still inspect their own Answer under SPEC 008
 
 ### `REVEALED`
 
-- 新規Promptは0件
-- SPEC 008の最小Reveal閲覧を維持する
-- 完成版のAnswer比較・Visual表現はSPEC 010で定義する
+- Zero new prompts
+- Preserve SPEC 008 minimum Reveal browsing
+- SPEC 010 defines finished comparison and visual design
 
-### Error
+### Errors
 
-| 状況 | Status | 表示 |
+| Situation | Status | Display |
 | --- | --- | --- |
-| missingまたはDraft | 404 | 同一の `Question unavailable.` |
-| Home取得障害 | 503 | `Questions are temporarily unavailable. Try again.` |
-| Detail公開情報取得障害 | 503 | `Question is temporarily unavailable. Try again.` |
-| 本人状態取得障害 | 200 | `Your submission status is temporarily unavailable. Try again.`、PromptとPrivate情報なし |
+| Missing or Draft | 404 | Identical `Question unavailable.` |
+| Home retrieval failure | 503 | `Questions are temporarily unavailable. Try again.` |
+| Detail public-data failure | 503 | `Question is temporarily unavailable. Try again.` |
+| Personal-state failure | 200 | `Your submission status is temporarily unavailable. Try again.`, with no prompt or private data |
 
-## Response境界
+## Response Boundaries
 
-- 利用者ごとに内容が変わるDetailは `Cache-Control: private, no-store` と `Vary: Cookie` を維持する。
-- 1要求の状態と残り時間は同じサービス時刻Snapshotを使う。
-- `OPEN` と `CLOSED` では他者Answerの本文、Excerpt、ID、User、個別時刻を本文、属性、埋め込みデータ、Errorへ含めない。
-- Application UIは英語、Question本文と本人Answerは入力されたテキストのまま表示する。
+- User-dependent Detail retains `Cache-Control: private, no-store` and `Vary: Cookie`.
+- State and remaining time within one request use the same service-time snapshot.
+- In `OPEN`/`CLOSED`, include no other-User body, excerpt, ID, User, or individual time in content, attributes, embedded data, or errors.
+- Application UI is English; Question and own Answer appear exactly as entered.

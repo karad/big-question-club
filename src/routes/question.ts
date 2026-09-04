@@ -13,11 +13,20 @@ import type {
 } from '../repositories/question-repository';
 import { QuestionDetailPage } from '../views/question-detail';
 
+/** Headers that prevent personalized question responses from being shared or cached. */
 export const PRIVATE_RESPONSE_HEADERS = {
   'Cache-Control': 'private, no-store',
   Vary: 'Cookie',
 } as const;
 
+/**
+ * Returns the machine-readable representation of a question.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the viewer.
+ * @param repository - Question repository used to load the question.
+ * @param now - Current timestamp provider.
+ * @returns An HTTP response containing the visible question data.
+ */
 export async function questionRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -72,6 +81,13 @@ export async function questionRoute(
   );
 }
 
+/**
+ * Returns the current user's submission for a question.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the viewer.
+ * @param repository - Question repository used to load the submission.
+ * @returns An HTTP response containing the submission or a structured error.
+ */
 export async function mySubmissionRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -103,6 +119,14 @@ export async function mySubmissionRoute(
   );
 }
 
+/**
+ * Returns a revealed answer body when visibility rules allow it.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the viewer.
+ * @param repository - Question repository used to load the answer.
+ * @param now - Current timestamp provider.
+ * @returns An HTTP response containing the answer body or a structured error.
+ */
 export async function answerDetailRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -139,6 +163,15 @@ export async function answerDetailRoute(
     : context.json(answer, 200, PRIVATE_RESPONSE_HEADERS);
 }
 
+/**
+ * Renders a question page tailored to the current viewer.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the viewer.
+ * @param repository - Question repository used to load page data.
+ * @param now - Current timestamp provider.
+ * @param clientScriptUrl - URL of the browser-side application bundle.
+ * @returns The rendered question-page response.
+ */
 export async function questionPageRoute(
   context: Context,
   authentication: Authentication | undefined,

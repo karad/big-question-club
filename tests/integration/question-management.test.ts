@@ -268,7 +268,7 @@ describe('Question management', () => {
     expect(html).toContain('View question');
     expect(html).toContain('class="button-secondary mt-4"');
     expect(html).toContain('class="danger-disclosure');
-    expect(html).toContain('data-delete-trigger="true"><span class="size-4"');
+    expect(html).toContain('data-delete-trigger="true"><span class="size-4 flex items-center"');
     const deleteConfirmation = html.match(
       /<div[^>]*data-delete-confirmation="true"[^>]*>[\s\S]*?<\/div>/,
     )?.[0];

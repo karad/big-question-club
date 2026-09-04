@@ -11,6 +11,12 @@ const palettes = [
   { background: '#f1e1cf', foreground: '#6d4933' },
 ] as const;
 
+/**
+ * Derives a stable anonymous avatar palette and pattern for an answer.
+ * @param questionId - Identifier of the containing question.
+ * @param answerId - Identifier of the answer.
+ * @returns A deterministic visual identity for the participant.
+ */
 export function createAnonymousParticipantVisual(
   questionId: string,
   answerId: string,
@@ -19,6 +25,7 @@ export function createAnonymousParticipantVisual(
   const palette = palettes[state % palettes.length] ?? palettes[0];
   const cells: Array<readonly [number, number]> = [];
 
+  // Generate only the left half plus the center column so mirroring always produces a symmetric avatar.
   for (let y = 0; y < 5; y += 1) {
     for (let x = 0; x < 3; x += 1) {
       state = next(state);

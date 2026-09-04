@@ -1,109 +1,109 @@
-# 技術調査: ドメインデータモデルとQuestionライフサイクル
+# Technical Research: Domain Data Model and Question Lifecycle
 
-## 1. DrizzleとBetter Authの責務
+## 1. Responsibilities of Drizzle and Better Auth
 
-**決定**: `drizzle-orm`をアプリケーションのD1アクセスと全テーブルの型付きSchemaに導入する。Better Authは現在のD1 binding直接接続を維持し、User／Session／Account／Verificationの書き込み責務を引き続きBetter Authだけに持たせる。
+**Decision**: Introduce `drizzle-orm` for application D1 access and as the typed schema for every table. Keep Better Auth's current direct D1 binding, with Better Auth remaining solely responsible for writes to User, Session, Account, and Verification.
 
-**理由**: DrizzleはCloudflare D1とWorkersを正式にサポートする。既存のBetter Auth接続はSPEC 002で実機検証済みであり、SPEC 005の目的に認証Adapter交換は含まれない。Drizzle Schemaに認証テーブルも含めれば、Question／Answerの外部キーとDB全体の型を1か所で確認しつつ、認証挙動の回帰リスクを避けられる。
+**Rationale**: Drizzle officially supports Cloudflare D1 and Workers. The existing Better Auth connection was validated on the actual platform in SPEC 002, and replacing its authentication adapter is outside SPEC 005. Including the authentication tables in the Drizzle schema makes it possible to inspect Question/Answer foreign keys and database-wide types in one place without risking regressions in authentication behavior.
 
-**検討した代替案**:
+**Alternatives Considered**:
 
-- Better AuthもDrizzle Adapterへ切り替える案: このSPECに不要な認証経路変更と回帰範囲を増やすため採用しない。
-- Question／AnswerだけをDrizzle Schemaへ含める案: DB全体の関係をSource of Truthとして表せないため採用しない。
-- 生SQL Repositoryを維持する案: Schemaと照会型の乖離を防げないため採用しない。
+- Switch Better Auth to the Drizzle adapter: rejected because it adds an unnecessary authentication-path change and expands the regression surface.
+- Include only Question/Answer in the Drizzle schema: rejected because the database-wide relationships could not be represented as a source of truth.
+- Keep raw-SQL repositories: rejected because schema and query types could drift apart.
 
-**根拠**: [Drizzle Cloudflare D1 guide](https://orm.drizzle.team/docs/sqlite/connect-cloudflare-d1)、[Better Auth database guide](https://better-auth.com/docs/concepts/database)、[Better Auth Drizzle adapter](https://better-auth.com/docs/adapters/drizzle)
+**References**: [Drizzle Cloudflare D1 guide](https://orm.drizzle.team/docs/sqlite/connect-cloudflare-d1), [Better Auth database guide](https://better-auth.com/docs/concepts/database), [Better Auth Drizzle adapter](https://better-auth.com/docs/adapters/drizzle)
 
-## 2. Drizzleのバージョンと時刻表現
+## 2. Drizzle Versions and Time Representation
 
-**決定**: Better Auth 1.7のpeer互換範囲に含まれる安定版の `drizzle-orm` 0.45系と `drizzle-kit` 0.31系を採用し、SQLite方言を使用する。時刻列はSQLite `INTEGER`へUTC Unixミリ秒の `number` として保存する。
+**Decision**: Use stable `drizzle-orm` 0.45.x and `drizzle-kit` 0.31.x releases within Better Auth 1.7's peer-compatible range, with the SQLite dialect. Store time columns as UTC Unix milliseconds represented by `number` values in SQLite `INTEGER` columns.
 
-**理由**: 既存ドメインとD1 MigrationはUnixミリ秒の数値を使っており、`Date`への暗黙変換を増やさず移行できる。Drizzleの `timestamp_ms` modeはアプリケーション型を`Date`にするため、今回は `number` modeで既存契約を保つ。安定版を選び、プレリリース依存を持ち込まない。
+**Rationale**: The existing domain and D1 migrations use numeric Unix milliseconds, so this preserves the contract without adding implicit `Date` conversions. Drizzle's `timestamp_ms` mode exposes application values as `Date`, whereas `number` mode preserves the existing types. Stable releases avoid introducing prerelease dependencies.
 
-**検討した代替案**:
+**Alternatives Considered**:
 
-- `timestamp_ms` mode: Domain全体の型変更が増えるため採用しない。
-- ISO 8601文字列: 既存Migrationとの互換性が下がるため採用しない。
-- Drizzle v1 RC: この機能にRC固有機能は不要なため採用しない。
+- `timestamp_ms` mode: rejected because it would require broad type changes throughout the domain.
+- ISO 8601 strings: rejected because they reduce compatibility with existing migrations.
+- Drizzle v1 RC: rejected because this feature does not require any RC-only capability.
 
-**根拠**: [Drizzle SQLite column types](https://orm.drizzle.team/docs/sqlite/column-types)、[Drizzle timestamp guide](https://orm.drizzle.team/docs/guides/timestamp-default-value)、[Drizzle indexes and constraints](https://orm.drizzle.team/docs/indexes-constraints)
+**References**: [Drizzle SQLite column types](https://orm.drizzle.team/docs/sqlite/column-types), [Drizzle timestamp guide](https://orm.drizzle.team/docs/guides/timestamp-default-value), [Drizzle indexes and constraints](https://orm.drizzle.team/docs/indexes-constraints)
 
-## 3. Migration履歴とDrizzle Kit
+## 3. Migration History and Drizzle Kit
 
-**決定**: 既にD1へ適用済みの `migrations/0001`〜`0003` の相対パスとWranglerの `d1_migrations` 台帳を維持し、最終Drizzle Schemaと一致するレビュー済み差分SQLを `migrations/0004_domain_data_lifecycle.sql` として追加する。Migrationの適用はWranglerへ一本化する。Drizzle KitはSchema設定と今後の差分生成に使用するが、既存履歴を移動・改名しない。
+**Decision**: Preserve the relative paths of `migrations/0001` through `0003`, which have already been applied to D1, and the Wrangler `d1_migrations` ledger. Add reviewed differential SQL that matches the final Drizzle schema as `migrations/0004_domain_data_lifecycle.sql`. Use Wrangler exclusively to apply migrations. Use Drizzle Kit for schema configuration and future diff generation, without moving or renaming existing history.
 
-**理由**: WranglerはMigration名を適用済み識別子として記録する。DrizzleのMigration台帳とWranglerの台帳を併用すると適用状態が分裂する。CloudflareはDrizzleのネスト形式もサポートするが、既存トップレベル履歴を持つ現段階ではWranglerの1台帳を継続する方が安全である。最初の本番Schemaへの差分はlegacy table rebuildを含むため、人手でレビューする。
+**Rationale**: Wrangler records migration names as applied identifiers. Using both the Drizzle and Wrangler migration ledgers would split application state. Cloudflare supports Drizzle's nested format, but continuing with one Wrangler ledger is safer while the project already has top-level migration history. The first differential migration to the production schema includes rebuilding legacy tables and therefore receives manual review.
 
-**検討した代替案**:
+**Alternatives Considered**:
 
-- 既存MigrationをDrizzleのネスト形式へ移す案: 適用済み名が変わるため採用しない。
-- `drizzle-kit migrate`も併用する案: 2つのMigration台帳が生じるため採用しない。
-- 新しいD1へ全データを移す案: 認証データ移送を伴い本SPECを超えるため採用しない。
+- Move existing migrations into Drizzle's nested format: rejected because applied identifiers would change.
+- Also use `drizzle-kit migrate`: rejected because it would create two migration ledgers.
+- Move all data to a new D1 database: rejected because migrating authentication data exceeds this specification.
 
-**根拠**: [Cloudflare D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/)、[Drizzle Kit generate](https://orm.drizzle.team/docs/drizzle-kit-generate)
+**References**: [Cloudflare D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/), [Drizzle Kit generate](https://orm.drizzle.team/docs/drizzle-kit-generate)
 
-## 4. 既存Migrationの不整合
+## 4. Existing Migration Inconsistency
 
-**決定**: 実装開始時にLocal空DBとRemoteの適用台帳を読み取り確認する。現行 `0001_better_auth.sql` と `0002_add_account_issuer.sql` がどちらも `issuer` 列を追加するため、0002が全対象環境で適用済みであることを確認したうえで、0001をissuer追加前のSchemaへ復元し、空DBで `0001 → 0002` が一度ずつ変更を適用する履歴に整える。
+**Decision**: At implementation start, inspect the migration ledgers for a local empty database and the remote database in read-only mode. Because the current `0001_better_auth.sql` and `0002_add_account_issuer.sql` both add the `issuer` column, first confirm that `0002` has been applied in every target environment. Then restore `0001` to the schema from before the issuer was added, so an empty database applies the change exactly once through `0001 → 0002`.
 
-**理由**: 現在のファイルを空DBへ順に適用すると重複列で失敗し、FR-016を満たせない。一方、適用済みMigrationの意味を推測して変更するのも危険なため、D1台帳の確認を先行させる。0001を適用当時の内容へ戻す修正は、既存DBには再適用されず、新規DBの再現性だけを回復する。
+**Rationale**: Applying the current files in order to an empty database fails because the column is duplicated, violating FR-016. Changing an applied migration based on assumptions is also unsafe, so checking the D1 ledger comes first. Restoring `0001` to the content it had when originally applied does not rerun it against existing databases; it only restores reproducibility for new databases.
 
-**検討した代替案**:
+**Alternatives Considered**:
 
-- 0002を削除または空にする案: Remote台帳とrepository履歴の意味が失われるため採用しない。
-- 0004で重複を吸収する案: 空DBは0002到達時点で失敗するため解決にならない。
-- Localだけ特別な初期Schemaを使う案: 本番と検証のMigration経路が分かれるため採用しない。
+- Delete or empty `0002`: rejected because it would destroy the meaning of the remote ledger and repository history.
+- Absorb the duplication in `0004`: rejected because an empty database would fail before reaching `0004`.
+- Use a special initial schema only for local environments: rejected because production and verification would follow different migration paths.
 
-## 5. 既存Question／Answerの移行
+## 5. Migrating Existing Questions and Answers
 
-**決定**: 0004は認証テーブルを変更せず、SPEC 004の検証専用 `answers` と `questions` を外部キー順に置換して本番用構造を作る。共有環境へ適用する前に既存行が検証データだけであることを確認し、D1 exportまたはbackupで退避する。
+**Decision**: Migration `0004` leaves authentication tables unchanged and replaces the SPEC 004 validation-only `answers` and `questions` tables, in foreign-key order, with their production structures. Before applying it to a shared environment, confirm that all existing rows are validation data and preserve them with D1 export or backup.
 
-**理由**: 既存Questionには作成者と互換用の言語値がなく、意味を損なわない一般的なbackfillを決められない。仕様は検証データの置換を許可する一方、User／Sessionの維持を要求している。
+**Rationale**: Existing Questions have neither creators nor compatible language values, so no generally meaningful backfill is possible. The specification permits replacing validation data while requiring User/Session preservation.
 
-**検討した代替案**:
+**Alternatives Considered**:
 
-- 最初のUserを作成者にする: 所有者を捏造するため採用しない。
-- 新しい列をnullableにする: 本番Schemaの契約を弱めるため採用しない。
-- 認証テーブルも再作成する: User／Session保持要件に反するため採用しない。
+- Use the first User as creator: rejected because it would fabricate ownership.
+- Make new columns nullable: rejected because it weakens the production schema contract.
+- Recreate the authentication tables as well: rejected because it violates the User/Session preservation requirement.
 
-**根拠**: [Cloudflare D1 import and export](https://developers.cloudflare.com/d1/best-practices/import-export-data/)、[Cloudflare D1 migration foreign keys](https://developers.cloudflare.com/d1/reference/migrations/)
+**References**: [Cloudflare D1 import and export](https://developers.cloudflare.com/d1/best-practices/import-export-data/), [Cloudflare D1 migration foreign keys](https://developers.cloudflare.com/d1/reference/migrations/)
 
-## 6. Question状態のSource of Truth
+## 6. Source of Truth for Question State
 
-**決定**: 状態名はDBへ保存せず、`publishedAt`、`closesAt`、`revealsAt`、呼び出し側から渡す `now` から純粋関数で導出する。判定順は `publishedAt === null`、`now >= revealsAt`、`now >= closesAt`、それ以外の順とする。
+**Decision**: Do not store state names in the database. Derive state with a pure function from `publishedAt`, `closesAt`, `revealsAt`, and a caller-supplied `now`. Evaluate in this order: `publishedAt === null`, `now >= revealsAt`, `now >= closesAt`, then all other cases.
 
-**理由**: 保存状態と時刻から導ける状態を二重管理すると不一致が生じる。後の境界から先に評価すれば、締切とRevealが同時でも `REVEALED`だけを返す。固定 `now` により実時間待機なしに境界を反復検証できる。
+**Rationale**: Persisting a state that can already be derived from stored timestamps creates duplicate sources of truth that can diverge. Evaluating later boundaries first guarantees that only `REVEALED` is returned when closing and reveal occur simultaneously. A fixed `now` makes boundary cases repeatable without real-time waits.
 
-**検討した代替案**:
+**Alternatives Considered**:
 
-- `status`列と定期更新: 二重管理と更新遅延が生じるため採用しない。
-- `CLOSED`省略: 遅延Revealを表現できないため採用しない。
-- クライアント時刻: 改ざんと経路間不一致が生じるため採用しない。
+- A `status` column with scheduled updates: rejected because it introduces duplicate state and update delays.
+- Omit `CLOSED`: rejected because delayed reveals could not be represented.
+- Use client time: rejected because it permits tampering and inconsistent results across access paths.
 
-## 7. D1での原子的なAnswer作成
+## 7. Atomic Answer Creation in D1
 
-**決定**: Answer作成は、渡された同一の `now` に対してQuestionが公開済みかつ締切前である条件を含む単一の `INSERT ... SELECT ... WHERE ...` と、`UNIQUE(question_id, user_id)`、外部キー、CHECK制約で確定する。複数文が必要な操作だけD1 `batch()`を使用し、対話型Transactionを前提にしない。
+**Decision**: Create an Answer with a single `INSERT ... SELECT ... WHERE ...` that checks whether the Question is published and before its deadline using the same supplied `now`, with `UNIQUE(question_id, user_id)`, foreign-key, and CHECK constraints determining the outcome. Use D1 `batch()` only for operations that require multiple statements; do not assume interactive transactions.
 
-**理由**: D1はauto-commitで、`batch()`は途中失敗時に全体をrollbackする。事前SELECT後の無条件INSERTより、書き込み文に状態条件を含める方が締切境界を原子的に扱える。一意制約は同時投稿の最終判定源となる。
+**Rationale**: D1 uses auto-commit, while `batch()` rolls back the entire batch when a statement fails. Including state conditions in the write statement handles the deadline boundary atomically, unlike an unconditional INSERT after a preliminary SELECT. The uniqueness constraint is the final authority for concurrent submissions.
 
-**検討した代替案**:
+**Alternatives Considered**:
 
-- 読み取り後の無条件INSERT: 読み取りと書き込みの間に状態が変わるため採用しない。
-- Worker内mutex: 複数Worker instance間で共有されないため採用しない。
-- 対話型Transaction: D1の実行モデルと合わないため採用しない。
+- Unconditional INSERT after a read: rejected because state can change between the read and write.
+- A mutex inside the Worker: rejected because it is not shared across Worker instances.
+- Interactive transactions: rejected because they do not match D1's execution model.
 
-**根拠**: [D1 Database batch API](https://developers.cloudflare.com/d1/worker-api/d1-database/)、[D1 SQL statements](https://developers.cloudflare.com/d1/sql-api/sql-statements/)
+**References**: [D1 Database batch API](https://developers.cloudflare.com/d1/worker-api/d1-database/), [D1 SQL statements](https://developers.cloudflare.com/d1/sql-api/sql-statements/)
 
-## 8. D1 Schema／Migrationテスト
+## 8. D1 Schema and Migration Tests
 
-**決定**: 既存Nodeテストとは別に `vitest.d1.config.ts` を用意し、`@cloudflare/vitest-plugin` 1系の分離D1へ `readD1Migrations()` と `applyD1Migrations()` でMigrationを適用する。空DBへの全適用、0001〜0003適用後に認証データを入れたlegacy DBへの0004適用、制約、Repositoryを自動検証する。
+**Decision**: Add `vitest.d1.config.ts` separately from the existing Node test configuration. Apply migrations to isolated D1 databases using `readD1Migrations()` and `applyD1Migrations()` from `@cloudflare/vitest-plugin` 1.x. Automatically verify full application to an empty database, application of `0004` to a legacy database containing authentication data after migrations `0001` through `0003`, constraints, and repositories.
 
-**理由**: CloudflareはWorkersプロジェクトのUnit／Integration TestにWorkers Vitest統合を推奨し、workerdと分離ストレージでD1 bindingを直接テストできる。純粋関数は高速なNodeテストに残し、D1固有テストだけを分離すれば既存テスト環境を不用意に変更しない。
+**Rationale**: Cloudflare recommends Workers Vitest integration for unit and integration testing of Workers projects. It can test D1 bindings directly with workerd and isolated storage. Keeping pure functions in fast Node tests and isolating only D1-specific tests avoids unnecessary changes to the existing test environment.
 
-**検討した代替案**:
+**Alternatives Considered**:
 
-- D1完全mock: 外部キー、CHECK、Migration、同時書き込みを検証できないため採用しない。
-- Remote D1だけの手動検証: 反復性と分離性が不足するため採用しない。
-- 全テストをworkerdへ移す: 既存テストへの影響が大きいため採用しない。
+- Fully mock D1: rejected because it cannot verify foreign keys, CHECK constraints, migrations, or concurrent writes.
+- Rely only on manual remote D1 verification: rejected because it lacks repeatability and isolation.
+- Move every test to workerd: rejected because it would have a large impact on existing tests.
 
-**根拠**: [Cloudflare Workers Vitest integration](https://developers.cloudflare.com/workers/testing/vitest-integration/)、[Workers Vitest configuration](https://developers.cloudflare.com/workers/testing/vitest-integration/configuration/)、[Workers Vitest D1 test APIs](https://developers.cloudflare.com/workers/testing/vitest-integration/test-apis/)
+**References**: [Cloudflare Workers Vitest integration](https://developers.cloudflare.com/workers/testing/vitest-integration/), [Workers Vitest configuration](https://developers.cloudflare.com/workers/testing/vitest-integration/configuration/), [Workers Vitest D1 test APIs](https://developers.cloudflare.com/workers/testing/vitest-integration/test-apis/)

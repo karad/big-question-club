@@ -13,14 +13,29 @@ const messages: Record<IdentityErrorCode, string> = {
   INVALID_ARGUMENT: 'This tool does not accept input.',
 };
 
+/**
+ * Creates a successful identity result.
+ * @param userId - Authenticated user's identifier.
+ * @returns A successful identity payload.
+ */
 export function createIdentity(userId: string): IdentitySuccess {
   return { userId };
 }
 
+/**
+ * Creates a stable identity error for an error code.
+ * @param code - Machine-readable identity error code.
+ * @returns The code and its user-facing message.
+ */
 export function createIdentityError(code: IdentityErrorCode): IdentityError {
   return { code, message: messages[code] };
 }
 
+/**
+ * Validates input for an identity lookup.
+ * @param input - Untrusted tool input.
+ * @returns An identity error when invalid, otherwise null.
+ */
 export function validateIdentityInput(input: unknown): IdentityError | null {
   if (
     typeof input !== 'object' ||
@@ -34,6 +49,11 @@ export function validateIdentityInput(input: unknown): IdentityError | null {
   return null;
 }
 
+/**
+ * Parses an untrusted identity endpoint response.
+ * @param payload - Response payload to validate.
+ * @returns A validated identity result or an invalid-response error.
+ */
 export function parseIdentity(payload: unknown): IdentityResult {
   if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
     return createIdentityError('IDENTITY_UNAVAILABLE');

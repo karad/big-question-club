@@ -1,51 +1,51 @@
-# 実装計画: Google OAuthとWebMCPユーザー識別の検証
+# Implementation Plan: Validating Google OAuth and WebMCP User Identification
 
-**ブランチ**: `002-google-oauth-identity` | **日付**: 2026-09-01 | **仕様**: [spec.md](./spec.md)
+**Branch**: `002-google-oauth-identity` | **Date**: 2026-09-01 | **Spec**: [spec.md](./spec.md)
 
-**入力**: `specs/002-google-oauth-identity/spec.md` の機能仕様
+**Input**: Feature specification in `specs/002-google-oauth-identity/spec.md`
 
-## 概要
+## Summary
 
-Google OAuthでブラウザにログインしたBig Question Clubユーザーを、同じオリジンのWebMCP Tool Callでも同一のサービス内ユーザーとして識別できるかをP0で検証する。
+Perform a P0 validation that a Big Question Club user logged into the browser through Google OAuth can be identified as the same service-internal user in a same-origin WebMCP Tool Call.
 
-既存のCloudflare Workers・Hono・Vite構成にBetter AuthとD1の認証用データを追加する。OAuthとセッションはアプリの正規オリジンで完結させ、WebMCPの`who_am_i` Toolはブラウザページから相対URLの本人確認APIを呼び出す。APIは受信した認証Cookieをサーバー側で検証し、認証済みの場合に限りサービス内ユーザーIDだけを返す。Googleのアカウント情報、OAuthトークン、Cookie値、Secretは画面・Tool応答・記録に返さない。
+Add Better Auth and authentication data in D1 to the existing Cloudflare Workers, Hono, and Vite stack. OAuth and Sessions remain within the application's canonical Origin. The WebMCP `who_am_i` Tool calls an identity verification API through a relative URL from the browser page. The API validates the received authentication Cookie on the server and returns only the service-internal user ID when authenticated. Google account information, OAuth tokens, Cookie values, and Secrets are never returned in screens, Tool responses, or records.
 
-## 技術コンテキスト
+## Technical Context
 
-**言語/バージョン**: TypeScript 6、Node.js 22.13以上（開発時）、ES2022
+**Language/Version**: TypeScript 6, Node.js 22.13 or later for development, ES2022
 
-**主要依存関係**: Cloudflare Workers、Hono 4、Vite 8、Better Auth（Google OAuth）、Cloudflare D1、Vitest 4
+**Primary Dependencies**: Cloudflare Workers, Hono 4, Vite 8, Better Auth (Google OAuth), Cloudflare D1, Vitest 4
 
-**保存先**: Cloudflare D1。Better Authが管理するUser、Account、Session、Verificationの認証データだけを本SPECで保存する。
+**Storage**: Cloudflare D1. This SPEC stores only the User, Account, Session, and Verification authentication data managed by Better Auth.
 
-**テスト**: Vitestによるユニットテスト・統合テスト、ChromeのWebMCP対応環境と2つのテスト用Googleアカウントによる手動E2E検証
+**Testing**: Unit and Integration Tests with Vitest; manual E2E validation using a WebMCP-compatible Chrome environment and two test Google accounts
 
-**対象プラットフォーム**: Cloudflare Workers、ChromeのWebMCP対応環境。OAuthコールバックはローカルHTTPと本番HTTPSの正規オリジンでのみ扱う。
+**Target Platform**: Cloudflare Workers and a WebMCP-compatible Chrome environment. OAuth callbacks are handled only on the canonical Origin over local HTTP or production HTTPS.
 
-**プロジェクト種別**: SSRを含む単一のWebアプリケーション
+**Project Type**: Single web application including SSR
 
-**性能目標**: ログイン状態での本人確認APIおよび`who_am_i` Toolは、通常の開発・検証ネットワークで2秒以内に結果を返す。
+**Performance Goals**: The identity verification API and `who_am_i` Tool return a result within two seconds under ordinary development and validation network conditions when logged in.
 
-**制約**: 本人確認API・Toolは同一オリジンに限定する。`BETTER_AUTH_SECRET`、`GOOGLE_CLIENT_SECRET`、Cookie値、OAuthトークン、メールアドレスをリポジトリ、ログ、画面、Tool応答、検証記録へ含めない。ログアウト・認証失効・アカウント切替時に古いセッションを返さないため、セッションCookieキャッシュを有効化しない。
+**Constraints**: Restrict the identity verification API and Tool to the same Origin. Do not include `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_SECRET`, Cookie values, OAuth tokens, or email addresses in the repository, logs, screens, Tool responses, or validation records. Do not enable Session Cookie caching, so stale Sessions are not returned after sign-out, authentication expiration, or account switching.
 
-**規模/範囲**: P0の認証成立性検証。2つ以上のテスト用Googleアカウント、1つの本人確認API、1つの`who_am_i` Tool、ログイン状態表示、Go/No-Go記録を対象とし、Question・Answerの機能は対象外とする。
+**Scale/Scope**: P0 authentication feasibility validation covering at least two test Google accounts, one identity verification API, one `who_am_i` Tool, a login-state display, and a Go/No-Go record. Question and Answer functionality is out of scope.
 
-## 構成原則チェック
+## Constitution Check
 
-*ゲート: Phase 0の調査前に適合し、Phase 1の設計後に再確認する。*
+*Gate: Must pass before Phase 0 research and be rechecked after Phase 1 design.*
 
-`constitution.md` は未確定のテンプレートであり、適用可能な具体的原則は定義されていない。代わりにプロジェクトの`AGENTS.md`に従い、以下をゲートとする。
+`constitution.md` is an undecided template and defines no applicable concrete principles. Use the following gates from the project's `AGENTS.md` instead:
 
-- ユニットテスト可能な認証結果の変換・入力検証・セッション分岐にはテストを作成する。
-- 認証済みと未認証のHTTP導線およびWebMCPの本人確認導線は統合テストで保証する。
-- Secret・トークン・メールアドレスをソース、テストfixture、ログ、Tool応答、文書に保存しない。
-- P0がGoになるまで、P1の回答投稿などの本実装には進まない。
+- Create tests for unit-testable authentication-result conversion, input validation, and Session branches.
+- Cover authenticated and unauthenticated HTTP flows and the WebMCP identity verification flow with Integration Tests.
+- Do not store Secrets, tokens, or email addresses in source code, test fixtures, logs, Tool responses, or documentation.
+- Do not proceed to P1 implementation such as Answer submission until P0 receives a Go decision.
 
-**判定（Phase 0前）**: 適合。永続化は認証状態の即時失効とアカウント切替の検証に必要であり、公開する個人情報はサービス内ユーザーIDに限定する。
+**Decision (Before Phase 0)**: Pass. Persistence is required to verify immediate authentication invalidation and account switching, and exposed personal information is limited to the service-internal user ID.
 
-## プロジェクト構成
+## Project Structure
 
-### ドキュメント（本機能）
+### Documentation for This Feature
 
 ```text
 specs/002-google-oauth-identity/
@@ -58,23 +58,23 @@ specs/002-google-oauth-identity/
 └── tasks.md
 ```
 
-### ソースコード（リポジトリルート）
+### Source Code at the Repository Root
 
 ```text
 src/
-├── app.tsx                         # HonoルートとSSRページ
+├── app.tsx                         # Hono routes and SSR pages
 ├── auth/
-│   ├── auth.ts                     # Better Auth設定と認証ハンドラ
-│   ├── config.ts                   # 環境設定の検証
-│   └── session.ts                  # リクエストの認証結果を安全に変換
+│   ├── auth.ts                     # Better Auth configuration and authentication handler
+│   ├── config.ts                   # Environment configuration validation
+│   └── session.ts                  # Safe conversion of request authentication results
 ├── domain/
-│   └── identity.ts                 # 本人確認の公開結果・エラー契約
+│   └── identity.ts                 # Public identity result and error contract
 ├── routes/
-│   ├── auth.ts                     # 認証状態と本人確認API
+│   ├── auth.ts                     # Authentication status and identity verification API
 │   └── health.ts
 ├── webmcp/
-│   └── register-who-am-i-tool.ts   # Tool登録と同一オリジンfetch
-└── client.ts                       # ログイン状態表示とTool登録
+│   └── register-who-am-i-tool.ts   # Tool registration and same-origin fetch
+└── client.ts                       # Login-state display and Tool registration
 
 tests/
 ├── integration/
@@ -86,12 +86,12 @@ tests/
     └── register-who-am-i-tool.test.ts
 ```
 
-**構成判断**: 既存の単一Workerアプリを維持する。認証ルート、本人確認API、WebMCP Toolを同じ正規オリジンに置くことで、ブラウザの通常のセッションCookieを安全に利用し、CORSや第三者Cookieに依存しない。
+**Structure Decision**: Retain the existing single-Worker application. Placing authentication routes, the identity verification API, and the WebMCP Tool on the same canonical Origin safely uses the browser's ordinary Session Cookie without depending on CORS or third-party Cookies.
 
-## 複雑性の記録
+## Complexity Tracking
 
-該当なし。
+Not applicable.
 
-## Constitution Check（Phase 1後）
+## Constitution Check After Phase 1
 
-**判定**: 適合。`data-model.md`は認証用の最小エンティティだけを定義し、`contracts/who-am-i.md`はサービス内ユーザーIDだけを公開する。`quickstart.md`はSecretを値として扱わず、実機検証でCookieやトークンを記録しない手順を定める。ユニット・統合・手動E2Eの各層で必要な振る舞いを確認する。
+**Decision**: Pass. `data-model.md` defines only the minimum authentication entities, while `contracts/who-am-i.md` exposes only the service-internal user ID. `quickstart.md` never handles Secret values and prohibits recording Cookies or tokens during real-device verification. Required behavior is verified at the Unit, Integration, and manual E2E layers.

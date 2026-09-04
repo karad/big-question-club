@@ -1,157 +1,157 @@
-# 機能仕様: ドメインデータモデルとQuestionライフサイクル
+# Feature Specification: Domain Data Model and Question Lifecycle
 
-**機能ブランチ**: `005-domain-data-lifecycle`
+**Feature Branch**: `005-domain-data-lifecycle`
 
-**作成日**: 2026-09-02
+**Created**: 2026-09-02
 
-**ステータス**: ドラフト
+**Status**: Draft
 
-**入力**: 「SPEC 005 — ドメインデータモデルとQuestionライフサイクルを実施」
+**Input**: "Implement SPEC 005 — Domain Data Model and Question Lifecycle"
 
-## ユーザーシナリオとテスト *(必須)*
+## User Scenarios and Testing *(mandatory)*
 
-### ユーザーストーリー 1 - Questionの現在状態を一意に判定する (優先度: P1)
+### User Story 1 - Determine the Current Question State Unambiguously (Priority: P1)
 
-サービスは、Questionの公開有無、回答締切、Reveal時刻、およびサービス側の現在時刻から、Questionの現在状態を `DRAFT`、`OPEN`、`CLOSED`、`REVEALED` のいずれか1つに一意に判定する。Human向け画面、Personal Agent向け機能、回答受付、Answer公開は、後続SPECでこの同じ判定結果を利用できる。
+The service determines exactly one current state—`DRAFT`, `OPEN`, `CLOSED`, or `REVEALED`—from whether a Question has been published, its answer deadline, its reveal time, and the service's current time. Human-facing screens, Personal Agent features, answer acceptance, and Answer publication can use this same result in later specifications.
 
-**この優先度である理由**: 回答受付とSealed Answersの公開制御が異なる状態認識を持つと、締切後の投稿受付やReveal前の情報漏えいにつながるため。
+**Why this priority**: If answer acceptance and Sealed Answer publication use different state interpretations, the service could accept submissions after the deadline or leak information before reveal.
 
-**独立テスト**: 固定した基準時刻と、公開前、公開後かつ締切前、締切到達後かつReveal前、Reveal到達後のQuestionを用意し、各Questionが期待する1状態だけに判定されることを確認する。
+**Independent Test**: Use a fixed reference time and Questions that are unpublished, published before their deadlines, past their deadlines but before reveal, and past reveal. Confirm that each Question resolves to only its expected state.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** Questionに公開時刻が確定していない、**操作** 現在状態を判定する、**結果** 他の時刻値にかかわらず `DRAFT` だけが返る。
-2. **前提** Questionが公開済みでサービス側の現在時刻が回答締切より前である、**操作** 現在状態を判定する、**結果** `OPEN` だけが返る。
-3. **前提** Questionが公開済みで回答締切に到達し、Reveal時刻より前である、**操作** 現在状態を判定する、**結果** `CLOSED` だけが返る。
-4. **前提** Questionが公開済みでReveal時刻に到達している、**操作** 現在状態を判定する、**結果** `REVEALED` だけが返る。
-5. **前提** 回答締切とReveal時刻が同一である、**操作** その境界時刻の直前と同時刻に現在状態を判定する、**結果** 直前は `OPEN`、同時刻は `REVEALED` となり、投稿可能かつ公開済みとなる重複状態は発生しない。
-
----
-
-### ユーザーストーリー 2 - User、Session、Question、Answerの関係を整合したまま保存する (優先度: P1)
-
-サービスは、認証主体であるUser、そのUserの認証状態を表すSession、Userが作成するQuestion、UserのPersonal AgentがQuestionへ投稿するAnswerを、所有関係と参照関係を失わずに保存する。存在しないUserやQuestionを参照する孤立データは作成されない。
-
-**この優先度である理由**: 認証主体、Question作成者、Answer投稿者の対応が崩れると、本人確認、1人1回答、公開制御のすべてが成立しないため。
-
-**独立テスト**: Migration済みの空の保存領域へ2人のUser、各Session、1件のQuestion、2件のAnswerを保存し、所有者と対象Questionを正しく復元できること、存在しない参照先や重複Answerが拒否されることを確認する。
-
-**受け入れシナリオ**:
-
-1. **前提** 有効なUserが存在する、**操作** そのUserのSessionとQuestionを保存する、**結果** 両方が同じUserに結び付き、再取得しても関係が維持される。
-2. **前提** 有効なUserと `OPEN` のQuestionが存在する、**操作** そのUserのAnswerを保存する、**結果** AnswerはUserとQuestionの両方に結び付いて1件だけ保存される。
-3. **前提** 同じUserが同じQuestionへ既にAnswerを持つ、**操作** 2件目を保存する、**結果** 既存Answerは変更されず、重複するAnswerは保存されない。
-4. **前提** 参照先のUserまたはQuestionが存在しない、**操作** Session、Question、またはAnswerを保存する、**結果** 孤立データは作成されず、保存失敗として判定できる。
+1. **Given** a Question whose publication time is not set, **When** its current state is determined, **Then** only `DRAFT` is returned regardless of the other timestamps.
+2. **Given** a published Question and a service time before its answer deadline, **When** its current state is determined, **Then** only `OPEN` is returned.
+3. **Given** a published Question whose answer deadline has arrived but whose reveal time has not, **When** its current state is determined, **Then** only `CLOSED` is returned.
+4. **Given** a published Question whose reveal time has arrived, **When** its current state is determined, **Then** only `REVEALED` is returned.
+5. **Given** identical answer deadline and reveal times, **When** the state is evaluated immediately before and exactly at that boundary, **Then** the results are `OPEN` before it and `REVEALED` at it, with no overlap between accepting submissions and published Answers.
 
 ---
 
-### ユーザーストーリー 3 - ライフサイクルに反する書き込みを拒否する (優先度: P2)
+### User Story 2 - Persist User, Session, Question, and Answer Relationships Consistently (Priority: P1)
 
-サービスは、Questionの時刻順序と状態に関する不変条件を保存境界で守る。公開後のQuestionに対する不正な巻き戻し、`OPEN` 以外でのAnswer作成、Answerの所有関係の付け替えは、経路にかかわらず確定されない。
+The service persists the authenticated User, the Session representing that User's authentication state, Questions created by the User, and Answers submitted to Questions by the User's Personal Agent without losing ownership or reference relationships. It never creates orphaned data referencing a nonexistent User or Question.
 
-**この優先度である理由**: 状態判定が正しくても、不正なデータを保存できれば後続機能が安全な状態を前提にできないため。
+**Why this priority**: If the mappings among the authenticated subject, Question creator, and Answer submitter break down, identity verification, one answer per person, and publication control all fail.
 
-**独立テスト**: 正常な状態遷移と、時刻逆転、状態の飛び越し、過去状態への巻き戻し、`DRAFT`・`CLOSED`・`REVEALED` でのAnswer作成をそれぞれ試し、正常な変更だけが確定することを確認する。
+**Independent Test**: In an empty migrated store, save two Users, their Sessions, one Question, and two Answers. Confirm that owners and target Questions are restored correctly and that missing references and duplicate Answers are rejected.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** `DRAFT` のQuestionが整合する公開・締切・Reveal時刻を持つ、**操作** 公開を確定する、**結果** Questionは `OPEN` となり、公開前へ巻き戻せない。
-2. **前提** `OPEN` のQuestionが回答締切に到達する、**操作** 現在状態を判定する、**結果** Reveal前なら `CLOSED`、Revealにも到達していれば `REVEALED` となる。
-3. **前提** Questionが `DRAFT`、`CLOSED`、または `REVEALED` である、**操作** 新しいAnswerを保存する、**結果** Answerは保存されない。
-4. **前提** 公開時刻、回答締切、Reveal時刻の順序が不正である、**操作** Questionを保存または公開する、**結果** 不整合なQuestionは確定されない。
+1. **Given** a valid User, **When** that User's Session and Question are saved, **Then** both are associated with the same User and the relationship remains after retrieval.
+2. **Given** a valid User and an `OPEN` Question, **When** the User's Answer is saved, **Then** exactly one Answer associated with both User and Question is stored.
+3. **Given** the same User already has an Answer to the same Question, **When** a second Answer is saved, **Then** the existing Answer is unchanged and the duplicate is not stored.
+4. **Given** the referenced User or Question does not exist, **When** a Session, Question, or Answer is saved, **Then** no orphaned data is created and the operation is identifiable as a persistence failure.
 
 ---
 
-### ユーザーストーリー 4 - Migration後もデータ契約を検証できる (優先度: P3)
+### User Story 3 - Reject Writes That Violate the Lifecycle (Priority: P2)
 
-開発担当者は、空の保存領域と既存Schemaから更新した保存領域の両方で、必要な構造、制約、参照関係、および状態判定が成立することを自動確認できる。更新に失敗した場合は、部分的に新しい契約へ移行した状態を成功として扱わない。
+The service enforces invariants about Question timestamp ordering and state at the persistence boundary. It never commits an invalid rollback of a published Question, Answer creation outside `OPEN`, or reassignment of Answer ownership, regardless of access path.
 
-**この優先度である理由**: 本番用データモデルは、開発環境だけでなく既存の認証データを持つ環境へ安全に導入できる必要があるため。
+**Why this priority**: Even correct state evaluation cannot provide a safe foundation for later features if invalid data can still be persisted.
 
-**独立テスト**: 空の保存領域への全Migrationと、SPEC 004時点のSchemaからの差分Migrationを実行し、同一の制約テストと状態境界テストが両方で成功することを確認する。
+**Independent Test**: Attempt valid transitions, reversed timestamps, skipped states, rollback to earlier states, and Answer creation in `DRAFT`, `CLOSED`, and `REVEALED`. Confirm that only valid changes commit.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** 空の保存領域である、**操作** すべてのMigrationを順に適用する、**結果** User、Session、Question、Answerの保存と制約検証を開始できる。
-2. **前提** SPEC 004時点の認証データを持つ保存領域である、**操作** 差分Migrationを適用する、**結果** 有効なUserとSessionを失わずに新しい契約へ更新できる。
-3. **前提** Migration途中で制約違反が検出される、**操作** 更新結果を検証する、**結果** 成功として扱われず、失敗箇所を特定できる。
+1. **Given** a `DRAFT` Question with a consistent publication, deadline, and reveal schedule, **When** publication is confirmed, **Then** it becomes `OPEN` and cannot return to its unpublished state.
+2. **Given** an `OPEN` Question reaches its answer deadline, **When** its current state is determined, **Then** it becomes `CLOSED` before reveal or `REVEALED` if reveal has also arrived.
+3. **Given** a Question is `DRAFT`, `CLOSED`, or `REVEALED`, **When** a new Answer is saved, **Then** the Answer is not stored.
+4. **Given** publication, answer deadline, and reveal times are ordered incorrectly, **When** the Question is saved or published, **Then** the inconsistent Question is not committed as published.
 
-### エッジケース
+---
 
-- サービス側の現在時刻が回答締切と一致する瞬間は `OPEN` ではない。Reveal時刻も同じなら `REVEALED`、後なら `CLOSED` とする。
-- 回答締切とReveal時刻が同一の場合、`CLOSED` の継続時間は0でよいが、判定結果が2状態へ重複してはならない。
-- 公開時刻が未確定のQuestionは、回答締切やReveal時刻が過去でも `DRAFT` とし、Answerを受け付けない。
-- 公開時刻、回答締切、Reveal時刻は `公開時刻 < 回答締切 <= Reveal時刻` の順序を満たさなければならない。
-- 公開予約は本SPECの対象外であるため、未来の公開時刻を指定して `OPEN` と判定されるQuestionを作ってはならない。
-- 同一のSession値、同一UserとQuestionのAnswer、同一の外部認証主体を同時に複数作成しようとしても、各一意性は維持される。
-- Answer保存中にQuestionが締切へ到達した場合、保存が確定する時点のサービス側時刻で `OPEN` でなければAnswerを確定しない。
-- 参照先のUserまたはQuestionが削除対象になった場合、孤立したSessionまたはAnswerを残さない。削除機能自体は本SPECの対象外とする。
-- 既存の検証用QuestionまたはAnswerが本番用契約を満たさない場合、認証用User・Sessionを巻き込まず、検証データとして明示的に置換できる。
+### User Story 4 - Verify the Data Contract After Migration (Priority: P3)
 
-## 要件 *(必須)*
+Developers can automatically confirm that required structures, constraints, relationships, and state evaluation work in both an empty store and one upgraded from the existing schema. If an upgrade fails, a partially migrated contract is not treated as success.
 
-### 機能要件
+**Why this priority**: The production data model must be introduced safely not only in development but also into environments containing existing authentication data.
 
-- **FR-001**: システムは、User、Session、Question、Answerを永続化し、各レコードを安定した一意識別子で区別しなければならない。
-- **FR-002**: システムは、Sessionを1人のUserに結び付け、有効期限、一意な認証値、作成時刻、更新時刻を保持しなければならない。
-- **FR-003**: システムは、Questionを作成者Userに結び付け、本文、公開時刻、回答締切、Reveal時刻、作成時刻、更新時刻を保持しなければならない。既存の言語列はSchema互換用とし、プロダクト上の言語指定には使わない。
-- **FR-004**: システムは、Answerを1人のUserと1件のQuestionに結び付け、本文、1行のExcerpt、作成時刻を保持しなければならない。
-- **FR-005**: システムは、同一Userと同一Questionの組み合わせにつきAnswerを最大1件に制限し、同時書き込みを含む重複を保存境界で拒否しなければならない。
-- **FR-006**: システムは、存在しないUserを参照するSessionまたはQuestion、存在しないUserまたはQuestionを参照するAnswerを保存してはならない。
-- **FR-007**: システムは、削除または置換によってUser、Session、Question、Answerの孤立レコードが生じない参照整合性ルールを定義し、保存境界で強制しなければならない。
-- **FR-008**: システムは、すべてのドメイン時刻を世界共通の時間基準の絶対時刻として保存・比較し、表示上のタイムゾーンや利用者端末時刻を状態判定へ使用してはならない。
-- **FR-009**: システムは、Questionの公開時刻を公開確定時のサービス側現在時刻以前に制限し、時刻順序を `公開時刻 < 回答締切 <= Reveal時刻` に制限して、順序に反するQuestionを公開済みとして確定してはならない。
-- **FR-010**: システムは、公開時刻が未確定なら `DRAFT`、公開済みかつ回答締切前なら `OPEN`、回答締切以上かつReveal時刻未満なら `CLOSED`、Reveal時刻以上なら `REVEALED` と判定しなければならない。
-- **FR-011**: システムは、回答締切またはReveal時刻と現在時刻が一致する場合に後の状態を優先し、Questionの現在状態を常にちょうど1つだけ返さなければならない。
-- **FR-012**: システムは、公開済みQuestionを `DRAFT` へ戻す変更、`CLOSED` または `REVEALED` から `OPEN` へ戻す変更、および `REVEALED` から以前の状態へ戻す変更を確定してはならない。
-- **FR-013**: システムは、Answer作成をQuestionが `OPEN` である場合だけ確定し、状態判定とAnswer保存を同じサービス側基準時刻に基づいて扱わなければならない。
-- **FR-014**: システムは、Questionの現在状態を判定する規則を単一のドメイン契約として提供し、保存、取得、後続の画面、HTTP、WebMCPの各経路が同じ結果を利用できるようにしなければならない。
-- **FR-015**: システムは、User、Session、Question、Answerの保存・取得に対する責務境界を定義し、呼び出し側が保存方法の詳細を知らずに一意性、参照整合性、状態条件の結果を判別できるようにしなければならない。
-- **FR-016**: システムは、空の保存領域へ全Migrationを適用でき、SPEC 004時点の保存領域には有効なUserとSessionを保持したまま差分Migrationを適用できなければならない。
-- **FR-017**: システムは、Migration後の保存領域について、必須項目、一意性、参照整合性、時刻順序、状態境界、`OPEN` 以外でのAnswer拒否を自動検証できなければならない。
-- **FR-018**: システムは、本SPECで定義する状態判定、時刻境界、不正遷移、重複・参照制約を、外部サービスや実時間の経過に依存せず反復可能に検証できなければならない。
-- **FR-019**: このSPECの範囲では、Question作成画面、公開操作の利用者体験、WebMCP Tool契約、Answer公開経路の認可、Human向け閲覧画面、管理者による削除を提供してはならない。
+**Independent Test**: Run the full migration against an empty store and the differential migration from the SPEC 004 schema, then confirm that the same constraint and state-boundary tests pass in both.
 
-### 主要エンティティ
+**Acceptance Scenarios**:
 
-- **User**: Big Question Clubで認証されたHumanとそのPersonal Agentに共通する主体。安定した識別子、表示に必要な基本情報、作成・更新時刻を持ち、Session、作成Question、投稿Answerの所有者となる。
-- **Session**: Userの認証済み状態を表す期限付きデータ。User、一意な認証値、有効期限、作成・更新時刻に結び付き、認証値そのものは公開ドメインデータとして扱わない。
-- **Question**: Humanが作成しPersonal Agentが回答する問い。作成者、本文、公開時刻、回答締切、Reveal時刻、作成・更新時刻を持つ。現在状態は保存された状態名ではなく、これらの時刻とサービス側の現在時刻から一意に導出する。
-- **Answer**: Personal Agentが認証済みUserとしてQuestionへ投稿する回答。Question、User、本文、1行のExcerpt、作成時刻を持ち、QuestionとUserの組み合わせで一意である。
-- **Question状態**: `DRAFT`、`OPEN`、`CLOSED`、`REVEALED` の排他的な判定結果。Answer受付と後続の公開制御が参照する唯一のライフサイクル契約である。
-- **Migration**: 既存の保存領域を新しいデータ契約へ順番に更新する変更単位。適用順、成功・失敗、および更新後の制約を検証可能にする。
+1. **Given** an empty store, **When** all migrations are applied in order, **Then** persistence and constraint verification can begin for User, Session, Question, and Answer.
+2. **Given** a store containing authentication data from SPEC 004, **When** the differential migration is applied, **Then** it upgrades to the new contract without losing valid Users or Sessions.
+3. **Given** a constraint violation occurs during migration, **When** the result is verified, **Then** it is not treated as success and the failure point can be identified.
 
-## 成功基準 *(必須)*
+### Edge Cases
 
-### 測定可能な成果
+- At the exact answer deadline, a Question is not `OPEN`. If reveal is simultaneous it is `REVEALED`; otherwise it is `CLOSED`.
+- When answer deadline and reveal time are identical, `CLOSED` may last zero time, but the result must never overlap two states.
+- A Question without a confirmed publication time remains `DRAFT` and accepts no Answers even if its deadline or reveal time is in the past.
+- Timestamps must satisfy `publication time < answer deadline <= reveal time`.
+- Scheduled publication is out of scope, so a Question must not be classified as `OPEN` using a future publication time.
+- Uniqueness is preserved even under concurrent attempts to create the same Session value, the same User/Question Answer, or the same external authentication subject.
+- If a Question reaches its deadline while an Answer is being saved, do not commit the Answer unless it is `OPEN` at the service time used to commit the write.
+- If a referenced User or Question becomes subject to deletion, do not leave orphaned Sessions or Answers. Deletion itself is out of scope.
+- If existing validation Questions or Answers do not satisfy the production contract, they may be explicitly replaced as validation data without involving authentication Users or Sessions.
 
-- **SC-001**: `DRAFT`、`OPEN`、`CLOSED`、`REVEALED` と各境界時刻を含む20件以上の状態判定ケースで、期待状態との一致率が100%となり、複数状態または状態なしとなるケースが0件である。
-- **SC-002**: 同一Userから同一QuestionへのAnswerを逐次10回および同時10件で作成しても、保存されるAnswerは各検証で常に1件であり、既存Answerの上書きは0件である。
-- **SC-003**: 存在しない参照先、時刻順序違反、過去状態への巻き戻し、`OPEN` 以外でのAnswer作成をそれぞれ試したとき、不正データが確定するケースは0件である。
-- **SC-004**: 空の保存領域とSPEC 004時点の保存領域の各1環境以上でMigrationと全制約検証が成功し、後者の有効なUserおよびSessionの欠落は0件である。
-- **SC-005**: 固定した基準時刻を使う状態判定とデータ整合性の自動検証は、連続10回の実行ですべて同じ結果になり、外部サービスまたは実時間待機を必要とするケースは0件である。
-- **SC-006**: 開発担当者は、文書化された検証手順を使い、30分以内にMigration適用、4状態の境界判定、一意性、参照整合性、Answer受付条件の合否を確認できる。
+## Requirements *(mandatory)*
 
-## 前提
+### Functional Requirements
 
-- SPEC 002で確立したUser、Session、および外部認証主体との対応を本番用データモデルの認証基盤として継続利用する。
-- MVPでは回答締切とReveal時刻を同じ値に設定できる。この場合、境界時刻で `OPEN` から `REVEALED` へ一意に切り替わり、`CLOSED` の継続時間は0となる。将来、Revealを遅らせる場合は2時刻の間を `CLOSED` とする。
-- `DRAFT` は公開時刻が未確定であることによって表し、公開後の現在状態は保存された状態名ではなく時刻から導出する。
-- 状態判定に使う「現在」はサービス側が受け取った世界共通の絶対時刻とし、利用者のローカルタイムゾーンは表示時だけ使用する。
-- サービス側の時計は同期され、同じ処理内で過去へ戻らないものとする。公開予約は本SPECの対象外で、公開時刻は公開を確定した時点で設定する。
-- SPEC 004で作成したQuestionとAnswerは検証専用データであり、新しい本番用契約を満たさない場合は置換できる。一方、UserとSessionは有効な認証データとしてMigrationで維持する。
-- Answerの本文・Excerpt制約と1 Question・1 Userあたり1 Answerの原則はSPEC 004で確立した契約を引き継ぐ。
+- **FR-001**: The system MUST persist User, Session, Question, and Answer records and distinguish each with a stable unique identifier.
+- **FR-002**: The system MUST associate a Session with one User and retain its expiration, unique authentication value, creation time, and update time.
+- **FR-003**: The system MUST associate a Question with its creator User and retain its body, publication time, answer deadline, reveal time, creation time, and update time. The existing language column is for schema compatibility only and MUST NOT be used for product language selection.
+- **FR-004**: The system MUST associate an Answer with one User and one Question and retain its body, single-line excerpt, and creation time.
+- **FR-005**: The system MUST allow at most one Answer per User/Question pair and reject duplicates, including concurrent writes, at the persistence boundary.
+- **FR-006**: The system MUST NOT persist a Session or Question referencing a nonexistent User, or an Answer referencing a nonexistent User or Question.
+- **FR-007**: The system MUST define and enforce referential-integrity rules at the persistence boundary so deletion or replacement does not create orphaned User, Session, Question, or Answer records.
+- **FR-008**: The system MUST store and compare all domain times as absolute times on a universal time basis and MUST NOT use display time zones or a user's device clock for state evaluation.
+- **FR-009**: The system MUST restrict a Question's publication time to no later than the service time when publication is confirmed, enforce `publication time < answer deadline <= reveal time`, and MUST NOT commit a Question that violates this ordering as published.
+- **FR-010**: The system MUST classify a Question as `DRAFT` when its publication time is unset, `OPEN` when published and before its answer deadline, `CLOSED` at or after its answer deadline and before reveal, and `REVEALED` at or after reveal.
+- **FR-011**: When current time equals the answer deadline or reveal time, the system MUST prefer the later state and always return exactly one current state.
+- **FR-012**: The system MUST NOT commit changes that return a published Question to `DRAFT`, return a `CLOSED` or `REVEALED` Question to `OPEN`, or return a `REVEALED` Question to any earlier state.
+- **FR-013**: The system MUST commit Answer creation only when the Question is `OPEN`, using the same service reference time for state evaluation and Answer persistence.
+- **FR-014**: The system MUST provide the current-state rules as a single domain contract so persistence, retrieval, and later screen, HTTP, and WebMCP paths use the same result.
+- **FR-015**: The system MUST define responsibility boundaries for persisting and retrieving User, Session, Question, and Answer so callers can distinguish uniqueness, referential-integrity, and state-condition outcomes without knowing persistence details.
+- **FR-016**: The system MUST apply all migrations to an empty store and apply a differential migration to a SPEC 004 store while preserving valid Users and Sessions.
+- **FR-017**: The system MUST automatically verify required fields, uniqueness, referential integrity, timestamp ordering, state boundaries, and Answer rejection outside `OPEN` after migration.
+- **FR-018**: The system MUST repeatedly verify the state rules, time boundaries, invalid transitions, and duplicate/reference constraints defined here without external services or the passage of real time.
+- **FR-019**: Within this specification, the system MUST NOT provide a Question creation screen, publication UX, WebMCP Tool contract, authorization for the Answer publication path, Human-facing browsing screens, or administrator deletion.
 
-## 依存関係
+### Key Entities
 
-- SPEC 002「Google OAuthとWebMCPユーザー識別の検証」が完了し、UserとSessionの認証データ契約が利用できること。
-- SPEC 004「Agent回答投稿の完全性・Sealed Answersの検証」が完了し、Question、Answer、一意性、締切境界の検証結果が利用できること。
+- **User**: The shared subject representing an authenticated Human and their Personal Agent in Big Question Club. It has a stable identifier, basic display information, creation and update times, and owns Sessions, created Questions, and submitted Answers.
+- **Session**: Expiring data representing a User's authenticated state. It is associated with a User, a unique authentication value, expiration, creation, and update times. The authentication value itself is not public domain data.
+- **Question**: A prompt created by a Human and answered by Personal Agents. It has a creator, body, publication time, answer deadline, reveal time, creation time, and update time. Its current state is derived unambiguously from these timestamps and service time, not a stored state name.
+- **Answer**: A response submitted to a Question by a Personal Agent acting as an authenticated User. It has a Question, User, body, single-line excerpt, and creation time, and is unique for each Question/User pair.
+- **Question State**: The mutually exclusive result `DRAFT`, `OPEN`, `CLOSED`, or `REVEALED`. It is the sole lifecycle contract used by answer acceptance and later publication control.
+- **Migration**: An ordered unit of change that upgrades an existing store to the new data contract. Its order, success or failure, and resulting constraints are verifiable.
 
-## 対象外
+## Success Criteria *(mandatory)*
 
-- Question本文、締切の入力規則、Question作成画面、公開操作、My Questions（SPEC 006）
-- WebMCPのQuestion取得・Answer投稿Toolの入出力およびエラー契約（SPEC 007）
-- SSR、直接HTTP、WebMCP間のAnswer公開認可と漏えい防止マトリクス（SPEC 008）
-- 回答期間中およびReveal後のHuman向け画面・表示順・アクセシビリティ（SPEC 009、SPEC 010）
-- User、Question、Answerの管理者向け削除操作、監査ログ、データ保持期間
-- 投票、順位付け、要約、検索、Agent間の会話、Personal Contextの保存
+### Measurable Outcomes
+
+- **SC-001**: At least twenty state-evaluation cases covering `DRAFT`, `OPEN`, `CLOSED`, `REVEALED`, and every boundary match their expected state 100% of the time, with zero cases producing multiple states or no state.
+- **SC-002**: After ten sequential and ten concurrent attempts by the same User to answer the same Question, exactly one Answer is stored in each verification and zero existing Answers are overwritten.
+- **SC-003**: Attempts involving nonexistent references, invalid timestamp ordering, rollback to an earlier state, and Answer creation outside `OPEN` commit zero invalid records.
+- **SC-004**: Migration and all constraint checks succeed in at least one empty store and one SPEC 004 store, with zero valid Users or Sessions missing from the latter.
+- **SC-005**: Automated state and data-integrity verification using a fixed reference time produces identical results across ten consecutive runs, with zero cases requiring an external service or real-time wait.
+- **SC-006**: Using the documented procedure, a developer can verify migration application, four-state boundaries, uniqueness, referential integrity, and Answer acceptance conditions within thirty minutes.
+
+## Assumptions
+
+- Continue using the User, Session, and external-authentication-subject mapping established in SPEC 002 as the authentication foundation of the production data model.
+- In the MVP, answer deadline and reveal time may be identical. At that boundary the state changes directly and exclusively from `OPEN` to `REVEALED`, so `CLOSED` lasts zero time. If reveal is delayed later, the interval between them is `CLOSED`.
+- `DRAFT` is represented by an unset publication time. After publication, current state is derived from timestamps rather than a stored state name.
+- "Current time" means a universal absolute time received by the service; a user's local time zone is used only for display.
+- The service clock is synchronized and does not move backward within one operation. Scheduled publication is out of scope; publication time is set when publication is confirmed.
+- Questions and Answers created in SPEC 004 are validation-only data and may be replaced if they do not satisfy the new production contract. Users and Sessions are valid authentication data and remain intact through migration.
+- The Answer body and excerpt constraints and the one-Answer-per-Question-per-User principle established in SPEC 004 remain in effect.
+
+## Dependencies
+
+- SPEC 002, "Verify Google OAuth and WebMCP User Identification," is complete and its User/Session authentication data contract is available.
+- SPEC 004, "Verify Agent Answer Submission Integrity and Sealed Answers," is complete and its validation results for Question, Answer, uniqueness, and deadline boundaries are available.
+
+## Out of Scope
+
+- Question body and deadline input rules, Question creation screen, publication operation, and My Questions (SPEC 006)
+- Input/output and error contracts for WebMCP Question retrieval and Answer submission tools (SPEC 007)
+- Answer publication authorization and leakage-prevention matrix across SSR, direct HTTP, and WebMCP (SPEC 008)
+- Human-facing screens, display ordering, and accessibility during the answer period and after reveal (SPEC 009 and SPEC 010)
+- Administrator deletion of User, Question, or Answer; audit logs; and retention periods
+- Voting, ranking, summarization, search, Agent-to-Agent conversation, and Personal Context storage

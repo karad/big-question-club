@@ -21,6 +21,13 @@ import {
 
 type AuthorizedAdmin = { userId: string; repository: AdminRepository };
 
+/**
+ * Renders the administration dashboard.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the administrator.
+ * @param repository - Administration repository used to load summary data.
+ * @returns The rendered dashboard or an authorization error.
+ */
 export async function adminDashboardRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -36,6 +43,15 @@ export async function adminDashboardRoute(
   }
 }
 
+/**
+ * Renders a paginated administration resource list.
+ * @param context - Hono request context.
+ * @param kind - Administration resource to list.
+ * @param authentication - Authentication service used to resolve the administrator.
+ * @param repository - Administration repository used to load records.
+ * @param now - Current timestamp provider.
+ * @returns The rendered list or an authorization error.
+ */
 export async function adminListRoute(
   context: Context,
   kind: AdminListKind,
@@ -76,6 +92,14 @@ function readAdminList(
   return repository.listAuditLogs(limit, offset);
 }
 
+/**
+ * Deletes a question through the administration interface.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the administrator.
+ * @param repository - Administration repository used for the deletion.
+ * @param now - Current timestamp provider for the audit record.
+ * @returns A redirect or a structured administration error.
+ */
 export async function deleteAdminQuestionRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -92,6 +116,14 @@ export async function deleteAdminQuestionRoute(
   );
 }
 
+/**
+ * Deletes an answer through the administration interface.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the administrator.
+ * @param repository - Administration repository used for the deletion.
+ * @param now - Current timestamp provider for the audit record.
+ * @returns A redirect or a structured administration error.
+ */
 export async function deleteAdminAnswerRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -108,6 +140,14 @@ export async function deleteAdminAnswerRoute(
   );
 }
 
+/**
+ * Bans a user through the administration interface.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the administrator.
+ * @param repository - Administration repository used to create the ban.
+ * @param now - Current timestamp provider for the audit record.
+ * @returns A redirect or a structured administration error.
+ */
 export async function banAdminUserRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -124,6 +164,14 @@ export async function banAdminUserRoute(
   );
 }
 
+/**
+ * Removes a user's ban through the administration interface.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the administrator.
+ * @param repository - Administration repository used to remove the ban.
+ * @param now - Current timestamp provider for the audit record.
+ * @returns A redirect or a structured administration error.
+ */
 export async function unbanAdminUserRoute(
   context: Context,
   authentication: Authentication | undefined,

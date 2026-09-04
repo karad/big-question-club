@@ -1,259 +1,249 @@
-# 機能仕様: 回答公開体験とチャレンジ向け視覚設計
+# Feature Specification: Answer Reveal Experience and Challenge Visual Design
 
-**機能ブランチ**: `010-reveal-visual-design`
+**Feature Branch**: `010-reveal-visual-design`
 
-**作成日**: 2026-09-03
+**Created**: 2026-09-03
 
-**状態**: 完了
+**Status**: Complete
 
-**入力**: 「MILESTONE.mdのSPEC 010を実施し、追加仕様を優先して、公開後の回答比較、ホーム・質問詳細の視覚設計、一覧・質問管理の操作改善を完成させる」
+**Input**: “Implement SPEC 010 from MILESTONE.md, prioritize the added requirements, and complete post-Reveal Answer comparison, Home and Question Detail visual design, and list and Question-management improvements.”
 
-## ユーザーシナリオとテスト *(必須)*
+## User Scenarios and Tests *(required)*
 
-### ユーザーストーリー 1 - 公開された独立回答を比較する (優先度: P1)
+### User Story 1 - Compare Revealed Independent Answers (Priority: P1)
 
-認証済み利用者は、回答公開済みの質問詳細画面で封印が解除されたことを一目で理解し、2件以上のパーソナルエージェント回答の要約文と本文を、回答者の個人情報や順位付けに影響されず読み比べる。
+An authenticated user immediately understands that sealing has ended and compares excerpts and bodies from at least two Personal Agents without respondent identity or ranking bias.
 
-**この優先度である理由**: 複数のパーソナルエージェントが独立して答え、締切後に違いが現れる瞬間がチャレンジで伝える中心価値だからである。
+**Why this priority**: Independently produced Answers becoming comparable after the deadline are the Challenge's central value.
 
-**独立テスト**: 内容と長さが異なる2件以上の回答を持つ`REVEALED`状態の質問を認証済み利用者として開き、公開状態、安定した回答順、要約文、個別本文の展開、空状態を確認する。未認証者とWebMCPには既存の非公開境界が維持されることも確認する。
+**Independent Test**: Open a `REVEALED` Question containing at least two different Answers, verify revealed state, stable order, excerpts, body expansion, and empty state, and confirm existing non-exposure for signed-out users and WebMCP.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** 2件以上の回答を持つ質問が`REVEALED`状態である、**操作** 認証済み利用者が質問詳細を開く、**結果** 封印から公開へ変化したこと、回答総数、順序付きの要約文一覧が視覚的に明瞭に表示される。
-2. **前提** 公開後の要約文一覧が表示されている、**操作** 利用者が1件の回答を選択する、**結果** 対応する本文だけが読みやすく展開され、選択していない本文は事前取得も埋め込みもされない。
-3. **前提** 1件の本文が展開済みである、**操作** 利用者が別の回答も選択する、**結果** 先に開いた本文を保持したまま複数回答を上下に比較できる。
-4. **前提** 同じ回答群を持つ質問である、**操作** 利用者が再読込または再訪する、**結果** 回答は初回投稿時刻の古い順、同時刻なら一意な識別子順という同じ順序で表示され、画面上は`Answer 1`からの連番で識別できる。
-5. **前提** 公開後の質問に回答が0件である、**操作** 認証済み利用者が詳細を開く、**結果** 画面に`No answers were submitted.`と表示され、架空の回答は表示されない。
-6. **前提** 質問が`REVEALED`状態である、**操作** 未認証者またはパーソナルエージェントが他者回答へアクセスする、**結果** 人向け認証導線または既存の安全な拒否だけが返り、他者回答の要約文、本文、識別子、投稿者、個別時刻は1件も返らない。
-7. **前提** 認証済み利用者が公開後の回答一覧を開く、**操作** 回答の出所を確認する、**結果** 冒頭に`All answers were submitted by signed-in participants. One answer per account.`が表示され、各回答に質問単位の匿名アイコンと`Authenticated participant`が表示される。
-8. **前提** 同じ回答者が複数の質問へ回答している、**操作** 一般利用者が各質問の公開結果を比較する、**結果** Googleの表示名・プロフィール画像・利用者ID・生のハッシュ値は表示されず、匿名アイコンから質問を横断して同一回答者を追跡できない。管理者は既存の管理画面と監査経路で回答とアカウントの関連を確認できる。
-9. **前提** 認証済み利用者自身の回答を含む公開結果である、**操作** 回答一覧を確認する、**結果** 本人の回答だけに緑色の`Your answer` Tagが表示され、他者回答には表示されない。本人判定のための利用者IDは一般画面へ出力されない。
+1. A `REVEALED` Question with at least two Answers clearly shows the sealed-to-revealed change, total count, and ordered excerpts.
+2. Selecting one Answer fetches and expands only its body; unselected bodies are neither prefetched nor embedded.
+3. Selecting another Answer leaves the first open for vertical comparison.
+4. Reloads preserve initial-submission ascending order, ID tie-breaking, and numbering from `Answer 1`.
+5. Zero Answers shows `No answers were submitted.` and no invented content.
+6. Signed-out users and Personal Agents receive only the human Sign in action or existing safe rejection, with no other Answer excerpt, body, ID, respondent, or time.
+7. Results begin with `All answers were submitted by signed-in participants. One answer per account.` and each item shows a per-Question anonymous icon and `Authenticated participant`.
+8. Google names/images, user IDs, and raw hashes are hidden; icons cannot track a respondent across Questions, while administration retains account linkage.
+9. Only the current user's Answer shows green `Your answer`, with no user ID emitted for that decision.
 
----
+### User Story 2 - Find Answerable Questions and Results from Home (Priority: P1)
 
-### ユーザーストーリー 2 - ホームから回答可能・公開済み質問を見つける (優先度: P1)
+Home lets users find Questions they can answer and Questions whose Results they can read, reach complete lists, and disclose/copy an Agent prompt only when needed.
 
-利用者はホームで、いま回答できる質問と、すでに回答を読める質問の双方を見つけ、それぞれの全件一覧へ進める。回答受付中の質問からは、必要なときだけエージェントへの依頼文を開いてコピーできる。
+**Why this priority**: Both primary actions must be obvious to first-time users and during the three-minute demo.
 
-**この優先度である理由**: 回答参加と公開回答閲覧の2つの主要行動を、初見の利用者と3分デモの双方がホームから迷わず開始できる必要があるため。
+**Independent Test**: With at least six `OPEN` and eleven `REVEALED` Questions, verify limits, order, full-list links, prompt disclosure/copy, and global date display toggling.
 
-**独立テスト**: 6件以上の`OPEN`状態の質問と11件以上の`REVEALED`状態の質問を用意し、ホームの表示上限、並び順、全件リンク、依頼文の開閉・コピー、日時表示の一括切替を確認する。
+**Acceptance Scenarios**:
 
-**受け入れシナリオ**:
+1. Home shows at most five deadline-ordered `Open questions` and ten newest-first `Results`, with English full-list links.
+2. Each Open item shows count and remaining time in one icon-supported line below the body.
+3. Activating any time control toggles every displayed Question between remaining and absolute time.
+4. Only authenticated unanswered users can disclose the one-line prompt and `Copy prompt`, independently per Question.
+5. Copy uses the correct absolute URL and announces success or failure locally.
+6. Signed-out or answered users see no inappropriate prompt and receive the correct English next action.
+7. Open Cards navigate only through `View question`; Card surface and Agent actions do not navigate.
+8. Without an explicit personal view, the Agent creates and submits the best proxy answer from available context without asserting unknown facts or asking solely because the view is absent.
+9. The prompt explicitly requires ChatGPT's built-in browser, not an existing Chrome tab.
+10. Only confirmed answered Cards/Detail show green `Answered`; unanswered, signed-out, or indeterminate states show no answer-state tag.
 
-1. **前提** `OPEN`と`REVEALED`状態の質問が十分にある、**操作** 利用者がホームを開く、**結果** `Open questions`に締切の早い順で最大5件、`Results`に公開時刻の新しい順で最大10件が表示され、各区分に全件一覧への英語リンクがある。
-2. **前提** ホームに回答受付中の質問が表示されている、**操作** 利用者が項目を確認する、**結果** 質問本文の直下1行に回答数と残り時間が簡潔なアイコン付きで表示される。
-3. **前提** 複数の回答受付中の質問が表示されている、**操作** 利用者がいずれかの残り時間表示を選択する、**結果** 画面内の全質問が絶対締切表示へ同時に切り替わり、再度選択すると全件が残り時間表示へ戻る。
-4. **前提** 回答受付中の質問の依頼文は閉じている、**操作** 認証済みかつ未回答の利用者が依頼文の開示操作を選択する、**結果** 対象質問の1行依頼文欄と`Copy prompt`ボタンがその項目内に現れ、他の質問の依頼文は開かない。
-5. **前提** 依頼文欄が開いている、**操作** 利用者が`Copy prompt`を選択する、**結果** 対象質問の正しい絶対URLを含む全文がコピーされ、成功または失敗がその場で通知される。
-6. **前提** 未認証または回答済みの利用者である、**操作** 回答受付中の質問項目を確認する、**結果** 認証状態と本人回答状態に合わない依頼文本文は表示されず、適切な英語の次行動が示される。
-7. **前提** 回答受付中のCardにはエージェント依頼など複数の操作がある、**操作** 利用者がCard面または各操作を選択する、**結果** Question詳細への遷移は`View question` Buttonを選択した場合だけ発生し、Card面と別操作からは発生しない。
-8. **前提** Agentが利用できるContextに質問への明示的な個人見解がない、**操作** 利用者が既定の依頼文で回答作成と投稿を依頼する、**結果** Agentは利用可能な文脈から利用者が答えそうな内容を最善の代理回答として作成・投稿し、未確認の個人事実や既知の信条として断定せず、個人見解がないことだけを理由に確認質問しない。
-9. **前提** ChatGPTで既存Chrome Tabと組み込みブラウザの双方が利用できる、**操作** 利用者が既定の依頼文を送る、**結果** 依頼文はChatGPTの組み込みブラウザを使い既存Chrome Tabを使わないよう明示する。
-10. **前提** 認証済み利用者が質問Cardまたは質問詳細を表示する、**操作** 本人の回答状態を確認する、**結果** 本人が回答済みの場合だけ、既存の封印・公開Tagの隣に緑色の`Answered` Tagが表示される。未回答、未認証、または本人回答状態を安全に確定できない場合は、回答状態Tagが表示されない。
+### User Story 3 - Browse Question Lists by Page (Priority: P1)
 
----
+Users browse Open Questions or Results 20 at a time with clear current position and navigation.
 
-### ユーザーストーリー 3 - 質問一覧をページ単位で閲覧する (優先度: P1)
+**Why this priority**: Content beyond Home limits must remain discoverable as usage grows.
 
-利用者は、回答受付中または回答公開済みの質問を専用一覧で20件ずつ閲覧し、件数が多くても現在位置と移動先を理解して目的の質問詳細へ進む。
+**Independent Test**: With 21+ items per state, verify the 20-item limit, stable order, previous/next navigation, invalid pages, and time toggling.
 
-**この優先度である理由**: ホームの件数上限を超えた質問も発見可能にし、サービスが継続利用されても主要コンテンツへ到達できるようにするため。
+**Acceptance Scenarios**:
 
-**独立テスト**: 各一覧に21件以上の質問を用意し、1ページ20件の上限、安定した並び順、前後ページ移動、範囲外ページ、日時表示切替を確認する。
+1. Page 1 shows at most 20 items, current page, and available next navigation.
+2. Page 2 shows a nonoverlapping next set and available previous/next navigation.
+3. Reload preserves deterministic deadline/reveal-time and ID order.
+4. Invalid or missing pages produce a safe empty state or valid-page action, never an internal error.
+5. Open-list time toggling changes every item on the current page together.
 
-**受け入れシナリオ**:
+### User Story 4 - Save Draft, Publish Immediately, and Delete a Question (Priority: P1)
 
-1. **前提** 対象状態の質問が21件以上ある、**操作** 利用者が全件一覧を開く、**結果** 1ページ目には最大20件と現在ページ、利用可能な次ページ導線が表示される。
-2. **前提** 利用者が2ページ目へ移動する、**操作** 一覧を確認する、**結果** 1ページ目と重複しない次の質問群、現在ページ、利用可能な前後ページ導線が表示される。
-3. **前提** 一覧の内容が変わっていない、**操作** 同じページを再読込する、**結果** 締切または公開時刻と一意な識別子で決まる安定した順序が維持される。
-4. **前提** 存在しないページ番号または不正なページ指定である、**操作** 利用者が一覧へアクセスする、**結果** 安全な空状態または有効なページへの導線が表示され、内部エラーにならない。
-5. **前提** 回答受付中の質問一覧が表示されている、**操作** 残り時間と締切日時を切り替える、**結果** 現在ページの全質問の日付表現が一括で切り替わる。
+An authenticated user uses a next-midnight deadline default, chooses `Save as draft` or `Publish question`, and deletes owned Questions after confirmation without duplicate mutations.
 
----
+**Why this priority**: These MILESTONE-prioritized improvements prevent mistakes and duplicate demo data.
 
-### ユーザーストーリー 4 - 質問を下書き保存・即時公開・削除する (優先度: P1)
+**Independent Test**: Across times and zones, verify default deadlines, both creation intents, repeated actions, owner deletion, and non-owner rejection.
 
-認証済み利用者は、新規質問の入力時に翌日0時の回答締切初期値を利用し、`Save as draft`または`Publish question`を明示的に選ぶ。自分が作成した質問は確認後に削除でき、連続操作による二重作成や二重更新は発生しない。
+**Acceptance Scenarios**:
 
-**この優先度である理由**: MILESTONEの追加仕様として優先指定された作成・公開・削除の操作改善であり、デモ準備中の誤操作と重複データを防ぐため。
+1. New Question defaults to the first editable local `00:00` at least one hour away.
+2. `Save as draft` stores exactly one `DRAFT`.
+3. `Publish question` creates exactly one reachable `OPEN` Question without draft confirmation.
+4. During processing, repeat actions are disabled and double clicks create no duplicate.
+5. My Questions Cards show body, state, and count; deletion disclosure shows only the English irreversible checkbox and delete button and requires confirmation.
+6. Non-owner or unconfirmed deletion changes nothing and reveals no unnecessary internal information.
+7. Confirmed owner deletion makes the Question and Answers unreachable and records a body-free audit event.
 
-**独立テスト**: 新規作成画面を異なる時刻・タイムゾーンで開き、回答締切初期値、下書き保存、即時公開、連続操作、所有者削除、非所有者拒否を確認する。
+### User Story 5 - Understand State Through Consistent Visual Design (Priority: P1)
 
-**受け入れシナリオ**:
+Across Home, lists, Detail, management, sealed state, and Results, users recognize one product and infer current state and next action from type, color, spacing, icons, and motion.
 
-1. **前提** 利用者が新規質問作成画面を開く、**操作** 回答締切入力を確認する、**結果** 利用者のローカル日付で現在から1時間以上先となる最初の`00:00`が有効な初期値として入っており、変更できる。
-2. **前提** 有効な質問本文と回答締切が入力されている、**操作** 利用者が`Save as draft`を1回選択する、**結果** 質問は未公開の下書きとして1件だけ保存される。
-3. **前提** 有効な質問本文と回答締切が入力されている、**操作** 利用者が`Publish question`を1回選択する、**結果** 質問は下書き確認を挟まず直ちに1件だけ公開され、回答受付中の質問として到達可能になる。
-4. **前提** 保存または公開要求が処理中である、**操作** 利用者が同じ操作をダブルクリックまたは連続実行する、**結果** 最初の操作だけが受理され、操作ボタンは処理完了まで再実行できず、質問は重複しない。
-5. **前提** 利用者が質問本文、現在状態、回答数をMy QuestionsのCardで確認している、**操作** 削除を選択する、**結果** 展開領域には取り消せないことを示す英語の確認Checkboxと削除Buttonだけが表示され、確認後だけ削除できる。
-6. **前提** 他者が作成した質問または確認されていない削除要求である、**操作** 利用者が画面または直接要求から削除を試みる、**結果** 質問と回答は変更されず、所有者向け操作の存在や内部情報を不要に露出しない。
-7. **前提** 回答を持つ所有質問の削除が確認された、**操作** 削除が完了する、**結果** 質問と関連回答は公開経路から到達不能になり、既存の監査記録には本文を複製せず削除操作が記録される。
+**Why this priority**: Challenge judging requires the sealed-to-revealed story to be understood quickly, not merely implemented.
 
----
+**Independent Test**: Inspect primary screens at desktop/mobile widths, with keyboard and reduced motion, across default, hover, focus, loading, empty, and error states.
 
-### ユーザーストーリー 5 - 一貫した視覚設計で状態を理解する (優先度: P1)
+**Acceptance Scenarios**:
 
-利用者は、ホーム、質問一覧、質問詳細、質問作成・管理、封印中、回答公開後の各画面を同じ製品として認識し、文字、色、余白、アイコン、動きから現在状態と次の行動を判断できる。
+1. Typography, palette, layout, corners, borders, and shadows remain consistent.
+2. `OPEN`/`CLOSED` use lock imagery, state color, accessible `Answers are sealed`, and supporting text.
+3. `REVEALED` changes to reveal color/icon and brief nonblocking motion.
+4. Public screens show neither `Signed in as ...` nor raw user IDs.
+5. At 320 px or zoomed, primary content/actions remain reachable without horizontal scrolling.
+6. Keyboard and assistive technology perceive controls, focus, state changes, and errors.
+7. Reduced motion removes decorative transitions without losing meaning.
 
-**この優先度である理由**: チャレンジ審査では機能だけでなく、独立回答が封印されてから公開される物語を短時間で視覚的に理解できる完成度が必要だからである。
+### User Story 6 - Communicate the Core Experience in a Three-Minute Demo (Priority: P1)
 
-**独立テスト**: デスクトップとモバイル幅、キーボード操作、動きの低減設定、通常・ポインター重ね合わせ・フォーカス・処理中・空・エラーの各状態で主要画面を確認する。
+The demo proceeds from Home through Agent requests, counts zero/one/two, sealing, Reveal, and comparison of two different Answers within three minutes.
 
-**受け入れシナリオ**:
+**Why this priority**: Showing product differentiation and safety as one flow within judging time is a completion criterion.
 
-1. **前提** 利用者が主要画面間を移動する、**操作** 見出し、本文、カード、操作、状態表示を比較する、**結果** 共通の書体、配色、配置、角・境界・影の規則が一貫している。
-2. **前提** 質問が`OPEN`または`CLOSED`状態である、**操作** 利用者が一覧または詳細を確認する、**結果** 封印状態は鍵を想起させるアイコンと状態色で視覚的に区別され、`Answers are sealed`はアイコンのアクセシブル名と補助表示から取得できる。
-3. **前提** 質問が`REVEALED`状態へ変化する、**操作** 利用者が詳細を再表示する、**結果** 公開を示す状態色・アイコン・短い動きへ切り替わるが、内容の読解や操作を妨げない。
-4. **前提** 利用者の識別子が長い、**操作** 認証済み画面を開く、**結果** `Signed in as ...`と生の利用者IDは一般向け主要画面に表示されない。
-5. **前提** 320ピクセル相当の狭い表示領域または拡大表示である、**操作** ホームから公開回答本文まで利用する、**結果** 横スクロールなしで主要内容と操作へ到達でき、長い質問と回答も欠落しない。
-6. **前提** 利用者がキーボードまたは支援技術を使う、**操作** 開閉、コピー、日時切替、ページ移動、回答展開、作成、公開、削除を行う、**結果** 操作名、フォーカス、状態変化、エラーが知覚可能である。
-7. **前提** 利用者が動きの低減を指定している、**操作** 開閉または公開状態への変化を表示する、**結果** 意味を失わず装飾的な動きが停止または即時切替になる。
+**Independent Test**: Time the defined flow with two prepared users and one Question, confirming every state is visually distinct in English.
 
----
+**Acceptance Scenarios**:
 
-### ユーザーストーリー 6 - 3分デモで主要体験を伝える (優先度: P1)
+1. Copying the prompt and reflecting two Answers changes the count zero-to-one-to-two without showing other bodies.
+2. At reveal time, the demo shows sealing-to-Results and differences between Answers within three minutes.
+3. Automated/manual checks confirm WebMCP cannot retrieve other Answers and only authorized human Results can.
 
-デモ実施者は、ホームから回答受付中の質問を選び、パーソナルエージェントへの依頼、回答数の増加、封印状態、2件以上の異なる回答が公開される流れを3分以内に再現する。
+### Boundary Conditions
 
-**この優先度である理由**: チャレンジ提出の評価時間内に製品の差別化と安全境界を一続きの体験として示すことが完了条件だからである。
+- If tomorrow's midnight is less than one hour away, use the following midnight. Where midnight is skipped or repeated by daylight saving, choose the nearest valid start of day at least one hour away and explain it.
+- Very long bodies, excerpts, Answers, URLs, line breaks, and unbreakable strings never push Cards or pages horizontally.
+- Treat HTML, scripts, control characters, and icon-like characters as text, never structure or operations.
+- A Question crossing deadline/reveal while listed moves on the next request and never appears in Open and Results simultaneously.
+- Concurrent list changes preserve deterministic per-response order and no same-page duplicate.
+- If clipboard access fails, keep the full prompt selectable and show an English failure.
+- If authentication expires, the Question is deleted, or body retrieval fails, show no other body and a retryable English error.
+- Slow mutations retain processing state and duplicate prevention until success/failure restores the correct operable state.
+- One-Answer Results use the same readable structure without overstating comparison.
 
-**独立テスト**: 事前に用意した2利用者と1件の質問を使い、規定の画面遷移を計時しながら実行し、全状態が英語表示で視覚的に識別できることを確認する。
+## Requirements *(required)*
 
-**受け入れシナリオ**:
+### Functional Requirements
 
-1. **前提** 回答前の質問がホームにある、**操作** デモ実施者が詳細で依頼文をコピーして1件目と2件目の回答を反映する、**結果** 回答数が0件、1件、2件と変化し、他者回答本文は表示されない。
-2. **前提** 2件以上の異なる回答が封印されている、**操作** 質問が公開時刻を迎えて詳細を再表示する、**結果** 封印から公開への変化と回答内容の違いを、開始から3分以内に示せる。
-3. **前提** 主要デモを自動・手動検証する、**操作** 人向け画面とWebMCPを横断する、**結果** WebMCPから他者回答を取得できず、人向けの回答公開画面だけが既存の認可条件で表示される。
+- **FR-001**: Apply one recognizable Challenge visual design across Home, lists, Detail, and Question creation/management.
+- **FR-002**: Center an editorial, thought-provoking paper atmosphere and sealed/revealed transition; avoid excessive generic-dashboard decoration.
+- **FR-003**: Use consistent heading/body hierarchies, sizes, line heights, readable line lengths, and weights.
+- **FR-004**: Base colors on warm paper, dark brown-black ink, orange action/reveal, and amber seal; never rely on color alone.
+- **FR-005**: Use readable maximum line length, clear section spacing, consistent Question/Answer surfaces, denser wide layouts, and single-column narrow layouts.
+- **FR-006**: Support disclosures, time toggles, Answer expansion, and reveal changes with 150–300 ms transitions without delay; remove decorative motion when reduced motion is requested.
+- **FR-007**: All public visible text, operations, states, empty states, and errors MUST be English.
+- **FR-008**: Public primary screens MUST NOT show raw user IDs after `Signed in as`.
+- **FR-008a**: The shared Header MUST show `Sign in with Google` when signed out and only `Sign out` without raw ID or redundant status when signed in; do not duplicate Sign in at Home bottom or inside Question content.
+- **FR-008b**: On `My Questions`, the Header MUST NOT duplicate a link to the current page.
+- **FR-009**: Home MUST show at most five `OPEN` Questions ordered by deadline then ID and link to all Open Questions.
+- **FR-009a**: Home Hero MUST use `question-planet-right-hollow-mark-16x9.png` at 30% opacity, right-center, nonrepeating.
+- **FR-009b**: Hero English copy MUST welcome big Questions, invite the user's biggest Question, and promise distinctive Answers from each respondent's AI Agent.
+- **FR-009c**: Home's WebMCP guidance MUST state in an English heading that WebMCP is required to answer.
+- **FR-009d**: Keep internal `REVEALED` but present `Results`, `Results available`, and `View results` publicly.
+- **FR-009e**: Result Card surfaces MUST link to Detail. Open Cards MUST navigate only through `View question`. Hover MUST only deepen the warm background, without movement or new shadow.
+- **FR-009f**: `View question`/`View results` on list Cards and `View question` on My Questions MUST use the shared white Secondary Button.
+- **FR-010**: Home MUST show at most ten `REVEALED` Questions ordered by reveal time then ID descending and link to all Results.
+- **FR-011**: Home/Open-list items MUST show count and remaining time or deadline in one line with concise accessible icons.
+- **FR-012**: Toggling one time display MUST toggle all Questions on that screen.
+- **FR-012a**: Visible dates MUST use `YYYY-MM-DD HH:mm`, not seconds, `T`, or trailing `Z`; machine-readable/API ISO 8601 remains.
+- **FR-013**: `OPEN`/`CLOSED` sealing MUST use a lock, state color, accessible `Answers are sealed`, and pointer/keyboard help.
+- **FR-014**: For authenticated unanswered users, prompt text MUST remain hidden until explicit disclosure within that item.
+- **FR-015**: Disclosures MUST be independent, full text selectable, and copy success/failure announced nearby.
+- **FR-015a**: `get_question`/`submit_answer` MUST prioritize user-authored context and, absent an explicit view, direct the Agent to submit the best proxy answer without asserting unverified facts, treating inference as known belief, or asking solely due to missing personal view.
+- **FR-015b**: The prompt MUST specify ChatGPT's built-in browser rather than an existing Chrome tab while preserving URL, one-line form, submission permission, and context rules.
+- **FR-015c**: Authenticated list Cards and Detail MUST show green `Answered` beside state only when the current user answered; show no answer-state tag otherwise or when indeterminate.
+- **FR-016**: Open and Result lists MUST show at most 20 items per page with current position and available navigation.
+- **FR-017**: Only positive integer pages are valid; empty, out-of-range, and invalid values MUST have safe English presentation and valid navigation.
+- **FR-018**: Authenticated `REVEALED` Detail MUST show total, stable excerpts, numbering from `Answer 1`, and body expansion controls.
+- **FR-019**: Reveal order MUST be initial submission ascending then ID; never vary by votes, popularity, content, update, or viewer.
+- **FR-020**: Fetch only a selected body at that moment and allow multiple fetched bodies to remain open.
+- **FR-020a**: In `OPEN`/`CLOSED`, an answered authenticated user sees only their own body/excerpt; no other body, excerpt, ID, respondent, or time is displayed or embedded.
+- **FR-021**: Zero Results MUST show `No answers were submitted.`; one uses the same reading structure as multiple.
+- **FR-022**: Results MUST hide respondent user ID, email, Google name/image, raw hash, and individual time, and use anonymous numbering.
+- **FR-022a**: Results MUST show the authenticated-participant explanation, per-Question icon, and `Authenticated participant`.
+- **FR-022b**: Icons MUST remain stable for a Question/Answer, use no user ID, and not become persistent cross-Question identifiers.
+- **FR-022c**: Preserve Answer/account linkage only for existing administration/audit/moderation; add no public nickname.
+- **FR-022d**: Authenticated Results MUST mark only the session user's Answer as green `Your answer`, deciding server-side and projecting only the result, not respondent ID.
+- **FR-023**: Preserve SPEC 008: return no other-user excerpt, body, ID, respondent, time, or count to signed-out users or WebMCP, even after Reveal.
+- **FR-024**: Default new deadline to next local `00:00`, or the following day when under one hour away, while remaining editable.
+- **FR-025**: Show separate `Save as draft` and `Publish question`; publish immediately without draft confirmation.
+- **FR-026**: Every mutation MUST suppress replay from first valid execution through completion and never duplicate create/update/delete through repeat click, form replay, or latency.
+- **FR-027**: Owners MUST inspect target/state/count and delete their `DRAFT`/`OPEN`/`CLOSED`/`REVEALED` Questions only after an English irreversible checkbox; deletion area contains only checkbox, button, hidden values, and necessary status.
+- **FR-028**: Owner/admin Question deletion MUST cascade all Answers and audit actor, target, outcome, and time without bodies.
+- **FR-029**: Only owner or existing administrator may delete; signed-out and non-owner UI/direct requests are consistently rejected.
+- **FR-030**: Primary information/actions MUST remain available from 320 px through desktop, at 200% zoom, and by keyboard only.
+- **FR-031**: Normal text contrast MUST be at least 4.5:1 and large text/component boundaries 3:1; meaningful icons need names, decorative icons are hidden, status has nonvisual notification, and controls have visible focus.
+- **FR-031a**: Administration Question/Answer delete buttons MUST use `Delete`, while confirmation checkboxes identify target type.
+- **FR-031b**: Administration user-ban buttons MUST use `Ban`, while confirmation identifies the operation.
+- **FR-031c**: Public/admin deletion MUST use a trash icon rather than play/disclosure markers and an adjacent English target/action label.
+- **FR-031d**: Administration Home MUST link to `Users`, `Questions`, `Answers`, and `Audit log`; each is a table with at most 20 rows and current/previous/next position.
+- **FR-032**: Render long Questions, excerpts, Answers, URLs, and characters as safe text, never executable content, attributes, or structure.
+- **FR-033**: Screen tests MUST cover Home limits, pagination, global date toggle, prompt disclosure, sealed/revealed, zero/one/multiple Answers, replay prevention, deadline default, delete authorization, and responsive critical states.
+- **FR-034**: Integration tests MUST cover Home-to-Detail, prompt copy, count changes, post-Reveal body retrieval, owner deletion, and WebMCP non-exposure.
+- **FR-035**: The demo MUST reproduce Home, Open Detail, prompt, counts zero/one/two, sealing, Reveal, and comparison of two different Answers in order within three minutes.
 
-### 境界条件
+### Visual Design Direction
 
-- 翌日0時が現在から1時間未満となる場合は翌々日の0時を選ぶ。夏時間の変更などで0時が存在しない、または重複する地域では、1時間以上先かつ利用者の環境で有効な最も近い日付開始時刻を選び、画面上で明示する。
-- 質問本文、要約文、回答本文が非常に長い、改行を多く含む、長いURLや分割不能な文字列を含む場合も、カードやページ全体を横へ押し出さない。
-- 回答本文または要約文にHTML、スクリプト、制御文字、アイコンに似た文字が含まれても、画面構造や操作として解釈しない。
-- 一覧閲覧中に質問が締切または公開時刻へ到達した場合、次回の画面取得では新しい一覧へ移り、同じ質問が回答受付中と公開済みの一覧へ同時表示されない。
-- ページ移動中に質問数が変化しても、各応答内の順序は決定的で、同じ質問を同一ページへ重複表示しない。
-- クリップボードが利用不可または拒否された場合、依頼文全文は選択可能なまま残り、英語の失敗通知を表示する。
-- 回答本文取得中に認証が失効、質問が削除、または取得に失敗した場合、別回答の内容を表示せず再試行可能な英語のエラーを示す。
-- 状態変更操作の応答が遅い場合も、処理中表示と再実行防止を維持し、成功か失敗が判明した時点で操作可能状態を正しく戻す。
-- 回答が1件だけの公開画面でも同じ表示構造を使い、比較対象がないことを誇張せず明瞭に読むことができる。
+- **Theme**: “Observatory for reflection,” combining calm editorial paper with modern state expression.
+- **Typography**: Expressive Question/Results headings; readable sans-serif body, metadata, and controls; bounded long-text line length.
+- **Palette**: Warm paper, dark brown-black, orange actions, amber sealing; reinforce state with icons and text.
+- **Layout**: Question first, then metadata, participation, and Answers; distinct Home sections; single-column vertical comparison.
+- **Motion**: Only brief, calm disclosures and state transitions; no constant decoration or reading delay.
+- **Responsive**: Single column and touch targets on mobile; spacing/metadata on desktop; never remove content or operations solely due to width.
 
-## 要件 *(必須)*
+### Key Entities
 
-### 機能要件
+- **Question List Item**: Body, state, count, deadline/reveal time, remaining time, Detail action, and available Agent prompt.
+- **Question List Page**: State, stable order, current page, at most 20 items, and navigation.
+- **Date Display Preference**: Temporary screen-wide remaining-time or deadline selection.
+- **Revealed Answer Item**: Anonymous number/icon, `Authenticated participant`, excerpt, expansion state, and selected body, with no public identity or ranking.
+- **Question Creation Intent**: Exclusive draft-save or immediate-publish action.
+- **State-Changing Operation**: Target, action, processing state, and result treating repeats as one intent.
 
-- **FR-001**: システムは、ホーム、質問一覧、質問詳細、質問作成・管理に、チャレンジで一貫して認識できる共通の視覚設計を適用しなければならない。
-- **FR-002**: 視覚設計は、思考を促す編集紙面風の雰囲気と、封印・公開の状態変化を主役にし、一般的な管理画面に見える過剰な装飾を避けなければならない。
-- **FR-003**: 書体は、質問と回答公開の見出しに明確な見出し階層、本文と操作に長文可読性の高い階層を設け、文字サイズ、行間、行長、太さの規則を主要画面で統一しなければならない。
-- **FR-004**: 配色は、温かみのある明るい紙色、深い茶墨色の本文、操作と公開を示す橙色系、封印を示す琥珀色系を基本とし、色だけに意味を依存してはならない。
-- **FR-005**: 配置は、読みやすい最大行長、明確な区分間余白、質問と回答を区別する一貫した面表現を持ち、広い画面では情報密度を上げ、狭い画面では単一列に再配置しなければならない。
-- **FR-006**: 画面上の動きは、依頼文開閉、日時切替、回答展開、封印から公開への変化を150〜300ミリ秒相当の短い遷移で補助し、操作待ちを増やさず、動きの低減設定では装飾遷移を除去しなければならない。
-- **FR-007**: すべての一般利用者向け表示文言、操作名、状態名、空状態、エラーは英語でなければならない。
-- **FR-008**: 一般利用者向け主要画面は、`Signed in as`に続く生の利用者IDを表示してはならない。
-- **FR-008a**: 一般利用者向け共通Headerは、未認証時に`Sign in with Google`を表示し、認証後は生の利用者IDや冗長な状態文言を出さずに`Sign out`を表示しなければならない。Home下部とQuestion本文内に重複するサインイン操作を表示してはならない。
-- **FR-008b**: `My Questions`表示中の共通Headerは、現在表示中の`My Questions`への重複Linkを表示してはならない。
-- **FR-009**: ホームは`OPEN`状態の質問を締切の早い順かつ同条件では一意な識別子順で最大5件表示し、回答受付中の質問全件一覧への導線を提供しなければならない。
-- **FR-009a**: ホームのHero領域は`question-planet-right-hollow-mark-16x9.png`を、不透明度30%、右中央寄せ、非反復の装飾背景として表示しなければならない。
-- **FR-009b**: ホームのHero領域は、大きなQuestionを歓迎すること、利用者自身にとって最大のQuestionを促すこと、回答者ごとのAI Agentから個性的な回答が得られることを、簡潔な英語で伝えなければならない。
-- **FR-009c**: ホーム下部のWebMCP案内は、回答にWebMCPが必須であることを英語の見出しで明示しなければならない。
-- **FR-009d**: 一般利用者向け画面では`REVEALED`状態を内部契約として維持しつつ、一覧見出しを`Results`、利用可能状態を`Results available`、導線を`View results`として表示しなければならない。
-- **FR-009e**: `Results`のQuestion一覧Cardは主要なCard面全体を詳細へのクリック領域としなければならない。`Open questions`のCardはエージェント依頼などの独立操作を持つためCard面を詳細へのクリック領域にせず、`View question` Buttonだけを詳細への遷移操作としなければならない。Hover時は位置移動や影の追加を行わず、暖色背景をわずかに濃くして反応を示さなければならない。
-- **FR-009f**: Question一覧Cardの`View question`と`View results`、My Questions Cardの`View question`は、白背景の共通Secondary Button形状で表示しなければならない。
-- **FR-010**: ホームは`REVEALED`状態の質問を公開時刻の新しい順かつ同条件では一意な識別子順で最大10件表示し、公開済み質問全件一覧への導線を提供しなければならない。
-- **FR-011**: ホームと回答受付中の質問一覧の各項目は、質問本文の直下1行に回答数と残り時間または締切日時を、簡潔なアイコンとアクセシブル名付きで表示しなければならない。
-- **FR-012**: 残り時間または締切日時の表示を1件で切り替えた場合、同一画面に表示中の全質問を同じ表示方式へ一括で切り替えなければならない。
-- **FR-012a**: 画面上の日付と時刻は`YYYY-MM-DD HH:mm`形式で表示し、秒、ISO 8601の`T`区切り、末尾の`Z`を表示してはならない。機械可読な属性とAPIでは既存のISO 8601契約を維持しなければならない。
-- **FR-013**: `OPEN`と`CLOSED`状態の封印は視覚的な鍵アイコンと状態色で示し、`Answers are sealed`をアイコンのアクセシブル名、およびポインターとキーボードの双方で得られる補助表示として提供しなければならない。
-- **FR-014**: 認証済みかつ未回答の利用者向け質問項目は、初期状態では依頼文を隠し、明示的な開示後にだけ対象質問の依頼文欄と`Copy prompt`を項目内へ表示しなければならない。
-- **FR-015**: 依頼文の開示状態は質問ごとに独立し、表示中の全文を選択可能に保ち、コピーの成功・失敗をその操作の近くで通知しなければならない。
-- **FR-015a**: `get_question`と`submit_answer`のTool契約は利用可能なUser自身の記述を優先し、明示的な個人見解がない場合はUserが答えそうな最善の代理回答を作成・投稿するようAgentへ指示しなければならない。その際、未確認の個人事実を断定せず、推測した立場を既知の信条として扱わず、個人見解がないことだけを理由に確認質問してはならない。
-- **FR-015b**: Agent依頼PromptはChatGPTの組み込みブラウザを使用し、既存Chrome Tabを使用しないことを英語で明示しなければならない。URL、1行形式、投稿許可、Context規則は既存契約を維持しなければならない。
-- **FR-015c**: 認証済み利用者向けのQuestion一覧CardとQuestion詳細は、本人回答済みの場合だけ、封印・公開Tagの隣に緑色の`Answered` Tagを表示しなければならない。未回答、未認証、または本人回答状態を安全に確定できない場合は、回答状態Tagを表示してはならない。
-- **FR-016**: 回答受付中の質問一覧と公開済み質問一覧は1ページ最大20件とし、現在ページ、利用可能な前後移動、総ページ数または同等の現在位置を表示しなければならない。
-- **FR-017**: 一覧のページ指定は正の整数だけを有効とし、空結果、範囲外、不正値に対して安全な英語表示と有効な移動先を提供しなければならない。
-- **FR-018**: `REVEALED`状態の質問詳細は、認証済み利用者へ回答総数、安定した順序の要約文一覧、`Answer 1`からの連番、個別本文の展開操作を表示しなければならない。
-- **FR-019**: 公開後の回答順は初回投稿時刻の古い順、同時刻は一意な識別子順とし、投票、人気度、内容、更新時刻、閲覧者によって変化させてはならない。
-- **FR-020**: 回答本文は利用者が選択した1件だけをその時点で取得し、複数の選択済み本文を同時に開いたまま比較できるようにしなければならない。
-- **FR-020a**: `OPEN`または`CLOSED`状態で認証済み利用者が回答済みの場合、Question詳細は本人のAnswer本文とExcerptだけを表示し、他者Answerの本文、Excerpt、識別子、投稿者、個別時刻を表示または埋め込みしてはならない。
-- **FR-021**: 公開後に回答が0件の場合は`No answers were submitted.`を表示し、1件の場合も複数件と同じ読み取り構造を維持しなければならない。
-- **FR-022**: 公開後の回答表示は投稿者の利用者ID、メールアドレス、Google表示名、Googleプロフィール画像、生のハッシュ値、個別投稿時刻を公開せず、回答を匿名の連番として扱わなければならない。
-- **FR-022a**: 公開後の回答一覧は冒頭に`All answers were submitted by signed-in participants. One answer per account.`を表示し、各回答へ質問単位の匿名アイコンと`Authenticated participant`を表示しなければならない。
-- **FR-022b**: 匿名アイコンは同じ質問と回答に対して再表示時も安定し、利用者IDを入力に使わず、質問を横断して同一回答者を追跡できる永続識別子として機能してはならない。
-- **FR-022c**: 回答と認証済みアカウントの関連は既存の管理画面と監査・Moderation用途で維持し、一般利用者向け画面へ公開してはならない。公開ニックネームは将来検討とし、本SPECでは追加してはならない。
-- **FR-022d**: 認証済み利用者向けの公開回答一覧は、セッション利用者自身の回答だけに緑色の`Your answer` Tagを表示しなければならない。本人判定はサーバー側で行い、一般利用者向け投影には判定結果だけを含め、回答者の利用者IDを含めてはならない。
-- **FR-023**: システムは、SPEC 008のアクセス制御を維持し、未認証者とWebMCPへ公開後も他者回答の要約文、本文、識別子、投稿者、個別時刻、回答数を返してはならない。
-- **FR-024**: 新規質問作成画面は、利用者のローカル日付における翌日の`00:00`を回答締切初期値として提示しなければならない。ただし、その時刻が既存の最短期限である現在から1時間以上を満たさない場合は、翌々日の`00:00`を提示する。初期値は有効な別時刻へ編集可能でなければならない。
-- **FR-025**: 新規質問作成画面は、同じ入力内容に対して`Save as draft`と`Publish question`を別の主要操作として表示し、後者は下書き確認を挟まず即時公開しなければならない。
-- **FR-026**: すべての状態変更操作は、最初の有効な実行直後から完了まで再実行を抑止し、連続クリック、ダブルクリック、フォーム再送、遅延応答によって同じ質問または回答を重複作成・更新・削除してはならない。
-- **FR-027**: 質問所有者は、自分の`DRAFT`、`OPEN`、`CLOSED`、`REVEALED`状態の質問をMy QuestionsのCardで対象、状態、回答数を確認し、削除展開領域の不可逆性を示す英語の確認Checkboxを選択した後に削除できなければならない。削除展開領域は確認Checkbox、削除Button、非表示の送信値、必要な状態通知以外を表示してはならない。
-- **FR-028**: 所有者または管理者による質問削除は関連回答を同じ操作で全件削除し、既存の監査方針に従って実行者、対象、成否、時刻を本文なしで記録しなければならない。
-- **FR-029**: 質問削除は所有者または既存の管理者だけに許可し、未認証者と非所有者からの画面操作および直接要求を一貫して拒否しなければならない。
-- **FR-030**: 主要画面と操作は、320ピクセル相当からデスクトップまでの表示領域、200%相当の拡大、キーボードのみの操作で主要情報と機能を欠落させてはならない。
-- **FR-031**: 通常文字は背景に対して4.5対1以上、大きな文字と主要な画面部品の境界は3対1以上のコントラスト比を持たなければならない。意味のあるアイコンには名称、装飾アイコンには支援技術からの非表示、状態通知には視覚以外の通知手段、すべての操作には視認可能なフォーカスを提供しなければならない。
-- **FR-031a**: 管理画面のQuestionおよびAnswer削除Buttonは表示Labelを`Delete`へ統一し、直前の確認Checkboxでは削除対象種別を識別できる文言を維持しなければならない。
-- **FR-031b**: 管理画面のUser BAN Buttonは表示Labelを`Ban`とし、直前の確認Checkboxでは対象操作を識別できる文言を維持しなければならない。
-- **FR-031c**: 一般画面と管理画面の削除操作は再生記号や標準Disclosure Markerではなくゴミ箱アイコンを使い、隣接する英語Labelで削除対象または操作を識別できなければならない。
-- **FR-031d**: 管理画面トップは`Users`、`Questions`、`Answers`、`Audit log`の4専用一覧へのLinkとして構成し、各一覧はTable形式かつ1ページ最大20件で、現在ページと利用可能な前後移動を表示しなければならない。
-- **FR-032**: 長い質問、要約文、回答、URL、各種文字を安全な文字列として表示し、実行可能な内容、属性、画面構造として解釈してはならない。
-- **FR-033**: 画面の自動テストは、ホーム上限、一覧のページ分割、日時一括切替、依頼文開閉、封印・公開、回答0・1・複数件、二重操作抑止、回答締切初期値、削除認可、画面幅に応じた表示の重要状態を保証しなければならない。
-- **FR-034**: 結合テストは、ホームから質問詳細、依頼文コピー、回答数変化、公開後の本文取得、所有質問削除までの主要導線と、WebMCPの他者回答非露出を保証しなければならない。
-- **FR-035**: 3分デモは、ホーム、回答受付中の質問詳細、依頼文、回答数0・1・2件、封印、公開、異なる2回答の比較という順序で再現可能でなければならない。
+## Success Criteria *(required)*
 
-### 視覚設計の方向性
+### Measurable Outcomes
 
-- **主題**: 「思索の観測所」。人とパーソナルエージェントの異なる視点を集める知的なクラブとして、落ち着いた紙面性と現代的な状態表現を両立する。
-- **書体**: 質問と回答公開の見出しには表情のある見出し用書体、本文・補助情報・操作には可読性の高いゴシック体を用い、長文の行長を抑える。
-- **配色**: 温かみのある紙色、深い茶墨色、操作用の橙色を基調に、封印は琥珀色、公開は橙色の濃淡で補助する。状態はアイコンと文字でも重複して伝える。
-- **配置**: 質問本文を最上位に置き、補助情報、参加操作、回答の順に視線が流れる。ホームは区分を明確に分け、回答比較は単一列の縦読みを基本とする。
-- **動き**: 短く穏やかな開閉・状態遷移だけを使い、回答公開の変化を強調する。常時動作する装飾や読解を遅らせる演出は使わない。
-- **画面幅対応**: モバイルでは単一列と十分なタップ領域を優先し、デスクトップでは余白と補助情報配置を活用する。情報や操作を画面幅だけを理由に削除しない。
+- **SC-001**: The defined Home-to-two-Answer comparison demo completes within three minutes.
+- **SC-002**: At least four of five first-time evaluators identify sealed versus Results, count, and next primary action within 30 seconds without explanation.
+- **SC-003**: At least four of five evaluators open any two bodies and identify differences within two minutes.
+- **SC-004**: Limits of five Open, ten Results, and 20 per dedicated page hold in 100% of empty, boundary, and over-boundary cases.
+- **SC-005**: Target mobile/tablet/desktop widths and 200% zoom have zero unintended horizontal scrolling, missing primary actions, or unreadable overlap.
+- **SC-006**: Keyboard-only use reaches every disclosure, copy, toggle, page, expansion, draft, publish, and delete action with identifiable focus.
+- **SC-007**: Repeat click, double click, replay, and delayed-response tests always mutate at most one target per user action.
+- **SC-008**: Other-user excerpts, bodies, IDs, respondents, and times exposed to signed-out users or WebMCP before/after Reveal total zero.
+- **SC-009**: Automated tests pass 100% across primary Question/auth/owner/answer-count states.
+- **SC-010**: Public visible text is 100% English and raw-ID `Signed in as ...` occurrences are zero.
+- **SC-011**: Every Question with Results shows authenticated-origin explanation and anonymous icons, with zero Google data, user IDs, or cross-Question identifiers.
+- **SC-012**: Both WebMCP retrieval and submission contracts communicate proxy answering, no unknown-fact assertion, and no clarification solely for missing personal view in 100% of cases.
+- **SC-013**: `Answered` appears correctly only for the current user's answered Cards/Detail, with zero false tags.
+- **SC-014**: `Your answer` appears only on the current user's Result, with zero other-user tags or respondent user IDs in public HTML.
 
-### 主要エンティティ
+## Assumptions and Dependencies
 
-- **質問一覧項目**: 質問本文、現在状態、回答数、締切または公開時刻、残り時間、詳細導線、利用可能な場合のエージェント依頼文をまとめた発見単位。
-- **質問一覧ページ**: 対象状態、安定した並び順、現在ページ、ページ当たり最大20件、前後移動を持つ一覧の状態。
-- **日時表示設定**: 同一画面の全回答受付中質問へ適用される「残り時間」または「締切日時」の一時的な表示選択。
-- **公開回答項目**: 匿名の連番、質問単位の匿名アイコン、`Authenticated participant`、要約文、展開状態、選択後に取得する本文を持つ比較単位。一般利用者向けには投稿者情報や順位情報を含めない。
-- **質問作成意図**: 同じ質問入力に対する「下書き保存」または「即時公開」の排他的な操作選択。
-- **状態変更操作**: 対象、操作種別、処理中状態、完了結果を持ち、連続実行を1つの意図として扱う操作単位。
+- Reuse SPEC 005 state, SPEC 006 creation/ownership, SPEC 007 prompt/tools, SPEC 008 access control, and SPEC 009 Home/Detail/administration/audit.
+- Keep the existing deadline/reveal lifecycle model.
+- Only authenticated humans read Results; signed-out users see Sign in; Personal Agents retrieve only their own Answer.
+- Date-display preference is temporary, not an account setting.
+- Use initial submission order for fairness/reproducibility; no voting, recommendation, or randomization.
+- Generate anonymous icons only from Question and Answer IDs at display time; persist no public user identifier.
+- Confirmed owner deletion cascades Answers; no restoration.
+- MILESTONE requires Tailwind CSS and React Icons; add no new screen framework.
+- All screen text is English; SpecKit documents are Japanese.
 
-## 成功基準 *(必須)*
+## Out of Scope
 
-### 測定可能な成果
-
-- **SC-001**: デモ実施者は、ホームから2件の異なる回答の公開・比較までの規定手順を3分以内に完了できる。
-- **SC-002**: 初見の評価者5人中4人以上が、説明を受けずに封印中と公開済みの違い、現在の回答数、次に行える主要操作を各画面で30秒以内に正しく説明できる。
-- **SC-003**: 2件以上の回答を持つ公開画面で、評価者5人中4人以上が任意の2件の本文を開き、回答の相違点を2分以内に特定できる。
-- **SC-004**: ホームは回答受付中5件以下、公開済み10件以下、専用一覧は1ページ20件以下という表示上限を、0件、境界件数、境界超過のすべてで100%満たす。
-- **SC-005**: 対象となるモバイル・タブレット・デスクトップ幅および200%拡大の検証で、主要画面に意図しない横スクロール、欠落した主要操作、読めない重なりが0件である。
-- **SC-006**: キーボードのみの検証で、依頼文開閉・コピー、日時切替、ページ移動、回答展開、下書き保存、公開、削除のすべてへ到達でき、フォーカス位置を常に識別できる。
-- **SC-007**: 連続クリック、ダブルクリック、フォーム再送、遅延応答を含む自動検証で、1回の利用者操作から作成・更新・削除される対象は常に最大1件である。
-- **SC-008**: 回答公開前後の公開経路検証表で、未認証者とWebMCPへ他者回答由来の要約文、本文、識別子、投稿者、個別時刻が露出する件数は0件である。
-- **SC-009**: `DRAFT`、`OPEN`、`CLOSED`、`REVEALED`、未認証、所有者、非所有者、未回答、回答済み、回答0・1・複数件の主要状態に対する自動テストが100%成功する。
-- **SC-010**: 主要画面の一般利用者向け可視文言は100%英語で、生の利用者IDを表示する`Signed in as ...`は0件である。
-- **SC-011**: 公開回答を持つ全質問で、認証済み回答であることの説明と各回答の匿名アイコンが表示され、Google表示名・プロフィール画像・利用者ID・質問横断識別子の露出は0件である。
-- **SC-012**: 明示的な個人見解がないQuestion回答依頼で、WebMCPの取得契約と投稿契約の双方が最善の代理回答、未確認事実の非断定、個人見解不足だけを理由とする確認質問の禁止を100%伝える。
-- **SC-013**: 認証済み利用者のQuestion一覧CardとQuestion詳細では本人回答済みの場合だけ`Answered` Tagが100%正しく表示され、未回答、未認証、または判定不能時の誤表示は0件である。
-- **SC-014**: 公開回答一覧では本人回答だけに`Your answer` Tagが表示され、他者回答への誤表示と一般画面への回答者利用者ID露出は0件である。
-
-## 前提と依存関係
-
-- SPEC 005の質問状態、SPEC 006の質問作成・所有者管理、SPEC 007のエージェント依頼文とWebMCPツール、SPEC 008の回答アクセス制御、SPEC 009のホーム・詳細・管理・監査を再利用する。
-- 質問の回答締切と公開時刻は既存のライフサイクルに従い、本SPECでは状態モデル自体を変更しない。
-- 公開後の回答は認証済み利用者だけが読み、未認証者にはサインイン導線を示し、パーソナルエージェントは本人回答以外を取得できない既存方針を維持する。
-- ホームと一覧の日時表示選択は、その画面を表示している間の一時的な設定とし、アカウント設定として永続化しない。
-- 回答の比較順は公平性と再現性を優先して初回投稿順とし、投票・推薦・無作為化は行わない。
-- 匿名アイコンは質問識別子と回答識別子だけから画面表示時に生成し、新しい永続化項目や利用者単位の公開識別子を追加しない。
-- 所有者が回答付き質問の削除を明示確認した場合、関連回答も削除対象になる。復元機能は本SPECに含めない。
-- MILESTONEで指定された実装上の制約として、画面のスタイル指定はTailwind CSSに統一し、アイコンはReact Iconsから選定する。新しい画面構築基盤の導入は含めない。
-- 画面の全表示文言は英語とし、SpecKit文書は日本語とする。
-
-## 対象外
-
-- 回答への投票、順位付け、推薦、検索、要約、横並びの差分表示
-- パーソナルエージェント同士の議論、合意形成、追加質問
-- 未認証者またはWebMCPへの他者回答公開
-- 質問または回答の復元、論理削除、ごみ箱
-- 利用者プロフィールの新設、アバター、一般向けの生の利用者ID表示
-- 専用デザインシステム製品、配色テーマ切替、包括的なブラウザー横断監査
+- Voting, ranking, recommendation, search, summarization, or side-by-side diff
+- Agent discussion, consensus, or follow-up questions
+- Other-user Answers for signed-out users or WebMCP
+- Restoration, soft delete, or trash
+- New user profiles, avatars, or public raw IDs
+- A standalone design-system product, theme switching, or exhaustive cross-browser audit

@@ -1,107 +1,107 @@
-# 契約: Human向けQuestion管理
+# Contract: Human-Facing Question Management
 
-## 共通規則
+## Common Rules
 
-- すべての画面・操作はBetter Authの有効なHuman向けSessionを要求する。
-- UI文言、label、button、errorは英語とする。
-- unsafe methodは同一OriginのHTML Formだけを受け付け、CSRF検証を通過しなければならない。
-- Question本文はtext nodeとして描画し、HTML、script、markdown、Agentへの命令として解釈しない。
-- 他人所有のQuestionと存在しないQuestionは、どの管理経路でも同じ404と `Question unavailable.` を返す。
-- 成功した変更はredirectし、同じFormの再送信を避ける。
+- Every screen and operation requires a valid Human-facing Better Auth Session.
+- UI copy, labels, buttons, and errors are in English.
+- Unsafe methods accept only same-origin HTML forms that pass CSRF validation.
+- Render Question bodies as text nodes; do not interpret them as HTML, scripts, Markdown, or instructions to an Agent.
+- Across every management path, Questions owned by another User and nonexistent Questions return the same 404 response and `Question unavailable.`
+- Redirect after successful changes to prevent resubmission of the same form.
 
-## Route一覧
+## Route List
 
-| Method | Path | 目的 | 成功 |
+| Method | Path | Purpose | Success |
 | --- | --- | --- | --- |
-| `GET` | `/questions/new` | 作成Form | 200 HTML |
-| `POST` | `/questions` | Draft作成 | 303 `/questions/{id}/review` |
-| `GET` | `/questions/{id}/edit` | 本人Draft編集Form | 200 HTML |
-| `POST` | `/questions/{id}/edit` | 本人Draft更新 | 303 `/questions/{id}/review` |
-| `GET` | `/questions/{id}/review` | 公開前確認 | 200 HTML |
-| `POST` | `/questions/{id}/publish` | 公開確定 | 303 `/questions/{id}` |
-| `GET` | `/my/questions` | 本人Question一覧 | 200 HTML |
+| `GET` | `/questions/new` | Creation form | 200 HTML |
+| `POST` | `/questions` | Create draft | 303 `/questions/{id}/review` |
+| `GET` | `/questions/{id}/edit` | Owner's draft edit form | 200 HTML |
+| `POST` | `/questions/{id}/edit` | Update owner's draft | 303 `/questions/{id}/review` |
+| `GET` | `/questions/{id}/review` | Pre-publication review | 200 HTML |
+| `POST` | `/questions/{id}/publish` | Confirm publication | 303 `/questions/{id}` |
+| `GET` | `/my/questions` | Owner's Question list | 200 HTML |
 
-具体的なpath `/questions/new` は既存の `/questions/{questionId}` より先に登録し、識別子として解釈させない。
+Register the concrete path `/questions/new` before the existing `/questions/{questionId}` so it is not interpreted as an identifier.
 
-## Form field
+## Form Fields
 
-### Draft作成・編集
+### Create and Edit Draft
 
-`application/x-www-form-urlencoded` または `multipart/form-data`:
+`application/x-www-form-urlencoded` or `multipart/form-data`:
 
-| Name | 型 | 必須 | 契約 |
+| Name | Type | Required | Contract |
 | --- | --- | --- | --- |
-| `body` | string | yes | trim後10〜1,000書記素。 |
-| `closesAtLocal` | string | yes | `datetime-local`表示値。エラー再表示用。 |
-| `closesAt` | integer string | yes | UTC Unixミリ秒。サービス時刻から1時間以上30日以内。 |
-| `timeZone` | string | yes | 表示・確認用IANAタイムゾーン。状態判定には不使用。 |
-| `contentAcknowledged` | `on` | yes | 未選択は拒否。 |
-| `expectedUpdatedAt` | integer string | edit only | 読み込んだDraftの更新時刻。 |
+| `body` | string | yes | 10–1,000 grapheme clusters after trimming. |
+| `closesAtLocal` | string | yes | `datetime-local` display value, retained when redisplaying errors. |
+| `closesAt` | integer string | yes | UTC Unix milliseconds, between one hour and thirty days from service time. |
+| `timeZone` | string | yes | IANA time zone for display and confirmation; not used for state evaluation. |
+| `contentAcknowledged` | `on` | yes | Reject when unchecked. |
+| `expectedUpdatedAt` | integer string | edit only | Update time of the loaded draft. |
 
-### 公開
+### Publication
 
-| Name | 型 | 必須 | 契約 |
+| Name | Type | Required | Contract |
 | --- | --- | --- | --- |
-| `confirmPublication` | `on` | yes | 不可逆性とsealed期間を確認した明示操作。 |
-| `expectedUpdatedAt` | integer string | yes | ReviewしたDraftの更新時刻。 |
+| `confirmPublication` | `on` | yes | Explicit acknowledgment of irreversibility and the sealed period. |
+| `expectedUpdatedAt` | integer string | yes | Update time of the reviewed draft. |
 
-公開実行時は保存済み本文、締切、`revealsAt === closesAt`、締切範囲、Draft状態、所有者を再検証する。
+At publication, revalidate the stored body, deadline, `revealsAt === closesAt`, deadline range, draft state, and owner.
 
-## 画面契約
+## Screen Contracts
 
 ### Create/Edit
 
-- `Question` textareaと現在文字数
-- `Answer deadline` のローカル日時
-- `Time zone` と `UTC deadline` のread-only確認
+- `Question` textarea and current character count
+- Local date and time for `Answer deadline`
+- `Time zone` and read-only `UTC deadline` confirmation
 - `I understand this question will be public and must not include personal, confidential, or harmful content.` checkbox
 - `Save draft` button
-- 項目別errorと先頭のerror summary
+- Field-specific errors and an error summary at the top
 
 ### Review
 
-- 完全なQuestion本文、ローカル締切、タイムゾーン、UTC締切
+- Full Question body, local deadline, time zone, and UTC deadline
 - `Answers remain sealed until the deadline.`
 - `You cannot edit this question after publishing.`
 - `I have reviewed this question and want to publish it.` checkbox
-- `Edit` linkと `Publish question` button
+- `Edit` link and `Publish question` button
 
 ### My Questions
 
-- 本人所有Questionだけを `createdAt DESC, id DESC` で表示する。
-- 各項目は本文の先頭、`DRAFT`／`OPEN`／`CLOSED`／`REVEALED`、締切、`Answers: {count}` を表示する。
-- `DRAFT`: `Edit`、`Review and publish`。
-- 公開済み: `View question`。
-- 空状態: `You haven't created any questions yet.` と `Create a question`。
+- Show only Questions owned by the current User, ordered by `createdAt DESC, id DESC`.
+- Each item shows the beginning of the body, `DRAFT`/`OPEN`/`CLOSED`/`REVEALED`, deadline, and `Answers: {count}`.
+- `DRAFT`: `Edit` and `Review and publish`.
+- Published: `View question`.
+- Empty state: `You haven't created any questions yet.` and `Create a question`.
 
-## 応答とエラー
+## Responses and Errors
 
-| 状況 | Status | 外部表示／動作 |
+| Situation | Status | External Display/Behavior |
 | --- | --- | --- |
-| 未認証GET | 401 | `Sign in to manage questions.` とsign-in導線 |
-| 未認証POST | 401 | 変更なし。同じ認証案内 |
-| CSRF拒否 | 403 | 変更なし。Question情報を含めない |
-| Form不正 | 400 | 同じForm、項目別error、有効な入力値を保持 |
-| missing／other owner | 404 | `Question unavailable.` |
-| stale edit | 409 | `This draft changed. Review the latest version and try again.` |
-| already published edit/publish | 409 | `This question has already been published.` |
-| deadline too soon/late at publish | 400 | `Choose a deadline between 1 hour and 30 days from now.` |
-| 一時障害 | 503 | `Question management is temporarily unavailable. Try again.` |
+| Unauthenticated GET | 401 | `Sign in to manage questions.` and sign-in path |
+| Unauthenticated POST | 401 | No changes; same authentication guidance |
+| CSRF rejection | 403 | No changes; omit Question information |
+| Invalid form | 400 | Same form, field-specific errors, valid input values retained |
+| Missing/other owner | 404 | `Question unavailable.` |
+| Stale edit | 409 | `This draft changed. Review the latest version and try again.` |
+| Edit/publish after publication | 409 | `This question has already been published.` |
+| Deadline too soon/late at publication | 400 | `Choose a deadline between 1 hour and 30 days from now.` |
+| Temporary failure | 503 | `Question management is temporarily unavailable. Try again.` |
 
-項目別error:
+Field-specific errors:
 
-- body不足: `Enter at least 10 characters.`
-- body超過: `Enter no more than 1,000 characters.`
-- deadline形式: `Choose a valid answer deadline.`
-- deadline範囲: `Choose a deadline between 1 hour and 30 days from now.`
-- content確認: `Confirm that this question is suitable for public posting.`
-- publication確認: `Confirm that you want to publish this question.`
+- Body too short: `Enter at least 10 characters.`
+- Body too long: `Enter no more than 1,000 characters.`
+- Deadline format: `Choose a valid answer deadline.`
+- Deadline range: `Choose a deadline between 1 hour and 30 days from now.`
+- Content acknowledgment: `Confirm that this question is suitable for public posting.`
+- Publication confirmation: `Confirm that you want to publish this question.`
 
-## 非公開情報の除外
+## Excluded Private Information
 
-Question管理のResponseは次を含めない。
+Question-management responses do not include:
 
-- 他人のDraftまたはその存在を示す差分
-- Answer本文、Excerpt、投稿者User ID
-- Session token、email、OAuth情報
-- 内部DB error、Query、stack trace
+- Another User's draft or differences revealing its existence
+- Answer bodies, excerpts, or submitter User IDs
+- Session tokens, email addresses, or OAuth information
+- Internal database errors, queries, or stack traces

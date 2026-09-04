@@ -15,6 +15,11 @@ type LayoutProps = {
   currentPage?: 'my-questions';
 };
 
+/**
+ * Renders the shared layout for question-management pages.
+ * @param props - Page title, client bundle, content, and current navigation item.
+ * @returns Question-management layout markup.
+ */
 export function QuestionManagementLayout({
   title,
   clientScriptUrl,
@@ -38,6 +43,11 @@ export function QuestionManagementLayout({
   );
 }
 
+/**
+ * Renders the sign-in requirement for question management.
+ * @param props - URL of the browser-side application bundle.
+ * @returns Authentication-required page markup.
+ */
 export function AuthenticationRequiredPage({ clientScriptUrl }: { clientScriptUrl: string }) {
   return (
     <QuestionManagementLayout title="Sign in" clientScriptUrl={clientScriptUrl}>
@@ -50,6 +60,11 @@ export function AuthenticationRequiredPage({ clientScriptUrl }: { clientScriptUr
   );
 }
 
+/**
+ * Renders the response used when an owned question cannot be found.
+ * @param props - URL of the browser-side application bundle.
+ * @returns Question-unavailable page markup.
+ */
 export function QuestionUnavailablePage({ clientScriptUrl }: { clientScriptUrl: string }) {
   return (
     <QuestionManagementLayout title="Question unavailable" clientScriptUrl={clientScriptUrl}>
@@ -64,6 +79,11 @@ export function QuestionUnavailablePage({ clientScriptUrl }: { clientScriptUrl: 
   );
 }
 
+/**
+ * Renders a temporary-unavailability response for question management.
+ * @param props - URL of the browser-side application bundle.
+ * @returns Management-unavailable page markup.
+ */
 export function ManagementUnavailablePage({ clientScriptUrl }: { clientScriptUrl: string }) {
   return (
     <QuestionManagementLayout title="Temporarily unavailable" clientScriptUrl={clientScriptUrl}>
@@ -77,6 +97,11 @@ export function ManagementUnavailablePage({ clientScriptUrl }: { clientScriptUrl
   );
 }
 
+/**
+ * Renders a question-management conflict and a recovery link.
+ * @param props - Client bundle, conflict message, and optional question identifier.
+ * @returns Conflict page markup.
+ */
 export function ConflictPage({
   clientScriptUrl,
   message,
@@ -104,6 +129,11 @@ export function ConflictPage({
   );
 }
 
+/**
+ * Renders the create or edit form for a question draft.
+ * @param props - Client bundle, form values, errors, existing draft, and creation token.
+ * @returns Question-form page markup.
+ */
 export function QuestionFormPage({
   clientScriptUrl,
   form,
@@ -248,6 +278,11 @@ export function QuestionFormPage({
   );
 }
 
+/**
+ * Renders a final review of a question before publication.
+ * @param props - Client bundle, draft question, and publication errors.
+ * @returns Question-review page markup.
+ */
 export function QuestionReviewPage({
   clientScriptUrl,
   question,
@@ -332,6 +367,11 @@ export function QuestionReviewPage({
   );
 }
 
+/**
+ * Renders the current user's draft and published questions.
+ * @param props - Client bundle, owned questions, time snapshot, and deletion status.
+ * @returns Owned-question list markup.
+ */
 export function MyQuestionsPage({
   clientScriptUrl,
   items,
@@ -409,6 +449,11 @@ export function MyQuestionsPage({
   );
 }
 
+/**
+ * Renders the deletion form for an owned draft.
+ * @param props - Question eligible for deletion.
+ * @returns Question-deletion form markup.
+ */
 export function DeleteQuestionForm({ question }: { question: Question }) {
   return (
     <details class="danger-disclosure mt-5 border-t border-ink/15 pt-4">

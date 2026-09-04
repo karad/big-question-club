@@ -1,39 +1,39 @@
-# 仕様品質チェックリスト: Challenge Core閲覧フロー
+# Specification Quality Checklist: Challenge Core Browsing Flow
 
-**目的**: 計画フェーズへ進む前に仕様の完全性と品質を検証する
+**Purpose**: Verify specification completeness and quality before planning
 
-**作成日**: 2026-09-02
+**Created**: 2026-09-02
 
-**対象機能**: [spec.md](../spec.md)
+**Feature**: [spec.md](../spec.md)
 
-## 内容品質
+## Content Quality
 
-- [x] 実装詳細（言語、フレームワーク、API実装方式）が含まれていない
-- [x] ユーザー価値とビジネスニーズに焦点を当てている
-- [x] 非技術系ステークホルダーが理解できる表現になっている
-- [x] 必須セクションがすべて完成している
+- [x] Contains no implementation details such as language, framework, or API implementation
+- [x] Focuses on user value and business needs
+- [x] Is understandable to non-technical stakeholders
+- [x] All mandatory sections are complete
 
-## 要件の完全性
+## Requirement Completeness
 
-- [x] `[NEEDS CLARIFICATION]` マーカーが残っていない
-- [x] 要件がテスト可能かつ曖昧でない
-- [x] 成功基準が測定可能である
-- [x] 成功基準が技術非依存である
-- [x] すべての受け入れシナリオが定義されている
-- [x] エッジケースが特定されている
-- [x] スコープが明確に限定されている
-- [x] 依存関係と前提が特定されている
+- [x] No `[NEEDS CLARIFICATION]` markers remain
+- [x] Requirements are testable and unambiguous
+- [x] Success criteria are measurable
+- [x] Success criteria are technology-agnostic
+- [x] All acceptance scenarios are defined
+- [x] Edge cases are identified
+- [x] Scope is clearly bounded
+- [x] Dependencies and assumptions are identified
 
-## 機能の準備状況
+## Feature Readiness
 
-- [x] すべての機能要件に明確な受け入れ基準がある
-- [x] ユーザーシナリオが主要フローを網羅している
-- [x] 機能が成功基準の測定可能な成果を満たす構成になっている
-- [x] 仕様へ実装詳細が漏れ込んでいない
+- [x] Every functional requirement has clear acceptance criteria
+- [x] User scenarios cover the primary flows
+- [x] The feature can satisfy measurable success criteria
+- [x] No implementation details leak into the specification
 
-## 注記
+## Notes
 
-- Challenge締切とVisual表現の優先順位を反映し、Home、Question Detail、Agent回答後の状態変化という3つの必須Storyへ縮小した。再検証で全16項目が合格した。
-- 専用Login、My Questions再設計、最終Visual Design、包括的Accessibilityを対象外として明示し、必須のReveal・Visual表現をSPEC 010へ移した。
-- SPEC 007のAgent依頼PromptとSPEC 008のsealed／Reveal最小閲覧を再利用し、既存安全境界を弱めない。
-- 仕様内に技術方式を持ち込まず、Challenge CoreとしてHumanが達成すべき結果と測定可能な完了条件に限定した。
+- Reflecting the Challenge deadline and visual priorities, scope was reduced to three mandatory stories: Home, Question Detail, and post-Agent-answer state changes. All 16 items passed revalidation.
+- Dedicated Login, My Questions redesign, final visual design, and comprehensive accessibility are explicitly out of scope; mandatory Reveal and visual work moved to SPEC 010.
+- Reuse SPEC 007's Agent request prompt and SPEC 008's minimum sealed/Reveal browsing without weakening safety boundaries.
+- The specification contains no technical mechanism, only Human outcomes and measurable Challenge Core completion criteria.

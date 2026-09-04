@@ -1,43 +1,43 @@
-# Question詳細とSealed Answers公開の契約
+# Contract for Question Detail and Sealed Answers Visibility
 
-## `GET /questions/:questionId`（Human向けSSR）
+## `GET /questions/:questionId` (Human-Facing SSR)
 
-| 条件 | 表示する情報 | 表示禁止 |
+| Condition | Information Shown | Prohibited From Display |
 | --- | --- | --- |
-| 締切前・未回答 | Question、回答数、締切、`Answers are sealed`、未投稿 | 全Answer本文・Excerpt・抜粋・要約 |
-| 締切前・本人投稿済み | 上記と本人Answerの本文・Excerpt | 他者Answer本文・Excerpt・抜粋・要約 |
-| 締切後・認証済みHuman | Question、回答数、締切、全AnswerのExcerpt。クリックしたAnswerだけの本文をExcerpt下に展開 | 認証情報、未クリックAnswerの本文 |
-| 締切後・0件 | Question、回答数0、空状態 | 架空のAnswer |
+| Before deadline, no submission | Question, Answer count, deadline, `Answers are sealed`, and not-submitted status | Every Answer Body, Excerpt, extract, and summary |
+| Before deadline, participant submitted | Above plus the participant's own Answer Body and Excerpt | Other participants' Answer Bodies, Excerpts, extracts, and summaries |
+| After deadline, authenticated Human | Question, Answer count, deadline, and every Answer Excerpt. Expand only a clicked Answer's Body below its Excerpt | Authentication information and Bodies of unclicked Answers |
+| After deadline, zero Answers | Question, Answer count 0, and empty state | Fabricated Answers |
 
-SSRは`/client.js`を読み込み、公開後のExcerptボタンのクリック時にだけ同一OriginのAnswer詳細APIを呼び出す。初期HTMLにはAnswer本文を埋め込まない。
+SSR loads `/client.js` and calls the same-Origin Answer detail API only when a post-Reveal Excerpt button is clicked. The initial HTML does not embed Answer Bodies.
 
 ## `GET /api/questions/:questionId`
 
-Question本文、回答数、締切、本人の投稿状態だけを返す。締切後も他者Answer本文、Excerpt、抜粋、要約、Answer識別子を返さない。
+Return only the Question Body, Answer count, deadline, and the participant's submission status. Even after the deadline, do not return another participant's Answer Body, Excerpt, extract, summary, or Answer identifier.
 
 ```json
 { "id": "question_opaque_id", "question": "Question text.", "answerCount": 2, "closesAt": "2026-09-02T00:00:00.000Z", "mySubmissionStatus": "submitted" }
 ```
 
-下記の公開後Answer詳細APIを除き、他者Answerを単件・一覧・Excerpt・抜粋・要約・検索で返すHTTP APIまたはWebMCP Toolを追加してはならない。
+Except for the post-Reveal Answer detail API below, do not add an HTTP API or WebMCP Tool that returns another participant's Answer individually, as a list, as an Excerpt, as an extract or summary, or through search.
 
 ## `GET /api/questions/:questionId/answers/:answerId`
 
-認証済みHumanが公開後にクリックしたAnswerのBodyだけを取得する。同一OriginのSSR画面が呼び出すが、直接のHTTP呼び出しでも同じ認可・時刻判定を必ず適用する。
+Retrieve only the Body of an Answer clicked by an authenticated Human after Reveal. The same-Origin SSR screen invokes this endpoint, but direct HTTP calls must apply the same authorization and time checks.
 
-成功（`200 OK`）:
+Success (`200 OK`):
 
 ```json
 { "id": "answer_opaque_id", "body": "The selected public answer body." }
 ```
 
-締切前または未認証の呼び出しは、`404 ANSWER_UNAVAILABLE`だけを返す。AnswerのBody、Excerpt、抜粋、要約、存在の手掛かりを返してはならない。締切後は、認証済みHumanに対して要求された1件だけを返し、一覧・検索・複数Answerの取得を許可しない。WebMCPからこの経路を呼び出してはならない。
+Before the deadline or when unauthenticated, return only `404 ANSWER_UNAVAILABLE`. Do not return an Answer Body, Excerpt, extract, summary, or clue to existence. After the deadline, return only the single requested item to an authenticated Human; do not allow lists, search, or retrieval of multiple Answers. WebMCP must not invoke this route.
 
-## 検証マトリクス
+## Validation Matrix
 
-| 主体 | 締切前SSR | 締切前HTTP | 締切前WebMCP | 締切後SSR | 締切後HTTP | 締切後WebMCP |
+| Actor | Pre-Deadline SSR | Pre-Deadline HTTP | Pre-Deadline WebMCP | Post-Deadline SSR | Post-Deadline HTTP | Post-Deadline WebMCP |
 | --- | --- | --- | --- | --- | --- | --- |
-| 未認証者 | 本文なし | 本文なし | 利用不可 | 本文なし | 本文なし | 利用不可 |
-| 投稿者本人 | 本人だけ | 本人状態だけ | 本人状態だけ | 全Answer | 本人状態だけ | 本人状態だけ |
-| 別の認証済みHuman | 本文なし | 本文なし | 本人状態だけ | 全Answer | 本文なし | 本人状態だけ |
-| Personal Agent | N/A | N/A | 本人状態だけ | N/A | N/A | 本人状態だけ |
+| Unauthenticated participant | No Body | No Body | Unavailable | No Body | No Body | Unavailable |
+| Submitting participant | Own only | Own status only | Own status only | All Answers | Own status only | Own status only |
+| Another authenticated Human | No Body | No Body | Own status only | All Answers | No Body | Own status only |
+| Personal Agent | N/A | N/A | Own status only | N/A | N/A | Own status only |

@@ -1,74 +1,75 @@
-# 実装計画: Personal Agent回答の安全性・言語の検証
+# Implementation Plan: Validating Personal Agent Answer Safety and Language
 
-**ブランチ**: `003-agent-safety-language` | **日付**: 2026-09-01 | **仕様**: [spec.md](./spec.md)
+**Branch**: `003-agent-safety-language` | **Date**: 2026-09-01 | **Spec**: [spec.md](./spec.md)
 
-**入力**: `specs/003-agent-safety-language/spec.md` の機能仕様
+**Input**: Feature specification in `specs/003-agent-safety-language/spec.md`
 
-## 概要
+## Summary
 
-Personal AgentがPrivate Contextを内部推論に活用しつつ公開出力へ漏らさず、Question本文のPrompt Injectionに従わず、Questionと同一言語で回答できるかをP0で検証する。
+Perform a P0 validation that a Personal Agent can use Private Context for internal reasoning without exposing it in public output, resist Prompt Injection in the Question body, and answer in the same language as the Question.
 
-既存のCloudflare Workers・Hono・Vite・WebMCP構成を拡張し、14件の固定検証Questionを1件ずつ返す読み取り専用Toolを提供する。Question本文は不信頼なユーザー生成コンテンツとしてTool出力に明示し、Tool descriptionには同一言語での回答、Contextを内部推論に限ること、本文の命令を信頼しないことを簡潔に記載する。安全性はdescription単独に委ねず、同一オリジンの読み取り境界、Private Contextを受信・保存しない契約、固定の検証手順、実Personal Agentでの手動E2Eによって多層に検証する。
+Extend the existing Cloudflare Workers, Hono, Vite, and WebMCP stack with a read-only Tool that returns one of 14 fixed verification Questions at a time. Explicitly mark the Question body as untrusted user-generated content in Tool output. Concisely state in the Tool description that the response must use the same language, Context is limited to internal reasoning, and instructions in the body are untrusted. Safety does not rely on the description alone: it is validated in layers through a same-origin read-only boundary, a contract that never receives or stores Private Context, fixed validation procedures, and manual E2E with a real Personal Agent.
 
-## 技術コンテキスト
+## Technical Context
 
-**言語/バージョン**: TypeScript 6、Node.js 22.13以上（開発時）、ES2022
+**Language/Version**: TypeScript 6, Node.js 22.13 or later for development, ES2022
 
-**主要依存関係**: Cloudflare Workers、Hono 4、Vite 8、Better Auth、Cloudflare D1、Vitest 4
+**Primary Dependencies**: Cloudflare Workers, Hono 4, Vite 8, Better Auth, Cloudflare D1, Vitest 4
 
-**保存先**: 本SPECで新規永続化なし。認証状態は既存のCloudflare D1を利用するが、検証Question、Answer、Private Context、評価結果は保存しない。
+**Storage**: No new persistence in this SPEC. Authentication state uses the existing Cloudflare D1, but verification Questions, Answers, Private Context, and evaluation results are not stored.
 
-**テスト**: Vitestのユニットテスト・統合テスト、ChromeのWebMCP対応環境と検証専用Personal Agentによる手動E2E
+**Testing**: Unit and Integration Tests with Vitest; manual E2E using a WebMCP-compatible Chrome environment and a dedicated validation Personal Agent
 
-**対象プラットフォーム**: Cloudflare Workers、ChromeのWebMCP対応環境。同一正規オリジンのブラウザセッションを使用する。
+**Target Platform**: Cloudflare Workers and a WebMCP-compatible Chrome environment using a same-canonical-Origin browser Session.
 
-**プロジェクト種別**: SSRを含む単一のWebアプリケーション
+**Project Type**: Single web application including SSR
 
-**性能目標**: 検証Question取得APIとToolは、通常の開発・検証ネットワークで2秒以内に結果を返す。
+**Performance Goals**: The verification Question API and Tool return a result within two seconds under ordinary development and validation network conditions.
 
-**制約**: Question本文、Tool definition、Tool出力はいずれも安全上の信頼根拠にしない。Question出力には`untrustedContentHint`を付ける。Private Context、検証用秘密文字列、Answer全文、認証情報、評価の詳細はアプリ・API・ログ・Git管理ファイルへ送信または保存しない。Question取得は同一オリジンの相対URLに限定し、回答投稿・評価APIを追加しない。
+**Constraints**: Do not treat the Question body, Tool definition, or Tool output as a trusted basis for safety. Add `untrustedContentHint` to Question output. Do not send or store Private Context, validation Secret strings, full Answers, authentication information, or detailed evaluations in the application, APIs, logs, or Git-tracked files. Restrict Question retrieval to a same-origin relative URL and do not add Answer-submission or evaluation APIs.
 
-**規模/範囲**: 日本語7件、英語7件の14固定ケースを対象にする。期限内のCritical Goでは、日英の通常Question各1件と4類型の攻撃ケース各1件、計6件を実施する。残り8件は削除せず後続回帰検証とする。混在言語、回答投稿、Answer保存・公開、実在利用者のContextは対象外とする。
+**Scale/Scope**: Fourteen fixed cases: seven Japanese and seven English. The deadline-critical Go runs six cases: one normal Question in each language and one attack case for each of four classifications. Retain the other eight for subsequent regression validation. Mixed languages, Answer submission, Answer storage or publication, and Context belonging to real participants are out of scope.
 
-## 構成原則チェック
+## Constitution Check
 
-*ゲート: Phase 0の調査前に適合し、Phase 1の設計後に再確認する。*
+*Gate: Must pass before Phase 0 research and be rechecked after Phase 1 design.*
 
-`constitution.md` は未確定のテンプレートであり、適用可能な具体的原則は定義されていない。代わりにプロジェクトの`AGENTS.md`と仕様をゲートとする。
+`constitution.md` is an undecided template and defines no applicable concrete principles. Use the project's `AGENTS.md` and this specification as gates instead.
 
-- 固定Question契約、入力検証、ケース選択、Tool登録の分岐はユニットテストで固定する。
-- HonoのQuestion取得APIとSSRの検証案内は統合テストで保証する。
-- Private Context・秘密文字列・Answer全文・Cookie・トークンをソース、テストfixture、ログ、Tool応答、検証記録に保存しない。
-- Personal Agentの内部推論、実際の漏えい有無、Injection不服従、言語一致は、実Agentを使う手動E2Eでのみ判定する。
-- P0がGoになるまで、回答投稿、保存、公開を含むP1以降の本実装には進まない。
+- Fix the contracts, input validation, case selection, and Tool-registration branches for fixed Questions with Unit Tests.
+- Cover the Hono Question-retrieval API and SSR validation guidance with Integration Tests.
+- Do not store Private Context, Secret strings, full Answers, Cookies, or tokens in source code, test fixtures, logs, Tool responses, or validation records.
+- Evaluate Personal Agent internal reasoning, actual disclosure, Injection resistance, and language matching only through manual E2E with a real Agent.
+- Do not proceed to P1 implementation involving Answer submission, storage, or publication until P0 receives a Go decision.
 
-**判定（Phase 0前）**: 適合。固定Question群と読み取り専用Toolだけで検証でき、Private ContextやAnswerを受信する新たな経路を設けない。
+**Decision (Before Phase 0)**: Pass. The fixed Question set and read-only Tool are sufficient for validation and introduce no new route that receives Private Context or Answers.
 
-## プロジェクト構成
+## Project Structure
 
-### ドキュメント（本機能）
+### Documentation for This Feature
 
 ```text
 specs/003-agent-safety-language/
-├── plan.md              # 本ファイル（speckit-planの出力）
-├── research.md          # Phase 0の出力
-├── data-model.md        # Phase 1の出力
+├── plan.md              # This file (speckit-plan output)
+├── research.md          # Phase 0 output
+├── data-model.md        # Phase 1 output
 ├── quickstart.md        # Phase 1 output ($speckit-plan command)
 ├── contracts/           # Phase 1 output ($speckit-plan command)
-└── tasks.md             # Phase 2の出力（speckit-planでは作成しない）
+└── tasks.md             # Phase 2 output (not created by speckit-plan)
 ```
 
-### ソースコード（リポジトリルート）
+### Source Code at the Repository Root
+
 ```text
 src/
-├── app.tsx                                  # HonoルートとSSR検証案内
-├── client.ts                                # Tool登録と認証状態表示
+├── app.tsx                                  # Hono routes and SSR validation guidance
+├── client.ts                                # Tool registration and authentication-state display
 ├── domain/
-│   └── verification-question.ts              # 固定検証Question群と公開契約
+│   └── verification-question.ts              # Fixed verification Questions and public contract
 ├── routes/
-│   └── verification-question.ts              # no-storeの読み取りAPI
+│   └── verification-question.ts              # no-store read API
 └── webmcp/
-    └── register-tool.ts                      # Question取得Toolと不信頼出力の標識
+    └── register-tool.ts                      # Question-retrieval Tool and untrusted-output marker
 
 tests/
 ├── integration/
@@ -79,12 +80,12 @@ tests/
     └── verification-question.test.ts
 ```
 
-**構成判断**: 既存の単一Workerアプリを維持する。検証Questionの選択と返却契約を`domain`へ、HTTP境界を`routes`へ、WebMCPの登録と同一オリジン呼び出しを`webmcp`へ分離する。AnswerやPrivate Contextを受け取る経路は追加しない。
+**Structure Decision**: Retain the existing single-Worker application. Separate verification Question selection and response contracts into `domain`, the HTTP boundary into `routes`, and WebMCP registration and same-origin invocation into `webmcp`. Add no route that receives Answers or Private Context.
 
 ## Complexity Tracking
 
-該当なし。
+Not applicable.
 
-## 構成原則チェック（Phase 1後）
+## Constitution Check After Phase 1
 
-**判定**: 適合。`data-model.md`は固定データと手動評価記録だけを定義し、Private ContextやAnswerをデータモデルに含めない。`contracts/`は1件ずつ読むだけの同一オリジン契約であり、`quickstart.md`と`validation-record.md`は秘密を残さずに実Agentを評価する手順を定める。自動テストは公開契約の退行を、手動E2EはAgentの実際の安全性と言語一致を検証する。
+**Decision**: Pass. `data-model.md` defines only fixed data and manual evaluation records, excluding Private Context and Answers from the data model. `contracts/` defines a same-origin, one-item-at-a-time read contract, while `quickstart.md` and `validation-record.md` define procedures for evaluating a real Agent without retaining Secrets. Automated tests detect public-contract regressions; manual E2E validates actual Agent safety and language matching.

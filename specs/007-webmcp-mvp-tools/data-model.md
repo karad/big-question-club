@@ -1,113 +1,113 @@
-# データモデル: WebMCP MVP Tool群
+# Data Model: WebMCP MVP Tools
 
-## エンティティ
+## Entities
 
 ### Question
 
-| フィールド | 型 | 規則 |
+| Field | Type | Rule |
 | --- | --- | --- |
-| `id` | string | 不透明な一意識別子。コピペ用プロンプトへ埋め込む唯一の可変値。 |
-| `body` | string | 10〜1,000表示文字。未信頼の利用者生成コンテンツ。 |
-| `language` | 文字列 | 既存Schemaとの互換性だけに使い、Tool Viewへ含めない。新規Questionは `auto`。 |
-| `publishedAt` | timestamp / null | nullなら `DRAFT`。 |
-| `closesAt` | timestamp | `now < closesAt` の間だけAnswer作成・更新・削除が可能。 |
-| `revealsAt` | timestamp | Human向け公開状態を決める。WebMCPの他者非公開規則は変えない。 |
+| `id` | string | Opaque unique identifier; the only variable embedded in the copyable prompt. |
+| `body` | string | 10–1,000 display characters; untrusted user-generated content. |
+| `language` | string | Used only for existing-schema compatibility and omitted from Tool Views. New Questions use `auto`. |
+| `publishedAt` | timestamp / null | Null means `DRAFT`. |
+| `closesAt` | timestamp | Answer creation, update, and deletion are allowed only while `now < closesAt`. |
+| `revealsAt` | timestamp | Determines Human-facing publication state; does not change WebMCP's rule hiding other Users' Answers. |
 
-Questionの状態はSPEC 005の共通判定で `DRAFT`、`OPEN`、`CLOSED`、`REVEALED` の1つへ導出し、保存された状態名を追加しない。
+Derive exactly one Question state—`DRAFT`, `OPEN`, `CLOSED`, or `REVEALED`—using the shared SPEC 005 evaluation. Add no stored state name.
 
 ### Answer
 
-| フィールド | 型 | 規則 |
+| Field | Type | Rule |
 | --- | --- | --- |
-| `id` | string | 一意識別子。Tool入出力には含めない。 |
-| `questionId` | string | Questionへの必須参照。 |
-| `userId` | string | Sessionから決めるUserへの必須参照。Tool入力にしない。 |
-| `body` | string | 空白のみ不可、1〜5,000表示文字。公開を前提とする。 |
-| `excerpt` | string | 空白のみ・改行不可、1〜160表示文字。 |
-| `createdAt` | timestamp | 最初の投稿時刻。更新しても変えない。 |
-| `updatedAt` | timestamp | 作成時は `createdAt` と同じ。更新時にサービス側時刻へ進める。 |
+| `id` | string | Unique identifier, excluded from tool input and output. |
+| `questionId` | string | Required reference to Question. |
+| `userId` | string | Required reference to the User determined from Session; never tool input. |
+| `body` | string | Non-whitespace, 1–5,000 display characters; intended to be public. |
+| `excerpt` | string | Non-whitespace, no newlines, 1–160 display characters. |
+| `createdAt` | timestamp | First submission time; unchanged on update. |
+| `updatedAt` | timestamp | Equal to `createdAt` on creation; advanced to service time on update. |
 
-制約:
+Constraints:
 
-- `UNIQUE(question_id, user_id)` により同一User・QuestionのAnswerは同時点で最大1件。
-- Answerの更新・削除は同じ `questionId` とSession由来 `userId` を条件にする。
-- Answer削除はHard Deleteであり、Answer ID、本文、Excerpt、時刻を残さない。
-- QuestionまたはUserの参照整合性は既存外部キー規則を維持する。
-- DBは空白のみ、Excerpt改行、一意性、参照整合性を防御し、表示文字上限は共通Domain契約が投稿・更新の両方へ強制する。
+- `UNIQUE(question_id, user_id)` allows at most one Answer per User/Question at a time.
+- Answer updates and deletion filter by the same `questionId` and Session-derived `userId`.
+- Answer deletion is a hard delete that retains no Answer ID, body, excerpt, or timestamps.
+- Existing foreign-key rules preserve Question and User referential integrity.
+- The database defends against whitespace-only content, excerpt newlines, duplicates, and invalid references. The shared domain contract enforces display-character limits for both submission and update.
 
 ### Agent Request Prompt
 
-永続化しない表示モデル。
+A non-persistent display model.
 
-| フィールド | 型 | 規則 |
+| Field | Type | Rule |
 | --- | --- | --- |
-| `questionUrl` | string | リクエスト元のOriginとQuestion Pathから生成した絶対URL。QueryとFragmentを除外し、HTMLとPromptで安全なテキストとして扱う。 |
-| `prompt` | string | 短い英語テンプレートへ `questionUrl` だけを埋め込んだ全文。Question本文を含めない。 |
-| `visible` | boolean | 認証済み、Questionが `OPEN`、本人Answerなしの全条件を満たす場合だけtrue。 |
-| `statusMessage` | string | コピー成功、失敗、非表示理由を示す英語文言。 |
+| `questionUrl` | string | Absolute URL built from request Origin and Question path. Excludes query and fragment and is treated as safe text in HTML and the prompt. |
+| `prompt` | string | Full text made by inserting only `questionUrl` into the short English template; contains no Question body. |
+| `visible` | boolean | True only when authenticated, the Question is `OPEN`, and the current User has no Answer. |
+| `statusMessage` | string | English copy-success, failure, or hidden-reason message. |
 
 ### Question Tool View
 
-永続化しないAgent向けDTO。
+A non-persistent Agent-facing DTO.
 
-| フィールド | 型 | 規則 |
+| Field | Type | Rule |
 | --- | --- | --- |
-| `id` | string | Humanが指定したQuestion IDと一致。 |
-| `question` | string | 未信頼本文。 |
-| `closesAt` | ISO timestamp | 絶対時刻。 |
-| `instructions` | object | 利用可能なUser Context参照元、根拠の優先順位、事実と検討の区別、明示的な個人見解がない場合の代理回答、未確認事実の非断定、不要な確認質問の禁止、Private Context非開示、投稿許可、投稿確認を示す固定契約。 |
+| `id` | string | Matches the Human-selected Question ID. |
+| `question` | string | Untrusted body. |
+| `closesAt` | ISO timestamp | Absolute time. |
+| `instructions` | object | Fixed contract describing available User Context sources, evidence priority, fact-versus-consideration distinctions, proxy answers when no explicit view exists, no unsupported claims, no unnecessary clarification, non-disclosure of Private Context, submission authorization, and submission verification. |
 
-作成者、回答数、本人状態、他者Answer、Session情報は含めない。
+Exclude creator, answer count, current-User state, other Users' Answers, and Session information.
 
 ### My Submission View
 
-永続化しない本人限定DTO。
+A non-persistent DTO visible only to the current User.
 
-- 未投稿: `questionId`、`status: not_submitted`
-- 投稿済み: `questionId`、`status: submitted`、本人の `answer`、`excerpt`、`submittedAt`、`updatedAt`
+- Not submitted: `questionId`, `status: not_submitted`
+- Submitted: `questionId`, `status: submitted`, the current User's `answer`, `excerpt`, `submittedAt`, and `updatedAt`
 
-他者Answerの有無によって未投稿応答を変えない。
+Do not vary the not-submitted response based on whether another User has answered.
 
-## Answer状態遷移
+## Answer State Transitions
 
 ```text
 not_submitted
     └── submit_answer [OPEN] ──> submitted
 
 submitted
-    ├── update_answer [OPEN] ──> submitted（同じID、本文・Excerpt・updatedAt更新）
+    ├── update_answer [OPEN] ──> submitted (same ID; body, excerpt, updatedAt changed)
     ├── remove_answer [OPEN] ──> not_submitted
     └── deadline reached ──> locked
 
 not_submitted after removal
-    └── submit_answer [OPEN] ──> submitted（新しいID）
+    └── submit_answer [OPEN] ──> submitted (new ID)
 
 locked
-    └── submit/update/remove ──> QUESTION_CLOSED（状態変更なし）
+    └── submit/update/remove ──> QUESTION_CLOSED (no state change)
 ```
 
-| 現在状態 | 操作 | 条件 | 結果 |
+| Current State | Operation | Condition | Result |
 | --- | --- | --- | --- |
-| 未投稿 | submit | `OPEN` | Answerを1件作成 |
-| 投稿済み | submit | `OPEN` | `ANSWER_ALREADY_SUBMITTED` |
-| 投稿済み | update | `OPEN` | 本人Answerの本文・Excerpt・更新時刻を置換 |
-| 投稿済み | remove | `OPEN` | 本人Answerを削除 |
-| 未投稿 | update / remove | `OPEN` | `ANSWER_NOT_FOUND` |
-| 任意 | submit / update / remove | 非 `OPEN` | `QUESTION_CLOSED` |
+| Not submitted | submit | `OPEN` | Create one Answer |
+| Submitted | submit | `OPEN` | `ANSWER_ALREADY_SUBMITTED` |
+| Submitted | update | `OPEN` | Replace current User's Answer body, excerpt, and update time |
+| Submitted | remove | `OPEN` | Delete current User's Answer |
+| Not submitted | update / remove | `OPEN` | `ANSWER_NOT_FOUND` |
+| Any | submit / update / remove | Not `OPEN` | `QUESTION_CLOSED` |
 
-## 競合規則
+## Concurrency Rules
 
-- 同時submitは一意制約により最大1件だけ成功する。
-- updateとremoveは条件付き単一Statementの確定順に従い、remove後の遅延updateは `ANSWER_NOT_FOUND` となる。
-- removeと再submitが競合しても、一意制約により最終的な本人Answerは最大1件である。
-- 競合結果の再確認は `get_my_submission` を使い、Tool側で成功を推測しない。
+- The uniqueness constraint permits at most one concurrent submit to succeed.
+- Update and remove follow the commit order of their conditional single statements; a delayed update after removal returns `ANSWER_NOT_FOUND`.
+- Even when remove and resubmit conflict, the current User has at most one final Answer because of the uniqueness constraint.
+- Recheck conflict results with `get_my_submission`; the tool never infers success.
 
 ## Migration
 
-`0005_answer_revisions.sql` は既存Answerを保持して表を再構築する。
+`0005_answer_revisions.sql` rebuilds the table while preserving existing Answers.
 
-1. 新Answer表へ既存の `id`、`question_id`、`user_id`、`body`、`excerpt`、`created_at` をコピーする。
-2. `updated_at` を既存 `created_at` で初期化する。
-3. 外部キー、一意制約、Question別作成時刻Indexを再作成する。
-4. SQLのコードポイント上限CHECKをDomainの書記素上限へ移し、空白のみとExcerpt改行禁止CHECKは維持する。
-5. Migration後に既存Answerの件数、所有者、本文、Excerpt、作成時刻が欠落していないことを検証する。
+1. Copy existing `id`, `question_id`, `user_id`, `body`, `excerpt`, and `created_at` into the new Answer table.
+2. Initialize `updated_at` from existing `created_at`.
+3. Recreate foreign keys, uniqueness constraints, and the per-Question creation-time index.
+4. Move SQL code-point upper-limit checks to domain grapheme limits, retaining whitespace-only and excerpt-newline checks.
+5. After migration, verify no existing Answer count, owner, body, excerpt, or creation time is missing.

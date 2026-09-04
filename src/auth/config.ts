@@ -7,6 +7,11 @@ export type AuthConfiguration = {
 
 export type AuthConfigurationError = { code: 'AUTH_CONFIGURATION_INVALID'; message: string };
 
+/**
+ * Reads and validates authentication settings from the worker environment.
+ * @param env - Worker environment containing authentication variables.
+ * @returns Validated configuration or a structured configuration error.
+ */
 export function readAuthConfiguration(
   env: Pick<
     Env,

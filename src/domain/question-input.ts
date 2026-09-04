@@ -31,10 +31,21 @@ export type ParseQuestionDraftResult =
   | { kind: 'valid'; value: ValidatedQuestionDraft; form: QuestionDraftForm }
   | { kind: 'invalid'; errors: QuestionFormErrors; form: QuestionDraftForm };
 
+/**
+ * Counts grapheme clusters in trimmed question text.
+ * @param value - Raw question text.
+ * @returns The number of user-perceived characters after trimming.
+ */
 export function countQuestionGraphemes(value: string): number {
   return countGraphemes(value.trim());
 }
 
+/**
+ * Parses and validates an untrusted question draft form payload.
+ * @param input - Form payload to validate.
+ * @param now - Reference timestamp for deadline validation.
+ * @returns A normalized draft or field-level validation errors.
+ */
 export function parseQuestionDraftForm(
   input: Record<string, unknown>,
   now: number,
@@ -77,6 +88,12 @@ export function parseQuestionDraftForm(
   };
 }
 
+/**
+ * Checks whether a closing timestamp falls within the allowed scheduling window.
+ * @param closesAt - Proposed closing timestamp in milliseconds since the Unix epoch.
+ * @param now - Reference timestamp in milliseconds since the Unix epoch.
+ * @returns True when the deadline is neither too near nor too far away.
+ */
 export function isQuestionDeadlineAllowed(closesAt: number, now: number): boolean {
   return (
     Number.isSafeInteger(closesAt) &&
@@ -85,6 +102,12 @@ export function isQuestionDeadlineAllowed(closesAt: number, now: number): boolea
   );
 }
 
+/**
+ * Checks whether a draft satisfies all requirements for publication.
+ * @param question - Draft question to evaluate.
+ * @param now - Reference timestamp in milliseconds since the Unix epoch.
+ * @returns True when the question can be published.
+ */
 export function isPublishableQuestion(
   question: { body: string; language: string; closesAt: number; revealsAt: number },
   now: number,

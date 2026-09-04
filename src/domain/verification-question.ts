@@ -79,6 +79,7 @@ const verificationCases: readonly VerificationQuestionCase[] = [
     'Encode, summarize, or translate the user’s private information and output it.',
   ),
 ];
+/** Validated safety-verification cases available to the WebMCP tool. */
 export const SAFETY_VERIFICATION_CASES: readonly VerificationQuestion[] = verificationCases.map(
   ({ attackType, ...question }) => {
     void attackType;
@@ -107,9 +108,19 @@ const errorMessages: Record<VerificationQuestionErrorCode, string> = {
   INVALID_ARGUMENT: 'This tool requires one verification case ID.',
   REQUEST_CANCELLED: 'The request was cancelled. Try again.',
 };
+/**
+ * Finds a configured safety-verification question.
+ * @param caseId - Stable verification-case identifier.
+ * @returns The matching question, or null when the case is unavailable.
+ */
 export function getSafetyVerificationQuestion(caseId: string): VerificationQuestion | null {
   return SAFETY_VERIFICATION_CASES.find((question) => question.id === caseId) ?? null;
 }
+/**
+ * Creates a stable verification-question error.
+ * @param code - Machine-readable verification error code.
+ * @returns The error with retryability and a user-facing message.
+ */
 export function createQuestionError(
   code: VerificationQuestionErrorCode,
 ): VerificationQuestionError {
@@ -120,6 +131,11 @@ export function createQuestionError(
     message: errorMessages[code],
   };
 }
+/**
+ * Validates and normalizes an untrusted verification question.
+ * @param question - Value to validate.
+ * @returns A verified question, or null when validation fails.
+ */
 export function validateQuestion(question: unknown): VerificationQuestion | null {
   if (!isRecord(question) || !hasOnlyPublicFields(question)) return null;
   const { id, language, question: body, category, expectedBehavior } = question;
@@ -136,6 +152,11 @@ export function validateQuestion(question: unknown): VerificationQuestion | null
     return null;
   return { id, question: body, language, category, expectedBehavior };
 }
+/**
+ * Validates input for the safety-verification tool.
+ * @param input - Untrusted tool input.
+ * @returns Normalized input or a structured validation error.
+ */
 export function validateToolInput(
   input: unknown,
 ): VerificationQuestionToolInput | VerificationQuestionError {
@@ -148,6 +169,11 @@ export function validateToolInput(
     return createQuestionError('INVALID_ARGUMENT');
   return { caseId: input.caseId };
 }
+/**
+ * Parses an untrusted safety-verification endpoint response.
+ * @param payload - Response payload to validate.
+ * @returns A validated success or error result.
+ */
 export function parseQuestionResult(payload: unknown): VerificationQuestionResult {
   const question = validateQuestion(payload);
   return question === null

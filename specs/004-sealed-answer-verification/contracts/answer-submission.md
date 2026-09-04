@@ -1,55 +1,55 @@
-# Answer投稿と本人の投稿状況の契約
+# Contract for Answer Submission and the Participant's Submission Status
 
-## 共通規則
+## Shared Rules
 
-- 投稿者は同一Originの認証済みセッションで決め、利用者識別子を入力に受け取らない。
-- Answer本文は空白のみを許可せず、最大5,000文字とする。AIが同時に投稿するExcerptは必須で、空白のみと改行を許可せず、最大160文字とする。
-- 応答は`Cache-Control: no-store`とし、エラーは英語の`code`と`message`だけを持つ。
+- Determine the submitter from an authenticated same-Origin Session; do not accept a participant identifier as input.
+- The Answer Body must not be blank and has a maximum of 5,000 characters. The AI-submitted Excerpt is required, must not be blank or contain line breaks, and has a maximum of 160 characters.
+- Responses use `Cache-Control: no-store`; errors contain only an English `code` and `message`.
 
 ## `POST /api/questions/:questionId/answers`
 
-要求:
+Request:
 
 ```json
 { "answer": "Public answer text.", "excerpt": "One-line summary." }
 ```
 
-成功（`201 Created`）:
+Success (`201 Created`):
 
 ```json
 { "questionId": "question_opaque_id", "status": "submitted", "submittedAt": "2026-09-02T00:00:00.000Z" }
 ```
 
-| HTTP | `code` | 条件 |
+| HTTP | `code` | Condition |
 | --- | --- | --- |
-| 400 | `INVALID_ANSWER` | 本文、Excerpt、または形式が不正 |
-| 401 | `AUTHENTICATION_REQUIRED` | 未認証 |
-| 404 | `QUESTION_NOT_FOUND` | Questionなし |
-| 409 | `ANSWER_ALREADY_SUBMITTED` | 本人の既存Answerまたは同時投稿の先行確定 |
-| 409 | `QUESTION_CLOSED` | 締切時刻と同時または後 |
-| 500 | `ANSWER_SUBMISSION_UNAVAILABLE` | 永続化障害 |
+| 400 | `INVALID_ANSWER` | Invalid Body, Excerpt, or format |
+| 401 | `AUTHENTICATION_REQUIRED` | Unauthenticated |
+| 404 | `QUESTION_NOT_FOUND` | Question does not exist |
+| 409 | `ANSWER_ALREADY_SUBMITTED` | The participant has an existing Answer or a concurrent submission committed first |
+| 409 | `QUESTION_CLOSED` | At or after the deadline |
+| 500 | `ANSWER_SUBMISSION_UNAVAILABLE` | Persistence failure |
 
 ## `GET /api/questions/:questionId/my-submission`
 
-未投稿:
+Not submitted:
 
 ```json
 { "questionId": "question_opaque_id", "status": "not_submitted" }
 ```
 
-投稿済み:
+Submitted:
 
 ```json
 { "questionId": "question_opaque_id", "status": "submitted", "answer": "The caller's own public answer.", "excerpt": "The caller's one-line summary.", "submittedAt": "2026-09-02T00:00:00.000Z" }
 ```
 
-別利用者のAnswerは締切前後を問わず返さない。
+Never return another participant's Answer, before or after the deadline.
 
-## WebMCP Tool
+## WebMCP Tools
 
-| Tool | 入力 | 状態変更 | 出力 |
+| Tool | Input | Changes State | Output |
 | --- | --- | --- | --- |
-| `submit_answer` | `questionId`、`answer`、`excerpt`のみ | はい | 投稿結果または上記エラー |
-| `get_my_submission` | `questionId`のみ | いいえ | 本人の投稿状態または上記エラー |
+| `submit_answer` | Only `questionId`, `answer`, and `excerpt` | Yes | Submission result or an error above |
+| `get_my_submission` | Only `questionId` | No | The participant's submission status or an error above |
 
-Toolは同一Originの相対URLだけを呼び出し、他者Answer、Cookie、トークン、Private Contextを出力しない。
+Tools invoke only same-Origin relative URLs and do not output other participants' Answers, Cookies, tokens, or Private Context.

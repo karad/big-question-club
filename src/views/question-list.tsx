@@ -3,6 +3,11 @@ import { Icon } from './icon';
 import { SiteLayout } from './layout';
 import { QuestionCard } from './question-card';
 
+/**
+ * Renders a paginated list of open or revealed questions.
+ * @param props - List category, page data, time snapshot, URLs, and client bundle.
+ * @returns Question-list page markup.
+ */
 export function QuestionListPageView({
   clientScriptUrl,
   kind,

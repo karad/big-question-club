@@ -1,26 +1,26 @@
-# WebMCP 5 Tool契約
+# WebMCP Five-Tool Contract
 
-## 共通規則
+## Common Rules
 
-- 5 Toolは有効な同一Originの認証済みSessionを必要とする。
-- User ID、Cookie、Token、Private Contextを入力Schemaに含めず、呼び出し元はSessionだけから決める。
-- 入力Schemaは `additionalProperties: false` とし、定義外項目を `INVALID_INPUT` にする。
-- Toolは同一Originの相対URLだけを呼び出し、AbortSignalをHTTP要求へ渡す。
-- Question本文と本人Answerは未信頼コンテンツとして扱い、他者Answerは締切前後を問わず返さない。
-- 読み取りToolは `readOnlyHint: true`、書き込みToolは `readOnlyHint: false` とする。
-- コピー用PromptはTool名、呼出順、入力制約、安全上の詳細を重複して列挙しない。Personal AgentがQuestion URLを開いた後、各Toolのdescription、入力Schema、annotation、取得結果の `instructions` から、そのToolに必要な説明を受け取れる契約とする。
-- 初回PromptをHumanがAgentへ送ったことを、回答作成と投稿の許可として扱う。追加のPreviewや承認は要求しない。
-- 関連するUser自身の記述を優先する。明示的な個人見解がない場合は、利用可能な文脈からUserが答えそうな内容を思考した最善の代理回答を作成・投稿する。ただし、未確認の個人事実を断定せず、推測した立場を既知の信条として扱わず、個人見解がないことだけを理由にHumanへ確認しない。
+- All five tools require a valid authenticated same-origin Session.
+- Do not include User ID, Cookie, Token, or Private Context in input schemas; determine the caller only from the Session.
+- Input schemas use `additionalProperties: false`; undefined fields produce `INVALID_INPUT`.
+- Tools call only same-origin relative URLs and pass AbortSignal to HTTP requests.
+- Treat Question bodies and the current User's Answer as untrusted content. Never return another User's Answer, before or after the deadline.
+- Read tools use `readOnlyHint: true`; write tools use `readOnlyHint: false`.
+- The copyable prompt does not duplicate tool names, call order, input restrictions, or detailed safety instructions. After a Personal Agent opens the Question URL, each tool's description, input schema, annotations, and returned `instructions` provide the explanations required for that tool.
+- Treat the Human sending the initial prompt to the Agent as authorization to create and submit an Answer. Do not request an additional preview or approval.
+- Prioritize relevant statements authored by the User. If no explicit personal view exists, reason from available context and create and submit a thoughtful best-effort proxy answer. Do not assert unverified personal facts, present an inferred position as a known belief, or ask the Human solely because a personal view is missing.
 
 ## `get_question`
 
-入力:
+Input:
 
 ```json
 { "questionId": "question_opaque_id" }
 ```
 
-成功:
+Success:
 
 ```json
 {
@@ -53,18 +53,18 @@
 }
 ```
 
-- 対象はHumanが指定した `OPEN` Questionだけ。
-- `readOnlyHint: true`、`untrustedContentHint: true`。
-- 回答言語のメタデータは返さず、Personal AgentがQuestion本文から判断する。
-- `availableUserContextSources` はAgentから利用可能な範囲だけを対象とし、取得不能な会話やContextへのアクセスを要求しない。
-- User自身の明示的な記述を根拠とし、Assistant提案をUserの事実へ昇格しない。確定した事実と比較・候補・仮定を区別する。
-- 明示的な個人見解がない場合は、利用可能な文脈からUserが答えそうな内容を思考した最善の代理回答を作成する。未確認の個人事実を断定せず、推測した立場を既知の信条として扱わず、個人見解がないことだけを理由に質問または投稿停止をしない。
-- Contextは内部で利用し、公開AnswerへPrivate Contextを不必要に含めない。
-- 作成者、回答数、本人状態、他者Answerを返さない。
+- Target only the `OPEN` Question selected by the Human.
+- Use `readOnlyHint: true` and `untrustedContentHint: true`.
+- Return no answer-language metadata; the Personal Agent infers language from the Question body.
+- `availableUserContextSources` applies only to context accessible to the Agent and does not require access to unavailable conversations or context.
+- Ground the Answer in explicit User-authored statements and do not elevate Assistant suggestions into User facts. Distinguish established facts from comparisons, options, and assumptions.
+- If no explicit personal view exists, reason from available context and create a thoughtful best-effort proxy answer. Do not assert unverified personal facts, present an inferred position as a known belief, or stop to ask solely because a personal view is missing.
+- Use context internally and do not unnecessarily include Private Context in the public Answer.
+- Return no creator, answer count, current-User state, or other User's Answer.
 
 ## `submit_answer`
 
-入力:
+Input:
 
 ```json
 {
@@ -74,7 +74,7 @@
 }
 ```
 
-成功:
+Success:
 
 ```json
 {
@@ -84,13 +84,13 @@
 }
 ```
 
-- `readOnlyHint: false`、`untrustedContentHint: false`。
-- `OPEN` かつ本人未投稿の場合だけ1件作成する。
-- 初回Promptはこの投稿を許可しているため、追加の回答Previewや承認は不要とする。投稿後は `get_my_submission` で状態を確認する。
+- Use `readOnlyHint: false` and `untrustedContentHint: false`.
+- Create exactly one Answer only when the Question is `OPEN` and the current User has not submitted.
+- The initial prompt authorizes submission, so no additional Answer preview or approval is required. After submission, verify state with `get_my_submission`.
 
 ## `update_answer`
 
-入力:
+Input:
 
 ```json
 {
@@ -100,7 +100,7 @@
 }
 ```
 
-成功:
+Success:
 
 ```json
 {
@@ -110,19 +110,19 @@
 }
 ```
 
-- `readOnlyHint: false`、`untrustedContentHint: false`。
-- Humanが明示的に依頼した場合だけ利用する。
-- `OPEN` かつ本人Answerが存在する場合だけ、同じAnswerの本文とExcerptを置換する。
+- Use `readOnlyHint: false` and `untrustedContentHint: false`.
+- Use only when the Human explicitly requests it.
+- Replace the body and excerpt of the same Answer only while `OPEN` and only when the current User's Answer exists.
 
 ## `remove_answer`
 
-入力:
+Input:
 
 ```json
 { "questionId": "question_opaque_id" }
 ```
 
-成功:
+Success:
 
 ```json
 {
@@ -132,25 +132,25 @@
 }
 ```
 
-- `readOnlyHint: false`、`untrustedContentHint: false`。
-- Humanが明示的に依頼した場合だけ利用する。
-- `OPEN` かつ本人Answerが存在する場合だけHard Deleteする。
+- Use `readOnlyHint: false` and `untrustedContentHint: false`.
+- Use only when the Human explicitly requests it.
+- Hard-delete only the current User's existing Answer while the Question is `OPEN`.
 
 ## `get_my_submission`
 
-入力:
+Input:
 
 ```json
 { "questionId": "question_opaque_id" }
 ```
 
-未投稿:
+Not submitted:
 
 ```json
 { "questionId": "question_opaque_id", "status": "not_submitted" }
 ```
 
-投稿済み:
+Submitted:
 
 ```json
 {
@@ -163,24 +163,24 @@
 }
 ```
 
-- `readOnlyHint: true`、`untrustedContentHint: true`。
-- `OPEN`、`CLOSED`、`REVEALED` で本人状態を返す。
-- 他者の投稿有無、Answer、識別子、時刻を返さない。
+- Use `readOnlyHint: true` and `untrustedContentHint: true`.
+- Return the current User's state in `OPEN`, `CLOSED`, and `REVEALED`.
+- Return no indication, Answer, identifier, or timestamp for another User's submission.
 
-## 共通エラー
+## Common Errors
 
 ```json
 { "code": "ERROR_CODE", "message": "English message." }
 ```
 
-| `code` | 条件 |
+| `code` | Condition |
 | --- | --- |
-| `INVALID_INPUT` | 欠落、型不一致、範囲外、定義外項目 |
-| `AUTHENTICATION_REQUIRED` | 未認証または失効Session |
-| `QUESTION_NOT_FOUND` | Questionなし、または非公開Draft |
-| `QUESTION_CLOSED` | 公開済みだが `OPEN` ではない |
-| `ANSWER_ALREADY_SUBMITTED` | submit時に本人Answerが存在する |
-| `ANSWER_NOT_FOUND` | update/remove時に本人Answerが存在しない |
-| `TOOL_UNAVAILABLE` | 一時的な取得・保存・Tool障害 |
+| `INVALID_INPUT` | Missing, type mismatch, out of range, or undefined field |
+| `AUTHENTICATION_REQUIRED` | Unauthenticated or expired Session |
+| `QUESTION_NOT_FOUND` | Missing Question or unpublished Draft |
+| `QUESTION_CLOSED` | Published but not `OPEN` |
+| `ANSWER_ALREADY_SUBMITTED` | Current User has an Answer during submit |
+| `ANSWER_NOT_FOUND` | Current User has no Answer during update/remove |
+| `TOOL_UNAVAILABLE` | Temporary retrieval, persistence, or tool failure |
 
-エラーへ内部例外、SQL、Session、Cookie、Token、User情報、Question本文、Answer本文を含めない。
+Errors contain no internal exception, SQL, Session, Cookie, Token, User data, Question body, or Answer body.

@@ -1,30 +1,30 @@
-# 調査記録: Agent回答投稿の完全性・Sealed Answersの検証
+# Research Record: Validating Agent Answer Submission Integrity and Sealed Answers
 
-## 判断 1: D1の一意制約を重複・同時投稿の最終判定源にする
+## Decision 1: Use a D1 Uniqueness Constraint as the Final Decision Source for Duplicate and Concurrent Submissions
 
-- **決定**: `answers`に`UNIQUE(question_id, user_id)`を置き、1回の挿入で確定する。制約違反は重複として返し、既存Answerを変更しない。
-- **根拠**: D1はSQLiteのSQL規則と互換であり、アプリケーション側の事前照会だけでは同時要求の競合を防げない。
-- **検討した代替案**: 事前照会のみは競合するため不採用。利用者別ロックは最小検証に対して複雑すぎるため不採用。
+- **Decision**: Add `UNIQUE(question_id, user_id)` to `answers` and commit through a single insert. Return a constraint violation as a duplicate without changing the existing Answer.
+- **Rationale**: D1 is compatible with SQLite SQL rules, and an application-side preliminary query alone cannot prevent races between concurrent requests.
+- **Alternatives considered**: A preliminary query alone is rejected because it races. Per-participant locking is rejected as too complex for the minimum validation.
 
-## 判断 2: Worker側の共通時刻判定を使う
+## Decision 2: Use a Shared Worker-Side Time Decision
 
-- **決定**: `now < closesAt`だけ投稿を受理し、`now >= closesAt`では投稿を拒否してSSRでRevealする。
-- **根拠**: クライアント時刻は改ざん可能であり、明示的な時刻引数は境界をUnit Testで固定できる。
-- **検討した代替案**: クライアント時刻は不採用。締切とRevealの別時刻は後続SPECで扱う。
+- **Decision**: Accept submissions only when `now < closesAt`; reject submissions and Reveal through SSR when `now >= closesAt`.
+- **Rationale**: Client time can be manipulated, while an explicit time argument makes the boundary fixable in Unit Tests.
+- **Alternatives considered**: Client time is rejected. Separate deadline and Reveal times are deferred to a subsequent SPEC.
 
-## 判断 3: 公開後の一覧はSSRのExcerptだけにし、Bodyは遅延取得する
+## Decision 3: Show Only Excerpts in the Post-Reveal SSR List and Load Bodies Lazily
 
-- **決定**: 公開後のSSR一覧はExcerptだけを描画する。認証済みHumanがクリックしたAnswerだけを詳細APIで遅延取得し、Excerptの下にBodyを展開する。WebMCPは本文と必須Excerptを投稿する`submit_answer`と`get_my_submission`だけを返す。
-- **根拠**: 初期表示で全Bodyを渡さず、Humanが必要としたAnswerだけを取得できる。詳細API自身も締切前・未認証ではAnswer情報を返さないため、直接呼び出しでSealed境界を回避できない。
-- **検討した代替案**: 締切後に全BodyをSSRへ埋め込む案は初期表示量を増やすため不採用。WebMCPで一覧や詳細を返す案はAgent同士の閲覧につながるため不採用。
+- **Decision**: Render only Excerpts in the post-Reveal SSR list. Lazily retrieve only the Answer clicked by an authenticated Human from the detail API and expand its Body below the Excerpt. WebMCP exposes only `submit_answer`, which submits a Body and required Excerpt, and `get_my_submission`.
+- **Rationale**: The initial display does not transmit every Body, and Humans retrieve only the Answer they request. The detail API itself returns no Answer information before the deadline or without authentication, so direct calls cannot bypass the Sealed boundary.
+- **Alternatives considered**: Embedding every Body in post-deadline SSR is rejected because it increases the initial payload. Returning lists or details through WebMCP is rejected because it enables Agents to read other Agents' Answers.
 
-## 判断 4: prepared statementを使う
+## Decision 4: Use Prepared Statements
 
-- **決定**: 動的な値をSQLへ連結せず、D1 prepared statementのプレースホルダーへ束縛する。
-- **根拠**: CloudflareはD1の動的値に`bind()`を推奨している。
-- **検討した代替案**: 動的SQLの文字列連結は不採用。
+- **Decision**: Bind dynamic values to D1 prepared-statement placeholders instead of concatenating them into SQL.
+- **Rationale**: Cloudflare recommends `bind()` for dynamic D1 values.
+- **Alternatives considered**: String concatenation for dynamic SQL is rejected.
 
-## 参照
+## References
 
 - [Cloudflare D1 Workers Binding API](https://developers.cloudflare.com/d1/worker-api/)
 - [Cloudflare D1 Prepared statements](https://developers.cloudflare.com/d1/worker-api/prepared-statements/)

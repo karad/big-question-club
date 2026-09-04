@@ -1,44 +1,44 @@
-# 実装計画: Question作成・公開フロー
+# Implementation Plan: Question Creation and Publication Flow
 
-**ブランチ**: `006-question-publishing` | **日付**: 2026-09-02 | **仕様**: [spec.md](./spec.md)
+**Branch**: `006-question-publishing` | **Date**: 2026-09-02 | **Specification**: [spec.md](./spec.md)
 
-**入力**: `specs/006-question-publishing/spec.md` の機能仕様
+**Input**: Feature specification at `specs/006-question-publishing/spec.md`
 
-## 概要
+## Summary
 
-認証済みHumanが任意言語のQuestion本文と回答締切を入力し、下書き保存、編集、確認、不可逆な公開を行えるSSR画面を追加する。回答言語はPersonal AgentがQuestion本文から判断する。既存のHono JSX、Better Auth Session、Question Repository、D1 Schemaを継続利用し、入力規則は純粋なDomain関数、所有者と状態を伴う変更はRepositoryの条件付き書き込み、Human向け操作は同一OriginのHTML FormとCSRF保護で成立させる。`My Questions` は本人所有Questionだけを回答数付きで新しい順に返し、Answer内容や他者情報を扱わない。
+Add SSR screens where an authenticated Human can enter a Question body in any language and an answer deadline, save and edit a draft, review it, and publish it irreversibly. The Personal Agent determines the answer language from the Question body. Continue using the existing Hono JSX, Better Auth Session, Question Repository, and D1 schema. Implement input rules as pure domain functions, owner- and state-sensitive changes as conditional repository writes, and Human operations as same-origin HTML forms with CSRF protection. `My Questions` returns only the current User's Questions in newest-first order with answer counts, without handling Answer content or other Users' information.
 
-## 技術コンテキスト
+## Technical Context
 
-**言語/バージョン**: TypeScript 6、Node.js 22.13以上または24以上（開発時）、ES2022  
-**主要依存関係**: Cloudflare Workers、Hono、Hono JSX、Hono CSRF Middleware、Vite、Better Auth 1.7、Drizzle ORM 0.45系、Wrangler、Cloudflare Workers Vitest Plugin 1系、Vitest 4  
-**保存先**: 既存のCloudflare D1。SPEC 005の `questions`、`answers`、`user` を変更せず利用し、本SPECではMigrationを追加しない。  
-**テスト**: Vitestによる入力検証・文字数・時刻境界のUnit Test、Hono Appを使うSSR／Form／認証／CSRF Integration Test、Workers Vitest Pluginと分離D1を使う所有者・競合・一覧QueryのIntegration Test、Quickstartによる全導線の手動確認。  
-**対象プラットフォーム**: Cloudflare Workers、Cloudflare D1、モダンブラウザー、ローカルMiniflare／workerd。  
-**プロジェクト種別**: SSR、HTTP API、WebMCPを同一Workerで提供する単一Webアプリケーション。  
-**性能目標**: 作成、編集、公開、`My Questions` の各操作はローカル検証環境で2秒以内に完了する。逐次10回・同時10件の公開要求でも公開確定は1回だけとする。  
-**制約**: 表示文言は英語、SpecKit文書は日本語。本文は任意言語のtrim後の書記素クラスタ10〜1,000文字、締切は各変更・公開時のサービス時刻から1時間以上30日以内、`revealsAt === closesAt`。公開後の主要項目は不変。締切判定はクライアント時刻ではなく送信された絶対時刻をサービス時刻で再検証する。他人の下書きは存在有無も開示しない。
-**規模/範囲**: 4ユーザーストーリー、6つのHuman向け画面／操作、1つの入力Domain契約、既存Repositoryの作成・取得・編集・公開・一覧拡張、30件以上の入力ケース、20件以上の認可ケース、15件以上の一覧表示ケース。WebMCP Tool追加、一般公開一覧、Answer閲覧変更、Migrationは対象外。
+**Language/Version**: TypeScript 6, Node.js 22.13 or later or 24 or later for development, ES2022
+**Primary Dependencies**: Cloudflare Workers, Hono, Hono JSX, Hono CSRF Middleware, Vite, Better Auth 1.7, Drizzle ORM 0.45.x, Wrangler, Cloudflare Workers Vitest Plugin 1.x, Vitest 4
+**Storage**: Existing Cloudflare D1. Use the SPEC 005 `questions`, `answers`, and `user` tables unchanged; this specification adds no migration.
+**Testing**: Unit tests for input validation, character counts, and time boundaries; Hono integration tests for SSR, forms, authentication, and CSRF; integration tests using the Workers Vitest Plugin and isolated D1 for ownership, conflict, and list queries; and manual verification of the full flow through the quickstart.
+**Target Platform**: Cloudflare Workers, Cloudflare D1, modern browsers, and local Miniflare/workerd.
+**Project Type**: A single web application serving SSR, HTTP API, and WebMCP from one Worker.
+**Performance Goals**: Creation, editing, publication, and `My Questions` each complete within two seconds in the local verification environment. Publication is committed exactly once even after ten sequential or ten concurrent publication requests.
+**Constraints**: UI copy is English and SpecKit documents are Japanese. A body in any language contains 10–1,000 grapheme clusters after trimming. At every change and publication, the deadline is between one hour and thirty days from service time, with `revealsAt === closesAt`. Primary fields are immutable after publication. Deadline validation rechecks the submitted absolute time against service time rather than trusting the client clock. The existence of another User's draft is not disclosed.
+**Scale/Scope**: Four user stories, six Human-facing screens/operations, one input domain contract, extensions to the existing repository for creation/retrieval/editing/publication/listing, at least thirty input cases, at least twenty authorization cases, and at least fifteen list-display cases. WebMCP tools, public lists, Answer-viewing changes, and migrations are out of scope.
 
-## 構成原則チェック
+## Constitution Check
 
-`constitution.md`は未確定テンプレートのため、`AGENTS.md`、機能仕様、既存設計をゲートとする。
+Because `constitution.md` remains an unfilled template, use `AGENTS.md`, the feature specification, and the existing design as gates.
 
-- 本文文字数、締切、確認項目の純粋な入力判定はUnit Testで境界条件を固定する。
-- Question RepositoryとD1の所有者条件、公開の一意性、競合更新、集計一覧はD1 Integration Testで保証する。
-- Human向け画面の状態分岐、項目別エラー、認証、CSRF、非列挙応答はHono Integration Testで保証する。
-- QuestionのSource of Truthは既存D1 SchemaとRepository、認証のSource of TruthはBetter Auth Session、状態のSource of TruthはSPEC 005のライフサイクル判定を維持する。
-- 表示文言、コメント、識別子は英語とし、SpecKit成果物は日本語で作成する。
-- Question本文はHono JSXのテキストとして描画し、未信頼内容をHTMLまたは命令として解釈しない。
-- 実装・調査・重要判断は `USE_CODEX.md` に記録する。
+- Lock down boundary conditions for pure body-length, deadline, and acknowledgment validation with unit tests.
+- Verify owner conditions, publication uniqueness, conflicting updates, and aggregate listings in the Question Repository with D1 integration tests.
+- Verify Human-screen state branches, field errors, authentication, CSRF, and non-enumerating responses with Hono integration tests.
+- Preserve the existing D1 schema and repository as the Question source of truth, the Better Auth Session as the authentication source of truth, and the SPEC 005 lifecycle evaluation as the state source of truth.
+- Use English for UI copy, comments, and identifiers, and Japanese for SpecKit artifacts.
+- Render Question bodies as Hono JSX text and do not interpret untrusted content as HTML or instructions.
+- Record implementation, research, and important decisions in `USE_CODEX.md`.
 
-**Phase 0前の判定**: 適合。未解決の設計事項はUnicode表示文字の数え方、ローカル締切から絶対時刻への変換、HTML FormのCSRF、公開・編集競合、非列挙エラーであり、Phase 0で解決する。
+**Assessment before Phase 0**: Pass. Phase 0 resolves the remaining design topics: counting Unicode display characters, converting local deadlines to absolute time, HTML-form CSRF, publication/edit conflicts, and non-enumerating errors.
 
-**Phase 1後の判定**: 適合。`Intl.Segmenter`による共通入力契約、ブラウザーで生成した絶対時刻とIANAタイムゾーンの確認、Honoの同一Origin CSRF Middleware、D1の条件付き更新、本人所有取得のRepository境界、JSXのテキスト描画により各ゲートを満たす。未解決事項はない。
+**Assessment after Phase 1**: Pass. Every gate is satisfied by a shared input contract using `Intl.Segmenter`, browser-generated absolute time with IANA time-zone confirmation, Hono same-origin CSRF middleware, D1 conditional updates, an owner-only repository boundary, and JSX text rendering. No unresolved items remain.
 
-## プロジェクト構成
+## Project Structure
 
-### この機能のドキュメント
+### Documentation for This Feature
 
 ```text
 specs/006-question-publishing/
@@ -52,7 +52,7 @@ specs/006-question-publishing/
 └── tasks.md
 ```
 
-### ソースコード
+### Source Code
 
 ```text
 src/
@@ -80,8 +80,8 @@ tests/
     └── question-input.test.ts
 ```
 
-**構成判断**: 既存の単一Worker構成を維持する。入力の正規化・書記素文字数・締切範囲は `src/domain/question-input.ts` に集約し、すべての保存・公開経路が同じ結果を使う。D1の所有者条件、Draft限定更新、公開の条件付き更新、本人一覧は既存 `QuestionRepository` を拡張する。Routeは認証・Form解析・結果分類、ViewはHono JSXによる英語UIとアクセシビリティ属性を担当し、`src/client.ts` はローカル日時を絶対時刻へ変換して確認表示する最小の補助だけを追加する。
+**Structure Decision**: Retain the existing single-Worker structure. Centralize input normalization, grapheme counting, and deadline ranges in `src/domain/question-input.ts` so every save and publication path uses the same result. Extend the existing `QuestionRepository` with D1 owner conditions, draft-only updates, conditional publication, and owner listings. Routes handle authentication, form parsing, and result classification; views handle the English Hono JSX UI and accessibility attributes; and `src/client.ts` adds only a minimal helper to convert local dates to absolute time and show confirmation.
 
-## 複雑性の追跡
+## Complexity Tracking
 
-違反なし。新しいValidation Libraryや日時Libraryは追加せず、標準Web APIと既存のHono／Drizzle境界で実装する。RouteとViewの分離は6導線の状態・エラー分岐をテスト可能に保つための最小構成である。
+No violations. Add no validation or date-time library; use standard Web APIs and the existing Hono/Drizzle boundaries. Separating routes from views is the minimum structure needed to keep the state and error branches across six flows testable.

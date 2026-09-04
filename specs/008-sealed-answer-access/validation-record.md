@@ -1,45 +1,45 @@
-# 検証記録: Sealed Answersのアクセス制御
+# Validation Record: Sealed Answer Access Control
 
-## 実施環境
+## Environment
 
-- 日時: 2026-09-02 17:20 JST
-- ブランチ: `008-sealed-answer-access`
-- 開始Commit: `4a8d82af12d823b5482db0945dc5e40431639e0e`
-- Node.js: `v23.6.0`（`package.json` の推奨範囲外警告はあるが全品質ゲート成功）
-- ブラウザー: Codex In-app Browser（WebMCP対応）とChrome（別Session）
-- 検証アカウント: 機微情報を記録しない2利用者
+- Date/time: 2026-09-02 17:20 JST
+- Branch: `008-sealed-answer-access`
+- Starting commit: `4a8d82af12d823b5482db0945dc5e40431639e0e`
+- Node.js: `v23.6.0` (outside the `package.json` recommended range, but all gates passed)
+- Browsers: Codex in-app browser with WebMCP support and Chrome with a separate Session
+- Accounts: two test Users with no sensitive data recorded
 
-## Phase 1基準結果
+## Phase 1 Baseline
 
-| 項目 | 結果 | 注記 |
+| Item | Result | Notes |
 | --- | --- | --- |
-| Typecheck / Lint / Format | 成功 | 変更前の全コマンド成功 |
-| Node Test | 成功 | 29 files / 229 tests |
-| D1 Test | 成功 | 11 files / 42 tests |
-| Build / Schema Check | 成功 | BuildとDrizzle Schema Check成功 |
+| Typecheck / Lint / Format | Passed | Every pre-change command passed |
+| Node Test | Passed | 29 files / 229 tests |
+| D1 Test | Passed | 11 files / 42 tests |
+| Build / Schema Check | Passed | Build and Drizzle schema check passed |
 
-## 自動検証
+## Automated Verification
 
-| 項目 | 結果 | 注記 |
+| Item | Result | Notes |
 | --- | --- | --- |
-| Typecheck / Lint / Format | 成功 | `npm run typecheck`、`npm run lint`、`npm run format` |
-| Node Test / D1 Test | 成功 | 29 files / 557 tests、12 files / 44 tests |
-| Build / Schema Check | 成功 | 権限昇格環境のBuildと `drizzle-kit check` が成功 |
-| 認可決定表 | 成功 | 5主体 × 4状態 × 4経路 × 4情報種別 = 320件が100%一致 |
-| 非列挙反復 | 成功 | 実在・不在・別Questionを各10回比較し差異0件 |
+| Typecheck / Lint / Format | Passed | `npm run typecheck`, `npm run lint`, `npm run format` |
+| Node Test / D1 Test | Passed | 29 files / 557 tests, 12 files / 44 tests |
+| Build / Schema Check | Passed | Build in escalated environment and `drizzle-kit check` passed |
+| Authorization decision table | Passed | 5 subjects × 4 states × 4 channels × 4 information types = 320 matched 100% |
+| Non-enumeration repetition | Passed | Existing, missing, and wrong-Question compared ten times each with zero differences |
 
-## 手動検証
+## Manual Verification
 
-| 項目 | 結果 | 注記 |
+| Item | Result | Notes |
 | --- | --- | --- |
-| Reveal前・Closed非露出 | 成功 | 2利用者とも回答数2件と本人本文／Excerptだけを確認し、他者秘密値0件。Question作成者にも特権なし |
-| 直接HTTP非列挙 | 成功 | 実ブラウザーがJSON APIのトップレベル遷移を遮断したため、同一RouteをIntegration Testで実在・不在・別Question各10回、未認証、異常Methodまで補完。全件共通 `404 ANSWER_UNAVAILABLE` |
-| Reveal後Excerpt／本文遅延取得 | 成功 | 初期SSRに全Excerpt 2件・本文0件。選択した本文1件だけを表示し、未選択本文0件 |
-| Answer 0件 | 成功 | Integration Testで空状態だけを返し、偽のAnswer IDを生成しないことを確認 |
-| WebMCP本人限定 | 成功 | 実WebMCPで投稿、`get_my_submission`、`OPEN`／`CLOSED`／`REVEALED` を確認。登録Toolは5件だけで、回答数・他者値・一覧／詳細／検索／要約／比較Capabilityは0件 |
-| Session切替・再利用防止 | 成功 | 2つのブラウザーSessionで本人値だけを表示。利用者Aのサインアウト後、`get_my_submission` は `AUTHENTICATION_REQUIRED` となり本人値0件 |
-| Cache Header | 成功 | 成功・拒否・例外・未対応経路で `Cache-Control: private, no-store` と `Vary: Cookie` をIntegration Test確認 |
+| Pre-Reveal/Closed non-exposure | Passed | Both Users saw count 2 and only their own body/excerpt; zero other-User secrets; no creator privilege |
+| Direct HTTP non-enumeration | Passed | Browser blocked top-level JSON navigation, so integration tests covered existing/missing/wrong-Question ten times each, unauthenticated, and abnormal methods; all returned common `404 ANSWER_UNAVAILABLE` |
+| Post-Reveal excerpts/lazy body | Passed | Initial SSR contained 2 excerpts and zero bodies; selecting showed one body and zero unselected bodies |
+| Zero Answers | Passed | Integration test showed only empty state and generated no false Answer ID |
+| Owner-only WebMCP | Passed | Real WebMCP verified submission, `get_my_submission`, and `OPEN`/`CLOSED`/`REVEALED`; exactly five tools and zero counts, other values, or list/detail/search/summary/comparison capabilities |
+| Session switching/reuse prevention | Passed | Two browser Sessions showed only own values; after A signed out, `get_my_submission` returned `AUTHENTICATION_REQUIRED` and zero own values |
+| Cache headers | Passed | Integration tests confirmed `Cache-Control: private, no-store` and `Vary: Cookie` for success, denial, exception, and unsupported paths |
 
-## 未解決事項
+## Unresolved Items
 
-- なし。ローカルD1には機微情報を含まないSPEC 008検証fixtureだけを追加し、共有D1は変更していない。
+- None. Only non-sensitive SPEC 008 fixtures were added to local D1; shared D1 was unchanged.

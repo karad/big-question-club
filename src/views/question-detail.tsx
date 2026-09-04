@@ -12,6 +12,11 @@ import { Icon } from './icon';
 import { SiteLayout } from './layout';
 import { SubmissionStatus } from './submission-status';
 
+/**
+ * Renders controls for copying a question request to an external agent.
+ * @param props - Public URL of the question.
+ * @returns Agent-request section markup.
+ */
 export function AgentRequestSection({ questionUrl }: { questionUrl: string }) {
   return (
     <section class="paper-card" data-agent-request>
@@ -37,6 +42,11 @@ export function AgentRequestSection({ questionUrl }: { questionUrl: string }) {
   );
 }
 
+/**
+ * Renders the current viewer's full answer and excerpt.
+ * @param props - Answer body and excerpt to display.
+ * @returns Own-answer section markup.
+ */
 export function OwnAnswer({ answer }: { answer: { body: string; excerpt: string } }) {
   return (
     <section class="paper-card" data-own-answer>
@@ -48,6 +58,11 @@ export function OwnAnswer({ answer }: { answer: { body: string; excerpt: string 
   );
 }
 
+/**
+ * Renders revealed answer excerpts and controls for loading full bodies.
+ * @param props - Revealed excerpts and their parent question identifier.
+ * @returns Revealed-answer list markup.
+ */
 export function RevealedAnswers({
   answers,
   questionId,
@@ -126,6 +141,11 @@ function AnonymousParticipantIcon({
   );
 }
 
+/**
+ * Renders a question and the viewer-specific answer experience.
+ * @param props - Question data, viewer state, answers, URLs, lifecycle state, and time snapshot.
+ * @returns Question-detail page markup.
+ */
 export function QuestionDetailPage({
   answerCount,
   clientScriptUrl,

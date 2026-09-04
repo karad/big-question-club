@@ -1,96 +1,96 @@
-# データモデル: ドメインデータモデルとQuestionライフサイクル
+# Data Model: Domain Data Model and Question Lifecycle
 
-## 時刻と命名
+## Time and Naming
 
-- すべてのドメイン時刻はUTC Unixミリ秒の整数として保存する。
-- TypeScriptのプロパティはcamelCase、Question／AnswerのDB列はsnake_case、Better Authの既存DB列は互換性のため現在名を維持する。
-- `now`は保存せず、1操作につきサービス側で1回だけ取得してDomainとRepositoryへ渡す。
-- Question状態名は保存しない。
+- Store all Domain times as integer UTC Unix milliseconds.
+- Use camelCase for TypeScript properties and snake_case for Question/Answer DB columns. Preserve current Better Auth DB column names for compatibility.
+- Do not persist `now`; obtain it once from the service for each operation and pass it to the Domain and Repository.
+- Do not persist Question state names.
 
-## エンティティ
+## Entities
 
 ### User
 
-Better Authが作成・更新する認証主体。Questionの作成者とAnswerの投稿者を識別するSource of Truthである。
+The authentication principal created and updated by Better Auth. It is the Source of Truth identifying Question creators and Answer submitters.
 
-| フィールド | DB表現 | 必須 | 制約・意味 |
+| Field | DB Representation | Required | Constraint / Meaning |
 | --- | --- | --- | --- |
-| `id` | `TEXT` | 必須 | 主キー。外部に公開可能な安定したアプリ内識別子。 |
-| `name` | `TEXT` | 必須 | Better Authが保持する表示名。 |
-| `email` | `TEXT` | 必須 | 一意。公開契約やAnswerには含めない。 |
-| `emailVerified` | `INTEGER` | 必須 | 真偽値。 |
-| `image` | `TEXT` | 任意 | プロフィール画像参照。 |
-| `createdAt` | `INTEGER` | 必須 | UTC Unixミリ秒。 |
-| `updatedAt` | `INTEGER` | 必須 | UTC Unixミリ秒。 |
+| `id` | `TEXT` | Required | Primary key. Stable in-application identifier that may be exposed externally. |
+| `name` | `TEXT` | Required | Display name retained by Better Auth. |
+| `email` | `TEXT` | Required | Unique. Never included in public contracts or Answers. |
+| `emailVerified` | `INTEGER` | Required | Boolean. |
+| `image` | `TEXT` | Optional | Profile-image reference. |
+| `createdAt` | `INTEGER` | Required | UTC Unix milliseconds. |
+| `updatedAt` | `INTEGER` | Required | UTC Unix milliseconds. |
 
 ### Session
 
-Better Authが作成・更新する期限付き認証状態。アプリケーションDomainはSession値を直接扱わず、既存 `Authentication` 境界からUser IDだけを受け取る。
+Expiring authentication state created and updated by Better Auth. The application Domain does not handle Session values directly; it receives only a User ID from the existing `Authentication` boundary.
 
-| フィールド | DB表現 | 必須 | 制約・意味 |
+| Field | DB Representation | Required | Constraint / Meaning |
 | --- | --- | --- | --- |
-| `id` | `TEXT` | 必須 | 主キー。 |
-| `userId` | `TEXT` | 必須 | `user.id`への外部キー。User削除時はSessionを削除する。 |
-| `token` | `TEXT` | 必須 | 一意。画面、Tool応答、ログへ出さない。 |
-| `expiresAt` | `INTEGER` | 必須 | UTC Unixミリ秒。 |
-| `createdAt` | `INTEGER` | 必須 | UTC Unixミリ秒。 |
-| `updatedAt` | `INTEGER` | 必須 | UTC Unixミリ秒。 |
-| `ipAddress` | `TEXT` | 任意 | Better Auth互換フィールド。 |
-| `userAgent` | `TEXT` | 任意 | Better Auth互換フィールド。 |
+| `id` | `TEXT` | Required | Primary key. |
+| `userId` | `TEXT` | Required | Foreign key to `user.id`. Delete Sessions when the User is deleted. |
+| `token` | `TEXT` | Required | Unique. Never expose in screens, Tool responses, or logs. |
+| `expiresAt` | `INTEGER` | Required | UTC Unix milliseconds. |
+| `createdAt` | `INTEGER` | Required | UTC Unix milliseconds. |
+| `updatedAt` | `INTEGER` | Required | UTC Unix milliseconds. |
+| `ipAddress` | `TEXT` | Optional | Better Auth compatibility field. |
+| `userAgent` | `TEXT` | Optional | Better Auth compatibility field. |
 
 ### Question
 
-Humanが作成しPersonal Agentが回答する問い。状態は時刻から導出する。
+A prompt created by a Human and answered by Personal Agents. Its state is derived from time.
 
-| フィールド | DB表現 | 必須 | 制約・意味 |
+| Field | DB Representation | Required | Constraint / Meaning |
 | --- | --- | --- | --- |
-| `id` | `TEXT` | 必須 | 主キー。 |
-| `creatorUserId` | `TEXT` | 必須 | `user.id`への外部キー。User削除はQuestionがある間は拒否する。 |
-| `body` | `TEXT` | 必須 | 空白のみ不可。詳細な文字数はSPEC 006で定義する。 |
-| `language` | `TEXT` | 必須 | 既存Schema互換用。新規Questionは `auto` とし、回答言語の指定には使わない。 |
-| `publishedAt` | `INTEGER` | 任意 | `null`は `DRAFT`。公開確定時のサービス時刻以前。 |
-| `closesAt` | `INTEGER` | 必須 | 回答締切。`publishedAt`がある場合はそれより後。 |
-| `revealsAt` | `INTEGER` | 必須 | Human向けReveal開始。`closesAt`以上。 |
-| `createdAt` | `INTEGER` | 必須 | UTC Unixミリ秒。 |
-| `updatedAt` | `INTEGER` | 必須 | UTC Unixミリ秒。 |
+| `id` | `TEXT` | Required | Primary key. |
+| `creatorUserId` | `TEXT` | Required | Foreign key to `user.id`. Reject User deletion while Questions exist. |
+| `body` | `TEXT` | Required | Must not be blank. SPEC 006 defines detailed length limits. |
+| `language` | `TEXT` | Required | Retained for compatibility with the existing Schema. New Questions use `auto`; this does not prescribe the Answer language. |
+| `publishedAt` | `INTEGER` | Optional | `null` means `DRAFT`. No later than service time when publication commits. |
+| `closesAt` | `INTEGER` | Required | Answer deadline. Later than `publishedAt` when present. |
+| `revealsAt` | `INTEGER` | Required | Start of Human-facing Reveal. At or after `closesAt`. |
+| `createdAt` | `INTEGER` | Required | UTC Unix milliseconds. |
+| `updatedAt` | `INTEGER` | Required | UTC Unix milliseconds. |
 
-DBで強制するCHECK:
+CHECK constraints enforced by the DB:
 
 - `length(trim(body)) > 0`
 - `length(trim(language)) > 0`
 - `published_at IS NULL OR published_at < closes_at`
 - `closes_at <= reveals_at`
 
-公開時刻がサービス時刻以前であることと過去状態への巻き戻しは、既存値と `now` が必要なためDomain／Repository境界で強制する。
+The Domain/Repository boundary enforces that publication time is no later than service time and prevents rollback to a previous state, because those decisions require existing values and `now`.
 
 ### Answer
 
-Personal Agentが認証済みUserとしてQuestionへ投稿する不変の回答。
+An immutable response submitted to a Question by a Personal Agent as an authenticated User.
 
-| フィールド | DB表現 | 必須 | 制約・意味 |
+| Field | DB Representation | Required | Constraint / Meaning |
 | --- | --- | --- | --- |
-| `id` | `TEXT` | 必須 | 主キー。 |
-| `questionId` | `TEXT` | 必須 | `questions.id`への外部キー。Question削除時はAnswerを削除する。 |
-| `userId` | `TEXT` | 必須 | `user.id`への外部キー。UserにAnswerがある間はUser削除を拒否する。 |
-| `body` | `TEXT` | 必須 | 空白のみ不可、5,000文字以内。 |
-| `excerpt` | `TEXT` | 必須 | 空白のみ不可、改行なし、160文字以内。 |
-| `createdAt` | `INTEGER` | 必須 | UTC Unixミリ秒。 |
+| `id` | `TEXT` | Required | Primary key. |
+| `questionId` | `TEXT` | Required | Foreign key to `questions.id`. Delete Answers when the Question is deleted. |
+| `userId` | `TEXT` | Required | Foreign key to `user.id`. Reject User deletion while Answers exist. |
+| `body` | `TEXT` | Required | Must not be blank; at most 5,000 characters. |
+| `excerpt` | `TEXT` | Required | Must not be blank or contain line breaks; at most 160 characters. |
+| `createdAt` | `INTEGER` | Required | UTC Unix milliseconds. |
 
-DBで強制する制約:
+Constraints enforced by the DB:
 
 - `UNIQUE(question_id, user_id)`
-- 本文の空白のみ・5,000文字超を拒否
-- Excerptの空白のみ・改行・160文字超を拒否
+- Reject a blank or over-5,000-character Body
+- Reject a blank, multiline, or over-160-character Excerpt
 
-Answer作成時の `OPEN` 判定は現在時刻が必要なため、Repositoryの条件付き書き込みで強制する。
+Because the `OPEN` decision at Answer creation requires the current time, enforce it with a conditional Repository write.
 
-### AccountとVerification
+### Account and Verification
 
-Better Authが必要とする既存補助エンティティ。SPEC 005の主要Entityではないが、Drizzle Schemaに含めて既存テーブル名、列、一意制約、Userとの外部キーを維持する。業務Repositoryからは操作しない。
+Existing supporting entities required by Better Auth. They are not primary entities in SPEC 005, but the Drizzle Schema includes them and preserves existing table names, columns, uniqueness constraints, and foreign keys to User. Business Repositories do not operate on them.
 
-Accountは初期履歴の `UNIQUE(providerId, accountId)` と、issuer導入後の一意Index `UNIQUE(issuer, accountId)` をともに保持する。`0001`はissuer導入前のSchemaだけを作り、`0002`がissuer列とissuer単位の一意Indexを一度だけ追加する。
+Account retains both the initial `UNIQUE(providerId, accountId)` and the post-issuer unique index `UNIQUE(issuer, accountId)`. Migration `0001` creates only the pre-issuer Schema, while `0002` adds the issuer column and issuer-scoped unique index exactly once.
 
-## 関係
+## Relationships
 
 ```text
 User 1 ─── 0..* Session
@@ -101,28 +101,28 @@ Question 1 ─── 0..* Answer
 Answer ─── UNIQUE(questionId, userId)
 ```
 
-| 親 | 子 | 削除規則 | 理由 |
+| Parent | Child | Deletion Rule | Rationale |
 | --- | --- | --- | --- |
-| User | Session／Account | CASCADE | 認証主体がなくなった認証状態を残さない。既存Better Auth契約を維持する。 |
-| User | Question／Answer | RESTRICT | MVPに未定義のアカウント削除で公開コンテンツを暗黙削除しない。削除方針は後続SPECで定義する。 |
-| Question | Answer | CASCADE | Questionを明示的に削除する将来操作で孤立Answerを残さない。 |
+| User | Session / Account | CASCADE | Do not retain authentication state without its principal. Preserve the existing Better Auth contract. |
+| User | Question / Answer | RESTRICT | Do not implicitly delete published content through account deletion, which the MVP has not defined. A subsequent SPEC defines deletion policy. |
+| Question | Answer | CASCADE | Do not leave orphaned Answers when a future operation explicitly deletes a Question. |
 
-## Question状態
+## Question State
 
-### 判定表
+### Decision Table
 
-上から順に最初に一致した状態を返す。
+Return the first matching state from top to bottom.
 
-| 優先順 | 条件 | 状態 | Answer作成 |
+| Priority | Condition | State | Answer Creation |
 | --- | --- | --- | --- |
-| 1 | `publishedAt === null` | `DRAFT` | 不可 |
-| 2 | `now >= revealsAt` | `REVEALED` | 不可 |
-| 3 | `now >= closesAt` | `CLOSED` | 不可 |
-| 4 | 上記以外 | `OPEN` | 可 |
+| 1 | `publishedAt === null` | `DRAFT` | Not allowed |
+| 2 | `now >= revealsAt` | `REVEALED` | Not allowed |
+| 3 | `now >= closesAt` | `CLOSED` | Not allowed |
+| 4 | Otherwise | `OPEN` | Allowed |
 
-この順序により `closesAt === revealsAt` の境界は `REVEALED` となり、状態は重複しない。
+This ordering makes the `closesAt === revealsAt` boundary `REVEALED` and prevents overlapping states.
 
-### 遷移
+### Transitions
 
 ```text
 DRAFT --publish(now)--> OPEN --time reaches closesAt--> CLOSED
@@ -130,48 +130,48 @@ DRAFT --publish(now)--> OPEN --time reaches closesAt--> CLOSED
 CLOSED --time reaches revealsAt--> REVEALED
 ```
 
-許可:
+Allowed:
 
-- `DRAFT`の公開確定。`publishedAt = now`とし、`publishedAt < closesAt <= revealsAt`を満たす。
-- 時間経過による `OPEN → CLOSED → REVEALED`。
-- `closesAt === revealsAt`の場合の `OPEN → REVEALED`。
+- Commit publication of a `DRAFT` with `publishedAt = now`, satisfying `publishedAt < closesAt <= revealsAt`.
+- `OPEN → CLOSED → REVEALED` as time passes.
+- `OPEN → REVEALED` when `closesAt === revealsAt`.
 
-拒否:
+Rejected:
 
-- `OPEN`、`CLOSED`、`REVEALED`から `DRAFT`への巻き戻し。
-- `CLOSED`または`REVEALED`から `OPEN`へ戻る時刻変更。
-- `REVEALED`から以前の状態への変更。
-- 未来の `publishedAt` による公開予約。
-- `DRAFT`、`CLOSED`、`REVEALED`でのAnswer作成。
+- Rollback from `OPEN`, `CLOSED`, or `REVEALED` to `DRAFT`.
+- Schedule changes returning `CLOSED` or `REVEALED` to `OPEN`.
+- Changes returning `REVEALED` to an earlier state.
+- Scheduled publication through a future `publishedAt`.
+- Answer creation in `DRAFT`, `CLOSED`, or `REVEALED`.
 
-## Repository責務
+## Repository Responsibilities
 
-### 認証境界
+### Authentication Boundary
 
-- Better AuthだけがUser、Session、Account、Verificationを作成・更新する。
-- アプリケーションは既存 `Authentication.getSession()` を通してUser IDを取得する。
-- Domain RepositoryはSession token、email、OAuth tokenを受け取らない。
+- Only Better Auth creates and updates User, Session, Account, and Verification.
+- The application obtains a User ID through the existing `Authentication.getSession()`.
+- Domain Repositories do not receive Session tokens, email addresses, or OAuth tokens.
 
 ### QuestionRepository
 
-- Questionの取得、Draft保存、公開確定を担当する。
-- 保存前にQuestion時刻順序と状態遷移をDomain契約で検証する。
-- Answerの条件付き作成、本人Answer取得、回答数、Reveal後の取得に必要な既存操作を担当する。
-- D1の一意制約、外部キー、CHECK違反を安定したDomain結果へ分類し、想定外障害と混同しない。
-- 呼び出し元から渡された1つの `now` を状態判定と書き込み条件の両方に使用する。
+- Retrieves Questions and stores and publishes Drafts.
+- Validates Question schedule ordering and state transitions through the Domain contract before persistence.
+- Performs existing operations required for conditional Answer creation, own-Answer retrieval, Answer counts, and post-Reveal retrieval.
+- Classifies D1 uniqueness, foreign-key, and CHECK violations into stable Domain results without confusing them with unexpected failures.
+- Uses one `now` from the caller for both state decisions and write conditions.
 
 ## Migration
 
-### 空DB経路
+### Empty Database Path
 
-`0001`から`0004`を順に適用し、認証補助Entityを含む全テーブル、外部キー、CHECK、一意Indexを作成する。事前に0001と0002のissuer重複を解消し、両Migrationが各変更を一度だけ担当する履歴へ整える。
+Apply `0001` through `0004` in order to create every table, foreign key, CHECK, and unique index, including supporting authentication entities. First remove duplicated issuer responsibilities from `0001` and `0002`, leaving each Migration responsible for each change exactly once.
 
-### SPEC 004経路
+### SPEC 004 Path
 
-1. `0001`〜`0003`適用済みDBを前提とする。
-2. 有効なUser、Session、Account、Verificationを保持する。
-3. 検証専用Answerを削除し、旧Questionを削除する。
-4. 本番用Question、Answerを外部キー順に作成する。
-5. 外部キー検査、必須列、一意Index、CHECK制約を検証する。
+1. Assume a database with `0001` through `0003` applied.
+2. Preserve valid User, Session, Account, and Verification data.
+3. Delete validation-only Answers, then old Questions.
+4. Create production Questions and Answers in foreign-key order.
+5. Validate foreign keys, required columns, unique indexes, and CHECK constraints.
 
-共有環境へ適用する前にQuestion／Answerが検証データだけであることを確認する。一般利用者データが存在する場合はMigrationを進めず、別途data migration方針を決める。
+Before applying to a shared environment, confirm that Questions and Answers contain only validation data. If participant data exists, stop the Migration and define a separate data-migration policy.

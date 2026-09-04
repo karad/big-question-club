@@ -1,97 +1,97 @@
-# 技術調査: Challenge Core閲覧フロー
+# Technical Research: Challenge Core Browsing Flow
 
-## 1. 実装境界
+## 1. Implementation Boundary
 
-**決定**: SPEC 009はHomeとQuestion DetailのCore機能だけを実装し、専用Login、My Questions再設計、最終Visual Design、Reveal比較表現を含めない。
+**Decision**: SPEC 009 implements only the Home and Question Detail core features. It excludes a dedicated Login page, redesign of My Questions, final visual design, and Reveal comparison presentation.
 
-**理由**: 9月2日中に機能を完成させ、9月3日をChallengeで伝わる表現の制作へ使うため。
+**Rationale**: Complete the functionality on September 2 and reserve September 3 for presentation work that communicates the Challenge effectively.
 
-**検討した代替案**: 主要4画面と包括的品質を同時に完成する案は、Revealと表現へ進む時刻を遅らせるため不採用。
+**Alternatives Considered**: Completing all four primary screens and comprehensive quality at once was rejected because it would delay work on Reveal and presentation.
 
-## 2. Home一覧投影
+## 2. Home List Projection
 
-**決定**: `listOpenQuestions(snapshotNow)` で公開済みかつ `publishedAt <= now < closesAt` のQuestionと回答数だけを取得し、`closesAt ASC, publishedAt ASC, id ASC` で返す。
+**Decision**: `listOpenQuestions(snapshotNow)` retrieves only published Questions satisfying `publishedAt <= now < closesAt` and their answer counts, ordered by `closesAt ASC, publishedAt ASC, id ASC`.
 
-**理由**: N+1 Queryと非公開Question・Answer秘密値の持込みを避け、Homeに必要な情報だけを1回で取得できる。
+**Rationale**: This avoids N+1 queries and prevents unpublished Questions and Answer secrets from entering the Home data path, while retrieving only the information Home needs in one query.
 
-**検討した代替案**: 全Question取得後の絞り込みとQuestionごとの回答数取得は、安全境界と時間効率の両方で不利なため不採用。
+**Alternatives Considered**: Fetching every Question before filtering and fetching answer counts per Question were rejected because both weaken the safety boundary and time efficiency.
 
-## 3. Question状態Snapshot
+## 3. Question State Snapshot
 
-**決定**: HomeとQuestion Detailは要求ごとに `now()` を1回だけ取得し、既存 `getQuestionState`、一覧絞り込み、残り時間、Prompt可否へ同じ値を使う。
+**Decision**: Home and Question Detail obtain `now()` once per request and use the same value for the existing `getQuestionState`, list filtering, remaining time, and Prompt availability.
 
-**理由**: 締切境界をまたぐ1応答でOpen表示とClosed動作が混在しない。
+**Rationale**: This prevents Open presentation and Closed behavior from being mixed in a single response that crosses a deadline boundary.
 
-**検討した代替案**: Queryや表示項目ごとの時刻取得、Client時刻による状態判定は不整合を生むため不採用。
+**Alternatives Considered**: Obtaining time separately for queries or display fields and determining state from client time were rejected because they introduce inconsistency.
 
-## 4. 閲覧者と本人Submission
+## 4. Viewer and Current User's Submission
 
-**決定**: `anonymous`、`authenticated-unsubmitted`、`authenticated-submitted`、`submission-unavailable` を排他的に導出する。作成者一致は表示補助だけに使い、Answer認可へ使わない。
+**Decision**: Derive `anonymous`, `authenticated-unsubmitted`, `authenticated-submitted`, and `submission-unavailable` as mutually exclusive states. Use creator matching only as a presentation aid, never for Answer authorization.
 
-**理由**: 未回答Promptと本人Answerの同時表示を防ぎ、障害を未回答と誤認せず、SPEC 008の作成者非特権を維持できる。
+**Rationale**: This prevents simultaneous display of an unanswered Prompt and the current user's Answer, avoids mistaking a failure for an unanswered state, and preserves SPEC 008's rule that creators receive no special privilege.
 
-**検討した代替案**: Routeへ個別条件を散らす案は表示矛盾を起こしやすいため不採用。
+**Alternatives Considered**: Scattering individual conditions throughout routes was rejected because it is prone to presentation contradictions.
 
-## 5. 認証導線
+## 5. Authentication Flow
 
-**決定**: 既存Google Sign in操作を再利用し、未ログインQuestion Detailから既存認証入口へ案内する。専用Login画面と任意Pageへの戻り先管理は追加しない。
+**Decision**: Reuse the existing Google Sign in operation and guide signed-out users from Question Detail to the existing authentication entry point. Do not add a dedicated Login page or arbitrary-page return-destination handling.
 
-**理由**: Core Demoでは既存認証が動作しており、新しいOpen Redirect対策やClient認証再設計を発生させずに参加導線を成立させられる。
+**Rationale**: Existing authentication already works for the Core Demo, so the participation flow can be completed without introducing new open-redirect countermeasures or a client-authentication redesign.
 
-**検討した代替案**: 専用Loginと `returnTo` allowlistは製品品質には有用だが、Challenge Coreの差別化を増やさないため後日に回す。
+**Alternatives Considered**: A dedicated Login page and `returnTo` allowlist would be useful for product quality, but were deferred because they do not strengthen the Challenge Core differentiator.
 
-## 6. Visual Design境界
+## 6. Visual Design Boundary
 
-**決定**: SPEC 009では情報構造と安定したDOM hookだけを確定し、Typography、Color、Layout、Motion、Responsiveの最終表現はSPEC 010でHome・sealed・Revealを横断して完成する。
+**Decision**: SPEC 009 fixes the information structure and stable DOM hooks only. SPEC 010 completes the final typography, color, layout, motion, and responsive presentation across Home, sealed content, and Reveal.
 
-**理由**: 見た目を軽視するのではなく、機能完成後の9月3日を一貫したVisual Directionへ集中投資するため。
+**Rationale**: This does not de-emphasize appearance; it concentrates September 3 on a consistent visual direction after functionality is complete.
 
-**検討した代替案**: SPEC 009で暫定CSSを作りSPEC 010で作り直す案は二重作業になるため不採用。
+**Alternatives Considered**: Creating temporary CSS in SPEC 009 and rebuilding it in SPEC 010 was rejected as duplicate work.
 
-## 7. 既存SPECとの統合
+## 7. Integration with Existing Specifications
 
-**決定**: Agent依頼PromptとClipboardはSPEC 007、Answer認可・本人Answer・Reveal最小表示はSPEC 008を再利用する。Agent依頼Promptは、ChatGPTの組み込みブラウザを使い既存Chrome Tabを使わず、現在のOriginへ追従するQuestion絶対URLを含む確定済み1行文面を使用し、Context根拠と安全上の詳細指示は各WebMCP Tool契約からAgentへ渡す。Tool契約は現在の会話、利用可能な過去会話、Project ContextにあるUser自身の明示的・反復された記述を優先し、Assistant提案と比較・検討中の候補を確定事実とみなさない。明示的な個人見解がない場合はUserが答えそうな最善の代理回答を作成・投稿するが、未確認の個人事実や既知の信条として断定せず、その不足だけを理由にHumanへ確認しない。Prompt自体を初回投稿の許可とし、追加Previewや承認は要求しない。
+**Decision**: Reuse the Agent request Prompt and clipboard behavior from SPEC 007, and Answer authorization, the current user's Answer, and minimal Reveal presentation from SPEC 008. The Agent request Prompt uses the finalized one-line wording that requires ChatGPT's built-in browser rather than an existing Chrome tab and includes an absolute Question URL following the current origin. Context-evidence and safety details are passed to the Agent by each WebMCP tool contract. Tool contracts prioritize the user's own explicit or repeated statements from the current conversation, available past conversations, and Project Context, and do not treat assistant suggestions or options still under consideration as settled facts. If no explicit personal view exists, create and submit the best answer on the user's behalf without asserting unverified personal facts or presenting a belief as known, and do not ask the human solely because that context is missing. The Prompt itself authorizes the initial submission, so no additional preview or approval is required.
 
-**理由**: 既に実機検証済みのChallenge中心機能と安全境界を短期変更で壊さない。
+**Rationale**: Do not break the already device-verified central Challenge feature and safety boundaries through short-term changes.
 
-**検討した代替案**: UI用に別のAnswer取得やPromptを作る案は契約重複と漏えい経路を増やすため不採用。
+**Alternatives Considered**: Creating separate Answer retrieval or Prompts for the UI was rejected because it duplicates contracts and adds leakage paths.
 
-## 8. テスト分担
+## 8. Test Allocation
 
-**決定**: 回答数・残り時間・閲覧者状態はUnit、SSR・認証・秘密値非露出はHono Integration、Open一覧はD1 Integrationで検証する。Manual TestはSPEC 010の画面完成後にCore Demo全体で行う。
+**Decision**: Verify answer counts, remaining time, and viewer state with unit tests; SSR, authentication, and non-exposure of secrets with Hono integration tests; and the Open list with D1 integration tests. Conduct manual testing for the complete Core Demo after the SPEC 010 screens are complete.
 
-**理由**: 本日中に自動回帰を保った機能完成へ到達し、明日のVisual作業後に同じ導線を二重に手動確認しないため。
+**Rationale**: Reach functional completion with automated regression protection today, without manually verifying the same flow twice after tomorrow's visual changes.
 
-**検討した代替案**: SPEC 009単独の包括的Browser確認は、SPEC 010でDOMと見た目が変わるため不採用。
+**Alternatives Considered**: Comprehensive browser verification for SPEC 009 alone was rejected because SPEC 010 changes the DOM and appearance.
 
-## 9. 単一管理者の識別
+## 9. Single-Administrator Identification
 
-**決定**: `ADMIN_EMAIL` で1つの正規化済みEmailを設定し、Session由来User IDでDBのUserを取得してEmailが完全一致する場合だけ管理権限を与える。設定不備はFail Closedとする。
+**Decision**: Configure one normalized email in `ADMIN_EMAIL`. Retrieve the database user by the session-derived user ID, and grant administrator authority only when the email matches exactly. Fail closed when configuration is invalid.
 
-**理由**: Google Loginで確認済みの既存Emailを利用でき、User IDの事前調査や別Passwordを不要にしつつ、入力値による権限昇格を防げる。
+**Rationale**: This reuses the existing email verified through Google Login and prevents privilege escalation through input values without requiring advance discovery of a user ID or a separate password.
 
-**検討した代替案**: User ID指定は安定するが事前取得が必要、DB Roleは複数管理者と権限管理を追加するため不採用。
+**Alternatives Considered**: Configuring a user ID is stable but requires advance retrieval. A database role was rejected because it adds multiple administrators and role management.
 
-## 10. 監査記録
+## 10. Audit Records
 
-**決定**: Login／LogoutはSession、Question／Answer入力は各TableのD1 Triggerで追記型 `audit_logs` へ記録する。Actor、Action、Target、Outcome、時刻だけを保存し、本文・Excerpt・認証秘密を複製しない。
+**Decision**: Append records to `audit_logs` using session triggers for login/logout and D1 triggers on the Question/Answer tables for input operations. Store only actor, action, target, outcome, and time; do not duplicate bodies, excerpts, or authentication secrets.
 
-**理由**: RouteやWebMCPなど入口が複数あっても記録漏れを防ぎ、削除後の運用経緯を残しながら機密値と不適切コンテンツの重複保管を避けられる。
+**Rationale**: This prevents missed records despite multiple entry points such as routes and WebMCP, preserves the operational history after deletion, and avoids duplicating sensitive values or inappropriate content.
 
-**検討した代替案**: Route単位の記録は実装漏れと部分成功が起こりやすく、本文Snapshot保存は削除の意味と情報最小化に反するため不採用。
+**Alternatives Considered**: Per-route records are prone to implementation omissions and partial success. Body snapshots contradict the meaning of deletion and data minimization.
 
-## 11. 管理削除
+## 11. Administrator Deletion
 
-**決定**: Question削除は既存外部キーのCascadeで配下Answerを削除し、Answer削除は指定1件だけを削除する。管理者Actorを持つ専用監査記録と変更を同一D1 Batchで確定し、編集機能は設けない。
+**Decision**: Question deletion removes child Answers using the existing foreign-key cascade. Answer deletion removes only the specified record. Commit the mutation and a dedicated audit record containing the administrator actor in the same D1 batch. Do not provide editing operations.
 
-**理由**: 対象範囲が明確で、部分成功を避け、一般User操作のTrigger記録と管理者操作を区別できる。
+**Rationale**: The target scope is unambiguous, partial success is avoided, and administrator operations can be distinguished from trigger-recorded regular-user operations.
 
-**検討した代替案**: Soft Deleteは一般Queryすべての除外変更と復元権限を必要とし、期限内の最低限運用を超えるため不採用。
+**Alternatives Considered**: Soft deletion was rejected because it would require exclusion changes to every public query and restoration permissions, exceeding the minimum operations needed by the deadline.
 
-## 12. BAN強制
+## 12. Ban Enforcement
 
-**決定**: `banned_users` を正本とし、BAN時に対象の全Sessionを削除する。Better AuthのSession作成前HookでもBANを照会して新規Sessionを拒否し、解除はBAN行を削除する。管理者自身のBANは拒否する。
+**Decision**: Use `banned_users` as the source of truth, delete all of the target user's sessions when banning, reject new sessions by checking bans in the Better Auth before-session-creation hook, and unban by deleting the ban row. Reject attempts to ban the administrator.
 
-**理由**: 既存Sessionと再Loginの両経路を閉じ、BAN解除をUser削除なしで安全に行える。
+**Rationale**: This closes both existing-session and re-login paths while allowing a ban to be removed safely without deleting the user.
 
-**検討した代替案**: User削除はQuestion／Answerの参照整合性と監査追跡を壊し、Session削除だけでは再Loginできるため不採用。
+**Alternatives Considered**: Deleting a user breaks Question/Answer referential integrity and audit traceability, while deleting sessions alone still permits re-login.
