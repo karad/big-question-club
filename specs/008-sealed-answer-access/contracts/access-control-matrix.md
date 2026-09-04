@@ -1,29 +1,29 @@
-# Answerアクセス制御マトリクス
+# Answer Access-Control Matrix
 
-✅は返却可、❌はAnswer由来データと実在の手掛かりを返却不可とする。
+✅ means data may be returned. ❌ means no Answer-derived data or clue to existence may be returned.
 
-## 認証済みHuman
+## Authenticated Human
 
-| 状態 | SSR回答数 | SSR本人Answer | 本人状態HTTP | SSR全Excerpt | 詳細HTTP指定本文 |
+| State | SSR Answer Count | SSR Own Answer | Personal-State HTTP | SSR All Excerpts | Detail HTTP Selected Body |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `DRAFT` | ❌ | ❌ | ❌ | ❌ | ❌ |
 | `OPEN` | ✅ | ✅ | ✅ | ❌ | ❌ |
 | `CLOSED` | ✅ | ✅ | ✅ | ❌ | ❌ |
 | `REVEALED` | ✅ | ❌ | ✅ | ✅ | ✅ |
 
-Question作成者も同じ表に従い、Reveal前の特権を持たない。Reveal後の初期SSRは本人を含めてAnswer本文を埋め込まず、本人Answerは本人状態HTTPからのみ取得する。全Excerptには本人を含む全Answerの `{ id, excerpt }` だけを含める。
+Question creators follow the same table and receive no pre-Reveal privilege. Initial SSR after Reveal embeds no Answer body, including the current User's; their Answer is retrieved only through personal-state HTTP. All excerpts contain only `{ id, excerpt }` for every Answer, including the current User's.
 
 ## Personal Agent / WebMCP
 
-| 状態 | 回答数 | 本人状態・Answer | 他者情報 |
+| State | Answer Count | Own State/Answer | Other-User Information |
 | --- | ---: | ---: | ---: |
 | `DRAFT` | ❌ | ❌ | ❌ |
 | `OPEN` | ❌ | ✅ | ❌ |
 | `CLOSED` | ❌ | ✅ | ❌ |
 | `REVEALED` | ❌ | ✅ | ❌ |
 
-未投稿応答は他者の投稿有無や件数で変化しない。
+The unsubmitted response does not vary with another User's submission existence or count.
 
-## 未認証者と境界
+## Unauthenticated Users and Boundaries
 
-未認証者は全状態、全経路、全Answer情報を❌とする。`now < closesAt` は `OPEN`、`closesAt <= now < revealsAt` は `CLOSED`、`revealsAt <= now` は `REVEALED`。`closesAt === revealsAt` は境界直前が `OPEN`、同時刻から `REVEALED` とし、1要求は最初に導出した状態を最後まで使う。
+Unauthenticated Users receive ❌ for every Answer datum on every path in every state. `now < closesAt` is `OPEN`; `closesAt <= now < revealsAt` is `CLOSED`; `revealsAt <= now` is `REVEALED`. When `closesAt === revealsAt`, the instant before is `OPEN` and the boundary onward is `REVEALED`. One request uses the state derived at its start throughout.

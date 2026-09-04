@@ -6,6 +6,11 @@ export type AuthenticationControlPresentation = {
   statusMessage: string;
 };
 
+/**
+ * Maps authentication state to header-control visibility and status text.
+ * @param state - Current authentication state.
+ * @returns The presentation model for authentication controls.
+ */
 export function getAuthenticationControlPresentation(
   state: AuthenticationControlState,
 ): AuthenticationControlPresentation {

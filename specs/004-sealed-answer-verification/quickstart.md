@@ -1,14 +1,14 @@
-# 検証ガイド: Agent回答投稿の完全性・Sealed Answersの検証
+# Validation Guide: Agent Answer Submission Integrity and Sealed Answers
 
-## 前提条件
+## Prerequisites
 
-- SPEC 002・003がGo判定済みである。
-- Node.js 22.13以上、npm、Cloudflare認証済みWrangler、WebMCP対応Chromeが使える。
-- 区別できる検証用2利用者を用意し、Question・AnswerにPrivate Contextや認証情報を含めない。
+- SPEC 002 and 003 have Go decisions.
+- Node.js 22.13 or later, npm, Wrangler authenticated with Cloudflare, and WebMCP-compatible Chrome are available.
+- Prepare two distinguishable validation participants, and include no Private Context or authentication information in Questions or Answers.
 
-## 自動確認
+## Automated Checks
 
-現行の`remote: true` D1バインディングでは、リモートD1へマイグレーションを適用後、`npm run dev`を起動し、次を実行する。
+With the current `remote: true` D1 binding, apply migrations to remote D1, start `npm run dev`, and run:
 
 ```sh
 npm test
@@ -17,36 +17,36 @@ npm run lint
 npm run format
 ```
 
-| コマンド | 実行日 | 結果 |
+| Command | Execution Date | Result |
 | --- | --- | --- |
-| `npm test` | 2026-09-02 | Pass（85 tests） |
+| `npm test` | 2026-09-02 | Pass (85 tests) |
 | `npm run typecheck` | 2026-09-02 | Pass |
 | `npm run lint` | 2026-09-02 | Pass |
 | `npm run format` | 2026-09-02 | Pass |
 
-## 手動E2E
+## Manual E2E
 
-1. 利用者Aで投稿後、さらに9回再投稿し、確定Answerが1件で重複が9件になることを確認する。
-2. 未投稿Questionへ同時の投稿を10組送り、各組で成功1件・重複1件だけになることを確認する。
-3. 締切直前、ちょうど、後に投稿を試み、直前だけが成功することを確認する。
-4. A・Bが本文とExcerptを持つAnswerを同じQuestionに投稿し、締切前のSSR、HTTP API、WebMCPで他者Answer本文、Excerpt、抜粋、要約、識別子が出ないことを確認する。
-5. 10件の有効投稿について、Excerptが必須・改行なし・160文字以内であることを確認する。
-6. 締切後に認証済みHumanのSSR一覧で全AnswerのExcerptだけを確認し、Excerptクリック時だけ該当するBodyがその下へ展開されることを確認する。
-7. 締切前または未認証でAnswer詳細APIを直接呼び出し、`ANSWER_UNAVAILABLE`だけが返り、本文・Excerpt・存在の手掛かりがないことを確認する。
-8. 締切後もWebMCPから他者Answerが出ないことを確認する。
-9. Answer 0件の締切後Questionで空状態だけが表示されることを確認する。
+1. After Participant A submits, attempt nine additional submissions and confirm one committed Answer and nine duplicates.
+2. Send ten pairs of concurrent submissions to an unanswered Question and confirm exactly one success and one duplicate in each pair.
+3. Attempt submission immediately before, exactly at, and after the deadline; confirm that only the attempt immediately before succeeds.
+4. Have A and B submit Answers containing Bodies and Excerpts to the same Question. Before the deadline, confirm that SSR, HTTP APIs, and WebMCP expose no other participant's Answer Body, Excerpt, extract, summary, or identifier.
+5. Across ten valid submissions, confirm that an Excerpt is required, contains no line breaks, and is no more than 160 characters.
+6. After the deadline, confirm that the authenticated Human SSR list shows only every Answer's Excerpt and that only the selected Body expands below its Excerpt when clicked.
+7. Call the Answer detail API directly before the deadline or without authentication. Confirm that it returns only `ANSWER_UNAVAILABLE`, with no Body, Excerpt, or clue to existence.
+8. Confirm that WebMCP exposes no other participant's Answer after the deadline.
+9. Confirm that a post-deadline Question with zero Answers shows only the empty state.
 
-### 実行結果マトリクス
+### Execution Result Matrix
 
-| ケース | 主体 | 経路 | 締切状態 | 期待結果 | 実行結果 | 合否 |
+| Case | Actor | Route | Deadline State | Expected Result | Observed Result | Decision |
 | --- | --- | --- | --- | --- | --- | --- |
-| 再投稿 | 投稿者本人 | WebMCP | 締切前 | 1件成功・以後409 | `ANSWER_ALREADY_SUBMITTED` | Pass |
-| 同時投稿 | 投稿者本人 | HTTP | 締切前 | 各組で1件だけ成功 | 自動テスト | Pass |
-| Sealed | 別の認証済みHuman | SSR | 締切前 | 他者本文・Excerptなし | 他者情報なし | Pass |
-| Sealed直接取得 | 未認証者 | HTTP | 締切前 | `ANSWER_UNAVAILABLE`だけ | `ANSWER_UNAVAILABLE` | Pass |
-| Reveal一覧 | 認証済みHuman | SSR | 締切後 | Excerptだけを一覧表示 | Body初期表示なし | Pass |
-| Reveal詳細 | 認証済みHuman | HTTP | 締切後 | 要求した1件のBodyだけ | クリックしたAnswerだけ取得 | Pass |
-| Reveal WebMCP | Personal Agent | WebMCP | 締切後 | 他者Answerなし | 本人の`submitted`状態だけ | Pass |
-| 空状態 | 認証済みHuman | SSR | 締切後 | 架空のAnswerなし | 自動テスト | Pass |
+| Resubmission | Submitting participant | WebMCP | Before deadline | One success, then 409 | `ANSWER_ALREADY_SUBMITTED` | Pass |
+| Concurrent submission | Submitting participant | HTTP | Before deadline | Exactly one success per pair | Automated test | Pass |
+| Sealed | Another authenticated Human | SSR | Before deadline | No other participant's Body or Excerpt | No other-participant information | Pass |
+| Direct Sealed retrieval | Unauthenticated participant | HTTP | Before deadline | Only `ANSWER_UNAVAILABLE` | `ANSWER_UNAVAILABLE` | Pass |
+| Reveal list | Authenticated Human | SSR | After deadline | List only Excerpts | No Body in initial display | Pass |
+| Reveal detail | Authenticated Human | HTTP | After deadline | Only the requested Body | Retrieved only the clicked Answer | Pass |
+| Reveal WebMCP | Personal Agent | WebMCP | After deadline | No other participant's Answer | Only the participant's own `submitted` status | Pass |
+| Empty state | Authenticated Human | SSR | After deadline | No fabricated Answer | Automated test | Pass |
 
-ケースID、主体、経路、締切前後、期待結果、合否だけを記録し、Answer本文、Cookie、トークン、OAuth情報、スクリーンショットを残さない。
+Record only the case ID, actor, route, deadline state, expected result, and pass/fail. Do not retain Answer Bodies, Cookies, tokens, OAuth information, or screenshots.

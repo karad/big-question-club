@@ -1,113 +1,91 @@
-# 画面契約: 質問一覧と回答公開
+# Screen Contract: Question Lists and Answer Reveal
 
-## 共通応答
+## Shared Responses
 
-- 人向けHTMLの言語は`en`とし、表示文言は英語にする。
-- 全画面が`/styles.css`を初期HTMLの`head`から読み込み、`/client.js`をモジュールとして読み込む。
-- 質問本文、回答要約文、回答本文は文字列としてエスケープする。
-- 認証状態または本人回答状態で内容が変わる応答は`Cache-Control: private, no-store`と`Vary: Cookie`を返す。
-- 1応答内の状態判定、絞り込み、残り時間は同じ`now`を使う。
+- Human-facing HTML uses `lang="en"` and English text.
+- Every screen loads `/styles.css` in `head` and `/client.js` as a module.
+- Escape Question bodies, Answer excerpts, and Answer bodies as strings.
+- Responses varying by authentication or current-user Answer state return `Cache-Control: private, no-store` and `Vary: Cookie`.
+- Use one `now` value for state, filtering, and remaining-time decisions within a response.
 
 ## `GET /`
 
-ホームを返す。
+Returns Home.
 
-### 成功時
+### Success
 
-- 状態: `200`
-- `Open questions`: `OPEN`だけを締切昇順で最大5件表示する。
-- `Results`: `REVEALED`だけを公開時刻降順で最大10件表示する。
-- 両区分に全件一覧へのリンクを表示する。
-- 回答受付中の各項目は質問本文、回答数、残り時間または締切日時、封印アイコン、`View question` Buttonを表示する。詳細への遷移はこのButtonからだけ行い、Card面全体をリンク領域にしない。
-- 認証済み利用者には、本人回答済みのQuestion Cardだけ、封印・公開Tagの隣へ緑色の`Answered`を表示する。未回答、未認証、または本人回答状態を安全に確定できない場合は回答状態Tagを表示しない。
-- 認証済みかつ本人未回答と確認できた回答受付中項目だけ、閉じた依頼文開示操作を表示する。
-- 公開済みの各項目は質問本文、回答数、公開状態、詳細リンクを表示し、Card面全体を詳細へのリンク領域にする。
+- Status `200`.
+- `Open questions`: at most five `OPEN` Questions ordered by deadline ascending.
+- `Results`: at most ten `REVEALED` Questions ordered by reveal time descending.
+- Both sections link to their complete lists.
+- Each Open item shows body, count, remaining time or deadline, sealed icon, and `View question`. Only that button navigates; the Card surface is not a link.
+- For authenticated users, only Cards the current user answered show a green `Answered` beside the sealed/revealed tag. Show no answer-state tag when unanswered, signed out, or indeterminate.
+- Only authenticated, confirmed-unanswered Open items show a collapsed prompt-disclosure control.
+- Each Result shows body, count, revealed state, and Detail link, with the whole Card as its link surface.
 
-### 空状態
+### Empty State
 
-- 一方の区分だけが0件でも、もう一方の区分は表示する。
-- `OPEN`が0件なら`No open questions right now.`を表示する。
-- `REVEALED`が0件なら`No results yet.`を表示する。
+- Keep one section visible if the other is empty. Show `No open questions right now.` for no Open Questions and `No results yet.` for no Results.
 
-### 障害時
+### Failure
 
-- 質問一覧取得に失敗した区分は安全な再試行文言を表示し、取得済みでない内容を推測表示しない。
-- 認証または本人回答有無の取得だけが失敗した場合、公開質問一覧は表示し、依頼文を表示しない。
+- A failed section shows safe retry text and does not invent unfetched content.
+- If only authentication or current-user state fails, show public lists but no prompt.
 
 ## `GET /questions/open?page={page}`
 
-回答受付中の質問一覧を返す。
-
-- 状態: `200`
-- 1ページ最大20件。
-- 順序: `closesAt ASC, id ASC`。
-- 各項目の公開範囲と依頼文条件はホームと同じ。
-- `Previous`、`Next`、`Page {current} of {total}`を有効な場合だけ表示する。
-- `page`未指定は1。
-- 不正または範囲外の`page`は空の安全状態と`Back to page 1`を表示し、`500`にしない。
+- Status `200`; at most 20 per page; order `closesAt ASC, id ASC`.
+- Item exposure and prompt conditions match Home.
+- Show available `Previous`, `Next`, and `Page {current} of {total}`.
+- Omitted `page` means 1. Invalid or out-of-range values show a safe empty state and `Back to page 1`, never `500`.
 
 ## `GET /questions/revealed?page={page}`
 
-回答公開済みの質問一覧を返す。
+- Status `200`; at most 20; order `revealsAt DESC, id DESC`.
+- Items show only body, count, revealed state, and Detail link, never excerpts or bodies.
+- Pagination matches the Open list.
 
-- 状態: `200`
-- 1ページ最大20件。
-- 順序: `revealsAt DESC, id DESC`。
-- 各項目は質問本文、回答数、公開状態、詳細リンクだけを表示し、回答要約文と本文を含めない。
-- ページ移動契約は回答受付中一覧と同じ。
+## Deadline Display Toggle
 
-## 日時表示切替
+- Visible absolute dates use `YYYY-MM-DD HH:mm`; `time[datetime]` remains ISO 8601.
+- Initial presentation is remaining time. `[data-deadline-toggle]` changes every item within the same `[data-question-list-scope]` to absolute deadlines and back.
+- Communicate state with `aria-pressed` and English labels. Absolute deadlines remain assistive-technology-accessible without JavaScript.
 
-- 画面上の絶対日時は`YYYY-MM-DD HH:mm`形式で表示する。`time[datetime]`の値はISO 8601形式を維持する。
-- 初期状態は残り時間表示。
-- `[data-deadline-toggle]`をポインターまたはキーボードで実行すると、同じ`[data-question-list-scope]`内の全項目を残り時間から締切日時へ切り替える。
-- 再実行すると全項目を残り時間へ戻す。
-- 操作は`aria-pressed`と英語ラベルで現在状態を伝える。
-- JavaScriptが無効でも、初期HTML内の絶対締切は支援技術が取得できる形で残す。
+## Prompt Disclosure and Copy
 
-## 依頼文の開閉とコピー
-
-- 初期状態では依頼文本文を表示しない。
-- `[data-agent-request-toggle]`は対象質問の`aria-expanded`と`aria-controls`を持つ。
-- 開いた領域は選択可能な全文と`Copy prompt`を含む。
-- 質問Aの開閉は質問Bへ影響しない。
-- コピー成功は`Copied`、失敗は`Copy failed. Select the prompt and copy it manually.`を対象操作の状態領域へ通知する。
+- Hide prompt text initially. `[data-agent-request-toggle]` names the target through `aria-expanded` and `aria-controls`.
+- The expanded region contains selectable full text and `Copy prompt`; disclosure for one Question does not affect another.
+- Announce `Copied` or `Copy failed. Select the prompt and copy it manually.` near the operation.
 
 ## `GET /questions/:questionId`
 
-既存の質問詳細を返す。
+### `OPEN` or `CLOSED`
 
-### `OPEN`または`CLOSED`
-
-- 鍵アイコン、状態色、アクセシブル名`Answers are sealed`で封印を示す。
-- 他者回答の要約文、本文、識別子、投稿者、個別時刻を含めない。
-- 認証済み利用者には、本人回答済みの場合だけ封印Tagの隣へ緑色の`Answered`を表示する。
-- 回答済み利用者には本人の要約文と本文だけを表示し、他者回答を初期HTMLへ含めない。
-- 未回答、未認証、または本人回答状態を安全に確定できない場合は回答状態Tagを表示せず、既存の安全な案内を維持する。
+- Show sealing with a lock, state color, and accessible name `Answers are sealed`.
+- Include no other-user excerpt, body, ID, author, or timestamp.
+- For authenticated users, show green `Answered` beside the sealed tag only when the current user answered.
+- An answered user sees only their own excerpt and body. In unanswered, signed-out, or indeterminate states, show no answer-state tag and preserve safe guidance.
 
 ### `REVEALED`
 
-- 未認証者: 質問情報と`Sign in to view results.`だけを表示し、回答情報を含めない。
-- 認証済み利用者: 公開アイコン、回答総数、`Answer 1`から始まる要約文一覧を表示する。
-- 回答一覧の冒頭に`All answers were submitted by signed-in participants. One answer per account.`を表示する。
-- 各回答には、質問識別子と回答識別子から生成した質問単位の匿名アイコンと`Authenticated participant`を表示する。
-- セッション利用者自身の回答だけに緑色の`Your answer` Tagを表示する。本人判定はサーバー側で行い、SSR投影には`isOwn`の真偽だけを渡して回答者利用者IDを渡さない。
-- 匿名アイコンは同じ質問と回答で安定させるが、利用者ID、Google表示名、Googleプロフィール画像、生のハッシュ値を使わず、質問を横断する同一回答者の追跡に使える値を追加しない。
-- 管理画面では既存どおり回答とアカウントの関連を確認できる。一般利用者向け公開ニックネームは追加しない。
-- 回答順は初回投稿時刻昇順、同時刻は回答識別子昇順。
-- 0件なら`No answers were submitted.`を表示する。
-- 各回答の本文は初期HTMLへ含めない。
+- Signed out: show Question information and `Sign in to view results.`, with no Answer information.
+- Authenticated: show reveal icon, total count, and excerpts numbered from `Answer 1`.
+- Precede the list with `All answers were submitted by signed-in participants. One answer per account.`
+- Each Answer shows a per-Question anonymous icon derived from Question and Answer IDs and `Authenticated participant`.
+- Only the session user's Answer shows green `Your answer`. Determine ownership server-side and pass only `isOwn`, never respondent user ID, to SSR.
+- The icon is stable for the same Question/Answer but uses no user ID, Google name/image, or raw hash and adds no cross-Question tracking value.
+- Administration retains account linkage; add no public nickname.
+- Order by initial submission time ascending, then Answer ID ascending. Show `No answers were submitted.` for zero.
+- Include no Answer body in initial HTML.
 
 ## `GET /api/questions/:questionId/answers/:answerId`
 
-既存の認証必須回答詳細経路を維持する。
+Preserves the existing authenticated Answer-detail route.
 
-### 成功時
+### Success
 
-- 条件: 認証済み人、質問が公開済み、状態が`REVEALED`、回答が対象質問に属する。
-- 状態: `200`
-- ヘッダー: `Cache-Control: private, no-store`、`Vary: Cookie`
-- 本文:
+- Requires an authenticated human, published `REVEALED` Question, and Answer belonging to it.
+- Status `200`; `Cache-Control: private, no-store`; `Vary: Cookie`.
 
 ```json
 {
@@ -116,29 +94,26 @@
 }
 ```
 
-### 拒否時
+### Rejection
 
-- 未認証、未公開、`OPEN`、`CLOSED`、別質問の回答、不存在はすべて既存の安全な`404 ANSWER_UNAVAILABLE`とする。
-- 他者回答の実在や質問との所属を区別できる情報を返さない。
+- Signed out, unpublished, `OPEN`, `CLOSED`, wrong-Question, and missing cases all return the existing safe `404 ANSWER_UNAVAILABLE`, without distinguishing existence or membership.
 
-## 回答本文の展開
+## Answer-Body Expansion
 
-- 初回選択時は対象ボタンを処理中として示し、成功時に同じ回答項目内へ本文を表示する。
-- 取得済み本文の再展開では再取得しない。
-- 複数の回答本文を同時に開いた状態を許可する。
-- 閉じても取得済み本文は同じページ内だけ保持する。
-- 失敗時は対象項目だけに`Answer could not be loaded. Try again.`と再試行操作を表示し、別回答の表示状態を変更しない。
+- On first selection, show loading on that button and render the body within that item on success.
+- Reopening a fetched body does not refetch. Multiple bodies may remain open; closing retains it only in page memory.
+- Failure shows `Answer could not be loaded. Try again.` and retry only in that item without changing others.
 
-## アイコンと視覚状態
+## Icons and Visual States
 
-- すべてのアイコンはReact Icons由来の生成済み固定SVGを共通表示部品から使う。
-- 意味のあるアイコンは英語のアクセシブル名を持つ。隣接文字と意味が重複する装飾アイコンは`aria-hidden="true"`とする。
-- 封印と公開、回答数、日時、コピー、前後移動、削除はアイコンだけに意味を依存しない。
-- 動きの低減設定では装飾的遷移を停止する。
+- Use only generated fixed SVGs derived from React Icons through the shared component.
+- Meaningful icons have English accessible names; redundant decorative icons use `aria-hidden="true"`.
+- Sealed/revealed state, counts, dates, copy, navigation, and deletion never rely on icons alone.
+- Disable decorative transitions under reduced motion.
 
-## 非露出回帰
+## Non-Exposure Regression
 
-- `OPEN`と`CLOSED`の人向けHTML、全状態の未認証応答、全WebMCP応答に他者回答秘密値が0件であること。
-- `REVEALED`の初期HTMLに回答本文秘密値が0件であること。
-- `REVEALED`の初期HTMLにGoogle表示名、Googleプロフィール画像、利用者ID、生のハッシュ値、質問横断の回答者識別子が0件であること。
-- WebMCPの登録ツール数と他者回答非露出契約を変更せず、他者回答数・要約文・本文・識別子を追加しないこと。`get_question`と`submit_answer`の回答作成契約は、明示的な個人見解がない場合も未確認事実を断定しない最善の代理回答を作成・投稿し、その不足だけを理由に確認質問しない方針を伝えること。
+- Other-user secrets occur zero times in human HTML for `OPEN`/`CLOSED`, every signed-out response, and every WebMCP response.
+- Answer-body secrets occur zero times in initial `REVEALED` HTML.
+- Google names/images, user IDs, raw hashes, and cross-Question respondent identifiers occur zero times in initial `REVEALED` HTML.
+- Do not change WebMCP tool count or non-exposure behavior or add other-user counts, excerpts, bodies, or IDs. The `get_question` and `submit_answer` contracts direct the Agent, even without an explicit personal view, to create and submit the best proxy answer without asserting unverified facts and without asking solely due to that absence.

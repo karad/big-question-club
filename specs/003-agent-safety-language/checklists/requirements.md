@@ -1,36 +1,36 @@
-# 仕様品質チェックリスト: Personal Agent回答の安全性・言語の検証
+# Specification Quality Checklist: Validating Personal Agent Answer Safety and Language
 
-**目的**: 計画フェーズへ進む前に、仕様の完全性と品質を検証する  
-**作成日**: 2026-09-01  
-**機能**: [spec.md](../spec.md)
+**Purpose**: Validate the specification's completeness and quality before proceeding to the planning phase
+**Created**: 2026-09-01
+**Feature**: [spec.md](../spec.md)
 
-## 内容の品質
+## Content Quality
 
-- [x] 実装詳細（言語、フレームワーク、API）が含まれていない
-- [x] ユーザー価値とビジネス上の必要性に焦点を当てている
-- [x] 非技術的なステークホルダーが読める表現である
-- [x] 必須セクションがすべて記入されている
+- [x] Free of implementation details (languages, frameworks, APIs)
+- [x] Focused on user value and business needs
+- [x] Written in language accessible to non-technical stakeholders
+- [x] All mandatory sections are complete
 
-## 要件の完全性
+## Requirement Completeness
 
-- [x] `[NEEDS CLARIFICATION]` マーカーが残っていない
-- [x] 要件がテスト可能で曖昧でない
-- [x] 成功基準が測定可能である
-- [x] 成功基準が技術に依存していない
-- [x] すべての受け入れシナリオが定義されている
-- [x] エッジケースが特定されている
-- [x] スコープが明確に限定されている
-- [x] 依存関係と前提が特定されている
+- [x] No `[NEEDS CLARIFICATION]` markers remain
+- [x] Requirements are testable and unambiguous
+- [x] Success criteria are measurable
+- [x] Success criteria are technology-agnostic
+- [x] All acceptance scenarios are defined
+- [x] Edge cases are identified
+- [x] Scope is clearly bounded
+- [x] Dependencies and assumptions are identified
 
-## 機能の準備状況
+## Feature Readiness
 
-- [x] すべての機能要件に明確な受け入れ基準がある
-- [x] ユーザーシナリオが主要フローを網羅している
-- [x] 機能が成功基準で定義した測定可能な成果を満たせる
-- [x] 仕様に実装詳細が漏れていない
+- [x] All functional requirements have clear acceptance criteria
+- [x] User scenarios cover the primary flows
+- [x] The feature can meet the measurable outcomes defined by the success criteria
+- [x] No implementation details leak into the specification
 
-## 注記
+## Notes
 
-- 2026-09-01 に検証。全項目が適合した。Private Contextの利用可否は、非公開の内部推論を収集せず、事前定義した検査項目が公開出力に現れないことと、Questionに関連する安全な回答を返すことにより評価する。
-- 通常、日本語、英語、Private Context開示要求、Injectionの各ケースと、Go/No-Goの判定条件を仕様に定義した。
-- 2026-09-02 に期限内のCritical Go基準を6ケースへ更新し、残り8ケースを後続回帰検証として明記した。要件・成功基準・検証ガイド・記録・タスクの整合性を確認した。
+- Validated on 2026-09-01. Every item passed. Whether Private Context can be used is evaluated without collecting private internal reasoning: predefined inspection items must not appear in public output, while the Agent must return a safe answer relevant to the Question.
+- The specification defines normal, Japanese, English, Private Context disclosure-request, and Injection cases, along with Go/No-Go decision conditions.
+- On 2026-09-02, the deadline-critical Go criterion was updated to six cases, and the remaining eight were explicitly retained for subsequent regression validation. Requirements, success criteria, the validation guide, records, and tasks were checked for consistency.

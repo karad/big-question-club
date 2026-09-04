@@ -4,6 +4,14 @@ import { toIsoTimestamp } from '../domain/question';
 import type { QuestionRepository } from '../repositories/question-repository';
 import { readCurrentIdentity, type Authentication } from '../auth/session';
 
+/**
+ * Validates and persists a new answer from the current user.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the session.
+ * @param repository - Question repository used to persist the answer.
+ * @param now - Current timestamp provider.
+ * @returns An HTTP response containing the submission result.
+ */
 export async function submitAnswerRoute(
   context: Context,
   authentication: Authentication | undefined,

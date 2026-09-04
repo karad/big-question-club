@@ -3,6 +3,11 @@ import { Icon } from './icon';
 import { SiteLayout } from './layout';
 import { QuestionCard } from './question-card';
 
+/**
+ * Renders the home page and its open and revealed question sections.
+ * @param props - Question collections, availability flags, URLs, time, and client bundle.
+ * @returns Home-page markup.
+ */
 export function HomePage({
   clientScriptUrl,
   openItems,

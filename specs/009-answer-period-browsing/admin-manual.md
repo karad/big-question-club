@@ -1,50 +1,49 @@
-# 管理ユーザー向けマニュアル
+# Administrator Manual
 
-## 管理画面へ入る
+## Entering Administration
 
-1. 管理者として設定されたGoogleアカウントでログインします。
-2. `/club-operations`を直接開きます。一般画面には管理画面へのリンクはありません。
+1. Sign in with the Google account configured as administrator.
+2. Open `/club-operations` directly. Public screens contain no administration link.
 
-管理者は1人だけです。未ログイン、管理者以外のアカウント、設定不備では、管理画面の存在を示さない通常の404が表示されます。
+There is exactly one administrator. Signed-out Users, non-administrator accounts, and configuration failures receive the ordinary 404, revealing no administration surface.
 
-初回公開前の設定は[D1マイグレーション手順](./migration-manual.md)を参照してください。
+Before first publication, see the [D1 migration procedure](./migration-manual.md).
 
-## 一覧を確認する
+## Reviewing Lists
 
-管理画面トップには件数Summaryと、次の専用一覧ページへのLinkがあります。トップには個別Recordを表示しません。
+The administration home shows count summaries and links to these dedicated lists, with no individual records:
 
 - `/club-operations/users`
 - `/club-operations/questions`
 - `/club-operations/answers`
 - `/club-operations/audit-log`
 
-各一覧は1ページ20件のTable形式で表示し、`Previous`と`Next`でページを移動します。横幅が狭い場合は、いずれもTable内だけを横へ移動できます。
-画面上の日付と時刻は`YYYY-MM-DD HH:mm`形式で表示します。
+Each list is a table with twenty records per page and `Previous`/`Next` navigation. On narrow screens only the table scrolls horizontally. Dates use `YYYY-MM-DD HH:mm`.
 
-- User: 名前、Email、BAN状態、登録時刻
-- Question: 本文、作成者、状態、作成・更新時刻
-- Answer: 本文、Excerpt、Question、回答者、作成・更新時刻
-- Audit log: 操作者、操作、対象、結果、発生時刻
+- User: name, email, ban state, registration time
+- Question: body, creator, state, creation/update times
+- Answer: body, excerpt, Question, respondent, creation/update times
+- Audit log: actor, action, target, result, occurrence time
 
-QuestionとAnswerの内容は管理上必要な場合に限って取り扱ってください。Audit logにはQuestion本文、Answer本文、認証情報は保存されません。
+Handle Question and Answer content only when operationally necessary. Audit logs store no Question body, Answer body, or authentication data.
 
-## QuestionまたはAnswerを削除する
+## Deleting a Question or Answer
 
-QuestionまたはAnswer一覧で、対象行の確認欄を選択してから`Delete`を実行します。
+In the Question or Answer list, select the target row's confirmation and then `Delete`.
 
-- Questionを削除すると、そのQuestionに属するAnswerも削除されます。
-- Answerの削除では、Questionと他のAnswerは残ります。
-- 削除した内容は管理画面から復元できません。
-- 編集機能はありません。
+- Deleting a Question also deletes all its Answers.
+- Deleting an Answer preserves its Question and other Answers.
+- Deleted content cannot be restored from administration.
+- Editing is unavailable.
 
-対象IDと内容を確認してから実行してください。操作記録はAudit logに残ります。
+Verify target ID and content first. The operation remains in the audit log.
 
-## UserをBANまたは解除する
+## Banning or Unbanning a User
 
-User一覧で、対象Userの確認欄を選択してから`Ban`を実行します。BANすると、そのUserの既存ログイン状態は失効し、新しいログインも拒否されます。
+In the User list, select confirmation and then `Ban`. Banning invalidates all existing Sessions and rejects new sign-in.
 
-`Unban`を実行すると、次回から再びログインできます。過去のログイン状態は復元されません。管理者自身はBANできません。
+`Unban` permits future sign-in but does not restore old Sessions. The administrator cannot ban themselves.
 
-## Audit logを確認する
+## Reviewing Audit Logs
 
-問題調査では、発生時刻、操作、操作者ID、対象IDを確認します。Login、Logout、Question／Answer入力、管理者による削除、BAN、BAN解除が記録対象です。Audit logの編集・削除はできません。
+For investigations, inspect occurrence time, operation, actor ID, and target ID. Login, logout, Question/Answer input, administrator deletion, ban, and unban are recorded. Audit logs cannot be edited or deleted.

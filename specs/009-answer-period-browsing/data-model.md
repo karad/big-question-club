@@ -1,29 +1,29 @@
-# データモデル: Challenge Core閲覧フロー
+# Data Model: Challenge Core Browsing Flow
 
-本SPECは既存Entityを維持し、Home用投影、一時的な表示状態、公開運用向けのBANと監査Entityを追加する。
+This specification preserves existing entities and adds Home projections, transient presentation state, and ban/audit entities for publication operations.
 
-## 既存Entity
+## Existing Entities
 
 ### Question
 
-- `id`、`body`、`creatorUserId`、`publishedAt`、`closesAt`、`revealsAt`を既存どおり利用する。
-- 既存Schemaの `language` 列はMigration互換性のため残すが、利用者向け入力・表示・WebMCP契約には使わない。新規Questionには内部値 `auto` を保存する。
-- 現在状態は保存せず、要求単位のサービス時刻から導出する。
-- `creatorUserId` は作成者本人の表示判定だけに使い、公開HTMLへ値を出さない。
+- Continue using `id`, `body`, `creatorUserId`, `publishedAt`, `closesAt`, and `revealsAt`.
+- Keep `language` only for migration compatibility; do not use it in user input, display, or WebMCP. New Questions store internal `auto`.
+- Derive current state from request-scoped service time; do not persist it.
+- Use `creatorUserId` only to indicate ownership, never expose its value in public HTML.
 
 ### Answer
 
-- HomeとDetailでは回答数だけを集計する。
-- `body`、`excerpt`、`id`、`userId`、個別時刻は、SPEC 008が許可する本人またはReveal投影以外へ返さない。
+- Home and Detail aggregate only answer count.
+- Return `body`, `excerpt`, `id`, `userId`, and individual times only in personal or Reveal projections allowed by SPEC 008.
 
 ## OpenQuestionSummary
 
-| Field | 規則 |
+| Field | Rule |
 | --- | --- |
-| `question` | `publishedAt !== null` かつ `publishedAt <= snapshotNow < closesAt` |
-| `answerCount` | 対象QuestionのAnswer件数。内容は含めない |
+| `question` | `publishedAt !== null` and `publishedAt <= snapshotNow < closesAt` |
+| `answerCount` | Number of Answers for the Question; no content |
 
-順序は `closesAt ASC, publishedAt ASC, id ASC`。Answer本文、Excerpt、User、個別時刻を選択しない。
+Order by `closesAt ASC, publishedAt ASC, id ASC`. Select no Answer body, excerpt, User, or individual time.
 
 ## ViewerPresentation
 
@@ -35,28 +35,28 @@ submission-unavailable
 closed
 ```
 
-- `OPEN` 以外では `closed` とし、新規Promptを表示しない。
-- Sessionなしは `anonymous`。
-- 認証済みで本人Answerなしは `authenticated-unsubmitted`。
-- 認証済みで本人Answerありは `authenticated-submitted`。
-- 認証または本人Answer取得障害は `submission-unavailable` とし、未回答へ変換しない。
-- Question作成者であることは上記状態を変更しない。
+- Outside `OPEN`, use `closed` and show no new prompt.
+- Without Session, use `anonymous`.
+- Authenticated with no own Answer: `authenticated-unsubmitted`.
+- Authenticated with own Answer: `authenticated-submitted`.
+- Authentication or own-Answer retrieval failure: `submission-unavailable`, never reinterpret as unanswered.
+- Creator status does not change these states.
 
 ## AgentRequestPresentation
 
-- `prompt`: `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}` の確定済み1行文面。
-- `questionUrl`: 閲覧中リクエストのOriginとQuestion Pathから生成した絶対URL。QueryとFragmentを含めない。
-- Question本文、User情報、認証情報、Answer情報をPromptへ含めない。
-- Tool名、呼出順、入力制約、安全上の詳細はPromptへ重複させず、WebMCP Tool契約からAgentへ提供する。
-- 初回Promptの送信を回答作成・投稿の許可とし、追加Previewや承認は要求しない。
-- WebMCP Tool契約は、利用可能なUser Context参照元、User自身の記述の優先、事実と比較・検討の区別、Assistant提案の除外、明示的な個人見解がない場合の代理回答、未確認事実の非断定、不要な確認質問の禁止、Private Context非開示、投稿結果確認を固定instructionとして返す。
+- `prompt`: finalized one line: `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}`.
+- `questionUrl`: absolute URL derived from current request Origin and Question path, with no query or fragment.
+- Include no Question body, User, authentication, or Answer data.
+- Tool names, order, input restrictions, and detailed safety rules come from WebMCP contracts, not duplicated prompt text.
+- Sending the initial prompt authorizes Answer creation/submission without another preview or approval.
+- Fixed WebMCP instructions provide available User Context sources; priority for User-authored statements; fact-versus-consideration distinctions; exclusion of Assistant suggestions; proxy answers when no explicit view exists; no unsupported claims; no unnecessary questions; no Private Context disclosure; and submission-result verification.
 
 ## DeadlinePresentation
 
-- `absolute`: `closesAt` のISO 8601 UTC。
-- `remainingMs`: `max(0, closesAt - snapshotNow)`。
-- `remainingLabel`: 日・時間・分の意味のある単位。締切以後は受付終了表示。
-- Question状態は残り時間から再計算せず、同じ `snapshotNow` による `getQuestionState` を正とする。
+- `absolute`: `closesAt` as ISO 8601 UTC.
+- `remainingMs`: `max(0, closesAt - snapshotNow)`.
+- `remainingLabel`: meaningful days/hours/minutes; after deadline, show acceptance closed.
+- Do not recalculate Question state from remaining time; `getQuestionState` with the same `snapshotNow` is authoritative.
 
 ## AnswerCountPresentation
 
@@ -68,51 +68,51 @@ n -> n answers
 
 ## BannedUser
 
-| Field | 規則 |
+| Field | Rule |
 | --- | --- |
-| `userId` | BAN対象Userの一意識別子。主キー。 |
-| `bannedByUserId` | 操作した管理者User ID。 |
-| `reason` | 管理者が選ぶ固定理由。初期値は `Policy violation`。 |
-| `bannedAt` | サービス側Unixミリ秒。 |
+| `userId` | Unique banned User ID; primary key. |
+| `bannedByUserId` | Administrator User ID. |
+| `reason` | Fixed administrator-selected reason; initial value `Policy violation`. |
+| `bannedAt` | Service-side Unix milliseconds. |
 
-- BAN時に対象Userの全Sessionを削除する。
-- BAN中はSession作成前に拒否する。
-- BAN解除は行を削除する。User、Question、Answerは削除しない。
-- 管理者自身はBAN対象にできない。
+- Delete every Session for the User when banning.
+- Refuse Session creation while banned.
+- Unban deletes this row, not User, Question, or Answer.
+- The administrator cannot be banned.
 
 ## AuditLog
 
-| Field | 規則 |
+| Field | Rule |
 | --- | --- |
-| `id` | 一意識別子。 |
-| `actorUserId` | 操作を実施したUser ID。外部キーにせず履歴を維持する。 |
-| `action` | `LOGIN`、`LOGOUT`、`QUESTION_CREATED`、`QUESTION_UPDATED`、`QUESTION_PUBLISHED`、`ANSWER_SUBMITTED`、`ANSWER_UPDATED`、`ANSWER_REMOVED`、`ADMIN_QUESTION_DELETED`、`ADMIN_ANSWER_DELETED`、`USER_BANNED`、`USER_UNBANNED`。 |
-| `targetType` | `SESSION`、`QUESTION`、`ANSWER`、`USER`。 |
-| `targetId` | 操作対象の識別子。 |
-| `outcome` | 確定済み記録は `SUCCESS`。 |
-| `createdAt` | サービスまたはDBが確定したUnixミリ秒。 |
+| `id` | Unique identifier. |
+| `actorUserId` | Acting User ID; intentionally no foreign key so history remains. |
+| `action` | `LOGIN`, `LOGOUT`, `QUESTION_CREATED`, `QUESTION_UPDATED`, `QUESTION_PUBLISHED`, `ANSWER_SUBMITTED`, `ANSWER_UPDATED`, `ANSWER_REMOVED`, `ADMIN_QUESTION_DELETED`, `ADMIN_ANSWER_DELETED`, `USER_BANNED`, `USER_UNBANNED`. |
+| `targetType` | `SESSION`, `QUESTION`, `ANSWER`, `USER`. |
+| `targetId` | Target identifier. |
+| `outcome` | Committed entries use `SUCCESS`. |
+| `createdAt` | Unix milliseconds committed by service or database. |
 
-- 追記専用で、管理画面から編集・削除しない。
-- Question本文、Answer本文、Excerpt、Email、Cookie、Token、OAuth値を含めない。
-- `createdAt DESC, id DESC` で表示する。
+- Append-only; administration cannot edit or delete.
+- Contains no Question body, Answer body, excerpt, email, Cookie, Token, or OAuth value.
+- Display by `createdAt DESC, id DESC`.
 
 ## AdminDashboard
 
-永続化しない管理者限定投影。
+A non-persistent administrator-only projection.
 
-- `users`: User基本情報とBAN状態。
-- `questions`: 全Question、作成者、状態、時刻。
-- `answers`: 全Answer、Excerpt、本文、投稿者、Question、時刻。
-- `auditLogs`: Actor、Action、Target、Outcome、時刻。
+- `users`: basic User data and ban state.
+- `questions`: every Question, creator, state, and times.
+- `answers`: every Answer, excerpt, body, submitter, Question, and times.
+- `auditLogs`: actor, action, target, outcome, and time.
 
-## 不変条件
+## Invariants
 
-- 1応答は同じ `snapshotNow` を使う。
-- Homeは `OPEN` 以外とAnswer内容を取得しない。
-- 未回答Promptと本人Answerを同時表示しない。
-- 作成者へReveal前の追加権限を与えない。
-- `OPEN` と `CLOSED` で他者Answer情報を取得・直列化しない。
-- Draftとmissingを公開Detailから区別できない。
-- 管理画面と管理操作は、設定済み管理者EmailとSession UserのDB Emailが一致する場合だけ利用できる。
-- 管理画面はprivate no-storeとし、一般画面のAnswer非露出規則を変更しない。
-- `audit_logs` は削除対象との外部キーを持たず、対象削除後も維持する。
+- One response uses one `snapshotNow`.
+- Home retrieves neither non-`OPEN` Questions nor Answer content.
+- Never show an unanswered prompt and own Answer together.
+- Creators receive no extra pre-Reveal permission.
+- In `OPEN` and `CLOSED`, do not retrieve or serialize other-User Answer data.
+- Public Detail does not distinguish Draft from missing.
+- Administration is available only when configured administrator email matches the Session User's database email.
+- Administration is private/no-store and does not weaken public Answer non-exposure.
+- `audit_logs` has no foreign key to deletion targets and remains after they are deleted.

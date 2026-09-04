@@ -11,6 +11,12 @@ export type ApplicationDatabases = {
   data: D1Database;
 };
 
+/**
+ * Resolves the authenticated identity for an incoming request.
+ * @param authentication - Authentication service used to read the session.
+ * @param request - Incoming HTTP request.
+ * @returns A successful identity or a structured authentication error.
+ */
 export async function readCurrentIdentity(
   authentication: Pick<Authentication, 'getSession'> | undefined,
   request: Request,

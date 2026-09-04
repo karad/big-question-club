@@ -1,5 +1,10 @@
 import { answerError, type AnswerError } from '../domain/answer-submission';
 
+/**
+ * Validates and normalizes a question identifier from untrusted tool input.
+ * @param input - Tool input to validate.
+ * @returns The normalized identifier or a structured validation error.
+ */
 export function parseQuestionIdInput(input: unknown): { questionId: string } | AnswerError {
   if (
     typeof input !== 'object' ||

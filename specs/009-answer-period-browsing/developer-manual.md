@@ -1,33 +1,33 @@
-# 開発者向けマニュアル
+# Developer Manual
 
-リポジトリ直下で実行する。Node.js 22.13以上または24以上とnpmが必要。
+Run from the repository root. Requires Node.js 22.13 or later or 24 or later, and npm.
 
-## 初期設定
+## Initial Setup
 
 ```sh
 npm install
 cp .dev.vars.example .dev.vars
 ```
 
-`.dev.vars`へ`BETTER_AUTH_URL`、`BETTER_AUTH_SECRET`、`GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`ADMIN_EMAIL`を設定する。Secretをコミットしない。
+Set `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `ADMIN_EMAIL` in `.dev.vars`. Never commit secrets.
 
-Google OAuthには`http://localhost:5173/api/auth/callback/google`をリダイレクトURIとして登録する。
+Register `http://localhost:5173/api/auth/callback/google` as a Google OAuth redirect URI.
 
-## 開発モードで起動
+## Start Development Mode
 
 ```sh
 npm run dev
 ```
 
-表示されたURLをブラウザーで開く。現在の`wrangler.jsonc`はD1 Bindingが`remote: true`のため、開発サーバーからリモートD1へ接続する。事前にリモートMigrationが適用済みであることを確認する。
+Open the displayed URL. Current `wrangler.jsonc` sets the D1 binding to `remote: true`, so the development server connects to remote D1. Confirm remote migrations are already applied.
 
-## ビルド
+## Build
 
 ```sh
 npm run build
 ```
 
-## テスト
+## Test
 
 ```sh
 npm run typecheck
@@ -38,11 +38,11 @@ npm run test:d1
 npm run db:schema:check
 ```
 
-## デプロイ
+## Deploy
 
-公開環境の値はCloudflare Worker側へ設定する。`.dev.vars`やローカルの環境変数は、`npm run deploy`ではアップロードされない。
+Configure public-environment values on the Cloudflare Worker. `.dev.vars` and local environment variables are not uploaded by `npm run deploy`.
 
-次の各コマンドを実行すると値の入力を求められ、入力した値が対象WorkerのSecretとしてCloudflareへ直接保存される。
+Each command below prompts for a value and stores it directly as a Secret on the target Worker.
 
 ```sh
 npx wrangler secret put BETTER_AUTH_URL
@@ -54,7 +54,7 @@ npm run db:migrate:remote
 npm run deploy
 ```
 
-同じ設定はCloudflare Dashboardの対象WorkerにあるVariables and Secrets画面から行ってもよい。次の5項目がProduction環境へ設定済みなら、`wrangler secret put`は不要である。CLIとDashboardの両方で重複して設定する必要はない。
+The same configuration can be made in the target Worker's Variables and Secrets screen in Cloudflare Dashboard. If these five values already exist in Production, `wrangler secret put` is unnecessary; do not duplicate CLI and Dashboard configuration.
 
 - `BETTER_AUTH_URL`
 - `BETTER_AUTH_SECRET`
@@ -62,6 +62,6 @@ npm run deploy
 - `GOOGLE_CLIENT_SECRET`
 - `ADMIN_EMAIL`
 
-`BETTER_AUTH_SECRET`と`GOOGLE_CLIENT_SECRET`はSecretとして設定する。他の3項目は通常のVariableまたはSecretのどちらでもよい。値を変更しない限り、デプロイのたびに再登録する必要はない。PreviewとProductionが分かれている場合は、Production側の設定を確認する。
+Set `BETTER_AUTH_SECRET` and `GOOGLE_CLIENT_SECRET` as Secrets. The other three may be Variables or Secrets. Re-register only when values change. If Preview and Production are separate, verify Production.
 
-Google OAuthには公開Originの`/api/auth/callback/google`もリダイレクトURIとして登録する。Migrationの詳細は[D1マイグレーション手順](./migration-manual.md)を参照する。
+Also register the public Origin's `/api/auth/callback/google` as a Google OAuth redirect URI. See the [D1 migration procedure](./migration-manual.md).

@@ -1,3 +1,9 @@
+/**
+ * Initializes progressive loading of full bodies for revealed answers.
+ * @param root - Document containing revealed-answer controls.
+ * @param request - Fetch-compatible request function.
+ * @returns Nothing.
+ */
 export function initializeRevealedAnswers(
   root: Document = document,
   request: typeof fetch = fetch,

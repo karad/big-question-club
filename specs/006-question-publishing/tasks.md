@@ -1,160 +1,160 @@
-# タスク: Question作成・公開フロー
+# Tasks: Question Creation and Publication Flow
 
-**入力**: `specs/006-question-publishing/` の設計文書  
-**前提**: plan.md、spec.md、research.md、data-model.md、contracts/question-management.md、quickstart.md
+**Input**: Design documents in `specs/006-question-publishing/`
+**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/question-management.md, quickstart.md
 
-**テスト**: プロジェクト方針と仕様の測定可能な成果に従い、純粋入力ロジック、Repository／D1、SSR／Form／認可の自動テストを実装より先に作成する。
+**Tests**: Following project policy and measurable outcomes, create automated tests for pure input logic, repository/D1, and SSR/form/authorization before implementation.
 
-**構成**: 各ユーザーストーリーを独立して実装・検証できるよう、タスクをストーリー単位に配置する。
+**Organization**: Tasks are grouped by story so each user story can be implemented and verified independently.
 
-## 形式: `[ID] [P?] [Story] 説明`
+## Format: `[ID] [P?] [Story] Description`
 
-- **[P]**: 未完了タスクへの依存がなく、異なるファイルで並行実行可能
-- **[Story]**: `spec.md` のユーザーストーリー（US1〜US4）
-- すべてのタスクに対象ファイルを明記する
+- **[P]**: Can run in parallel in a different file without unfinished-task dependencies
+- **[Story]**: User story from `spec.md`, US1 through US4
+- Every task names its target file
 
-## Phase 1: セットアップ
+## Phase 1: Setup
 
-**目的**: 現在の品質基準を固定し、設計どおりのファイル境界を用意する
+**Purpose**: Establish the current quality baseline and prepare the planned file boundaries.
 
-- [x] T001 現在のTypecheck・Lint・Format・Node Test・D1 Test・Build結果を `specs/006-question-publishing/validation-record.md` に記録する
-- [x] T002 [P] `src/domain/question-input.ts`、`src/routes/question-management.tsx`、`src/views/question-management.tsx` の責務をplan.mdどおりに作成する
-- [x] T003 [P] `tests/unit/question-input.test.ts`、`tests/integration/question-management.test.ts`、`tests/d1/question-management-repository.test.ts` のテストファイルを作成して既存設定から検出されることを確認する
-
----
-
-## Phase 2: 基盤
-
-**目的**: 全ユーザーストーリーが共有する入力契約、Repository契約、認証・CSRF・View境界を整える
-
-**⚠️ CRITICAL**: このPhaseが完了するまでユーザーストーリー実装を開始しない
-
-- [x] T004 `tests/unit/question-input.test.ts` にtrim、書記素クラスタ10／1,000文字、`en`／`ja`、締切1時間／30日、確認項目を含む30件以上の失敗先行Unit Testを追加する
-- [x] T005 `src/domain/question.ts` にQuestion本文・締切範囲の英語識別子と型、および既存Schema互換値 `auto` を追加する
-- [x] T006 `src/domain/question-input.ts` に `Intl.Segmenter` を使う文字数、Form値解析、正規化、項目別英語error、サービス時刻による締切検証を実装してT004を通す
-- [x] T007 `src/repositories/question-repository.ts` に本人所有取得、Draft更新、本人一覧、競合・非列挙・一時障害を表す型付きRepository契約を追加する
-- [x] T008 `tests/helpers/question-repository.ts` を拡張後のRepository契約へ追従させ、複数Question、所有者、Draft更新、一覧集計を保持できるin-memory fixtureを実装する
-- [x] T009 [P] `src/views/question-management.tsx` に英語のDocument Layout、認証案内、非列挙404、一時障害、error summaryの共通JSX componentを実装する
-- [x] T010 `src/app.tsx` にQuestion管理Formだけを対象とするHono CSRF Middleware境界を追加し、既存Better Auth・HTTP API・WebMCP routeを対象外に保つ
-
-**Checkpoint**: 共通入力・認証・CSRF・Repository・View契約が利用可能
+- [x] T001 Record current typecheck, lint, format, Node test, D1 test, and build results in `specs/006-question-publishing/validation-record.md`
+- [x] T002 [P] Create `src/domain/question-input.ts`, `src/routes/question-management.tsx`, and `src/views/question-management.tsx` with responsibilities defined in plan.md
+- [x] T003 [P] Create `tests/unit/question-input.test.ts`, `tests/integration/question-management.test.ts`, and `tests/d1/question-management-repository.test.ts`, confirming existing configurations discover them
 
 ---
 
-## Phase 3: ユーザーストーリー1 — Questionを下書きとして作成する (優先度: P1) 🎯 MVP
+## Phase 2: Foundation
 
-**目標**: 認証済みHumanが任意言語の有効な本文・締切・公開内容の確認を入力し、本人所有のDraftを保存できる
+**Purpose**: Prepare the shared input, repository, authentication, CSRF, and view contracts for all stories.
 
-**独立テスト**: `/questions/new` から有効入力を送信して1件の `DRAFT` とReview redirectを得られ、無効入力と未認証操作では保存されず英語の項目別errorが表示される
+**⚠️ CRITICAL**: Do not begin user-story implementation until this phase is complete.
 
-### テスト
+- [x] T004 Add at least thirty failing-first unit tests to `tests/unit/question-input.test.ts` covering trim, 10/1,000 grapheme clusters, `en`/`ja`, one-hour/thirty-day deadlines, and acknowledgment fields
+- [x] T005 Add English identifiers and types for Question body/deadline ranges and existing-schema compatibility value `auto` to `src/domain/question.ts`
+- [x] T006 Implement `Intl.Segmenter` character counting, form parsing, normalization, field-specific English errors, and service-time deadline validation in `src/domain/question-input.ts`, making T004 pass
+- [x] T007 Add typed repository contracts for owner retrieval, draft update, owner listing, conflicts, non-enumeration, and temporary failures to `src/repositories/question-repository.ts`
+- [x] T008 Update `tests/helpers/question-repository.ts` to the expanded repository contract and implement in-memory fixtures supporting multiple Questions, owners, draft updates, and list aggregation
+- [x] T009 [P] Implement shared JSX components in `src/views/question-management.tsx` for the English document layout, authentication guidance, non-enumerating 404, temporary failures, and error summary
+- [x] T010 Add a Hono CSRF middleware boundary in `src/app.tsx` limited to Question-management forms, keeping Better Auth, HTTP API, and WebMCP routes out of scope
 
-- [x] T011 [P] [US1] `tests/integration/question-management.test.ts` に作成画面、未認証、Form解析、項目別error、入力保持、JSX text escape、成功時303 redirectの失敗先行Integration Testを追加する
-- [x] T012 [P] [US1] `tests/d1/question-management-repository.test.ts` に有効Draft、作成者外部キー、無効値非保存、`publishedAt === null`、`revealsAt === closesAt` の失敗先行D1 Testを追加する
-
-### 実装
-
-- [x] T013 [US1] `src/repositories/question-repository.ts` の `createDraft` を検証済みDomain入力だけからUUID付きQuestionを保存し、作成者不足とD1障害を安定分類する実装へ更新する
-- [x] T014 [US1] `src/views/question-management.tsx` にQuestion textarea、文字数、`datetime-local`、timezone／UTC確認、Moderation確認、関連付けた英語errorを持つ作成Formを実装する
-- [x] T015 [US1] `src/client.ts` に書記素文字カウンターとローカル締切からUTC Unixミリ秒・IANA timezone・UTC ISO表示を生成するQuestion Form補助を追加する
-- [x] T016 [US1] `src/routes/question-management.tsx` に認証済み作成画面GETとForm検証・Draft保存・error再表示・Reviewへの303を行うPOST handlerを実装する
-- [x] T017 [US1] `src/app.tsx` で `/questions/new` をparameter routeより先に登録し、`POST /questions` と依存関係を接続してUS1 Integration Testを通す
-
-**Checkpoint**: User Story 1だけでDraft作成MVPを独立検証可能
+**Checkpoint**: Shared input, authentication, CSRF, repository, and view contracts are available.
 
 ---
 
-## Phase 4: ユーザーストーリー2 — 下書きを確認して公開する (優先度: P1)
+## Phase 3: User Story 1 — Create a Question as a Draft (Priority: P1) 🎯 MVP
 
-**目標**: 本人Draftだけを編集・確認し、実行時再検証と条件付き更新により1回だけ公開できる
+**Goal**: An authenticated Human can enter a valid body in any language, deadline, and public-content acknowledgment and save an owned Draft.
 
-**独立テスト**: 本人Draftを更新してReview内容へ反映し、明示確認後に `OPEN` へ公開でき、stale編集、期限範囲外、二重・同時公開、公開後編集では保存内容が変わらない
+**Independent Test**: Submit valid input from `/questions/new`, receive one `DRAFT` and a Review redirect; invalid or unauthenticated operations save nothing and show English field errors.
 
-### テスト
+### Tests
 
-- [x] T018 [P] [US2] `tests/integration/question-management.test.ts` に本人編集、Review、公開確認、締切再検証、stale response、公開後409、303 detail redirectの失敗先行Integration Testを追加する
-- [x] T019 [P] [US2] `tests/d1/question-management-repository.test.ts` に本人所有取得、expectedUpdatedAt一致更新、stale更新、他人更新、公開済み更新拒否の失敗先行D1 Testを追加する
-- [x] T020 [US2] `tests/d1/question-management-repository.test.ts` に締切境界、`revealsAt === closesAt`、逐次10回・同時10件の公開要求で1回だけ確定する失敗先行D1 Testを追加する
+- [x] T011 [P] [US1] Add failing-first integration tests to `tests/integration/question-management.test.ts` for the creation screen, unauthenticated access, form parsing, field errors, retained input, JSX text escaping, and successful 303 redirect
+- [x] T012 [P] [US1] Add failing-first D1 tests to `tests/d1/question-management-repository.test.ts` for valid drafts, creator foreign keys, rejection of invalid values, `publishedAt === null`, and `revealsAt === closesAt`
 
-### 実装
+### Implementation
 
-- [x] T021 [US2] `src/repositories/question-repository.ts` に `id + creatorUserId` の本人所有取得と `publishedAt IS NULL + expectedUpdatedAt` の条件付きDraft更新・競合分類を実装する
-- [x] T022 [US2] `src/repositories/question-repository.ts` の公開を本人・Draft・`now + 1時間 <= closesAt <= now + 30日`・`revealsAt === closesAt` の単一条件付き更新へ強化する
-- [x] T023 [US2] `src/views/question-management.tsx` にexpectedUpdatedAtを含むDraft編集Formと、stale／公開済み状態を英語で回復可能に示すViewを実装する
-- [x] T024 [US2] `src/views/question-management.tsx` に完全な本文、ローカル／timezone／UTC締切、sealed説明、不可逆性、明示確認、Edit導線を持つReview Viewを実装する
-- [x] T025 [US2] `src/routes/question-management.tsx` に本人Draftの編集GET／POST、最新状態取得、400／404／409／503分類、Reviewへの303を実装する
-- [x] T026 [US2] `src/routes/question-management.tsx` にReview GETと公開POSTを実装し、confirmPublication・expectedUpdatedAt・実行時入力条件を再検証してdetailへ303する
-- [x] T027 [US2] `tests/helpers/question-repository.ts` の編集・公開fixtureを実D1と同じ所有者・競合・締切・一回公開semanticsへ揃え、US2 Integration Testを通す
+- [x] T013 [US1] Update `createDraft` in `src/repositories/question-repository.ts` to persist a UUID Question only from validated domain input and stably classify missing creators and D1 failures
+- [x] T014 [US1] Implement the creation form in `src/views/question-management.tsx` with Question textarea, count, `datetime-local`, time-zone/UTC confirmation, moderation acknowledgment, and associated English errors
+- [x] T015 [US1] Add Question-form helpers to `src/client.ts` for grapheme counting and converting local deadlines into UTC Unix milliseconds, IANA time zone, and UTC ISO display
+- [x] T016 [US1] Implement authenticated creation GET and form-validation, draft-save, error-redisplay, and 303-to-Review POST handlers in `src/routes/question-management.tsx`
+- [x] T017 [US1] Register `/questions/new` before parameter routes in `src/app.tsx`, wire `POST /questions` and dependencies, and make US1 integration tests pass
 
-**Checkpoint**: User Story 1と2でDraft作成から不可逆な公開まで独立検証可能
+**Checkpoint**: User Story 1 independently verifies the draft-creation MVP.
 
 ---
 
-## Phase 5: ユーザーストーリー3 — My Questionsで自分のQuestionを管理する (優先度: P2)
+## Phase 4: User Story 2 — Review and Publish a Draft (Priority: P1)
 
-**目標**: 本人所有Questionだけを新しい順に状態・締切・回答数・状態別導線付きで一覧できる
+**Goal**: Edit and review only the owner's Draft and publish exactly once using execution-time revalidation and conditional updates.
 
-**独立テスト**: 2利用者と4状態のQuestionを用意し、`/my/questions` が本人分だけを安定した新しい順で表示し、Draftと公開済みで正しい導線を分け、Answer内容を含めない
+**Independent Test**: Update an owned Draft, reflect it in Review, and publish to `OPEN` after explicit acknowledgment. Stale edits, invalid deadlines, duplicate/concurrent publication, and post-publication editing leave stored content unchanged.
 
-### テスト
+### Tests
 
-- [x] T028 [P] [US3] `tests/d1/question-management-repository.test.ts` に本人絞り込み、`createdAt DESC + id DESC`、0件、各QuestionのanswerCount、Answer非取得を検証する失敗先行D1 Testを追加する
-- [x] T029 [P] [US3] `tests/integration/question-management.test.ts` に4状態、空状態、本人限定、状態別英語導線、Answer本文・Excerpt・投稿者非露出を含む15件以上の失敗先行表示Testを追加する
+- [x] T018 [P] [US2] Add failing-first integration tests to `tests/integration/question-management.test.ts` for owner editing, Review, publication acknowledgment, deadline revalidation, stale responses, post-publication 409, and 303 detail redirect
+- [x] T019 [P] [US2] Add failing-first D1 tests to `tests/d1/question-management-repository.test.ts` for owner retrieval, expectedUpdatedAt-matching updates, stale updates, another User's updates, and published-update rejection
+- [x] T020 [US2] Add failing-first D1 tests to `tests/d1/question-management-repository.test.ts` for deadline boundaries, `revealsAt === closesAt`, and exactly-once publication under ten sequential and ten concurrent requests
 
-### 実装
+### Implementation
 
-- [x] T030 [US3] `src/repositories/question-repository.ts` にQuestionとAnswer件数を1 Queryで集計し、本人所有分だけを安定した新しい順で返す `listByCreator` を実装する
-- [x] T031 [US3] `src/views/question-management.tsx` に本文先頭、現在状態、締切、回答数、Draft／公開済み別導線、英語空状態を持つMy Questions Viewを実装する
-- [x] T032 [US3] `src/routes/question-management.tsx` にSession User ID・共通 `now`・本人一覧Queryを使う `GET /my/questions` handlerと503分類を実装する
-- [x] T033 [US3] `src/app.tsx` に `/my/questions` routeと認証済みHumanが到達できる英語navigationを接続し、既存Question detail導線を維持する
+- [x] T021 [US2] Implement owner retrieval by `id + creatorUserId` and conditional draft updates by `publishedAt IS NULL + expectedUpdatedAt`, with conflict classification, in `src/repositories/question-repository.ts`
+- [x] T022 [US2] Strengthen publication in `src/repositories/question-repository.ts` to one conditional update requiring owner, Draft, `now + 1 hour <= closesAt <= now + 30 days`, and `revealsAt === closesAt`
+- [x] T023 [US2] Implement a draft-edit form with expectedUpdatedAt and recoverable English stale/published states in `src/views/question-management.tsx`
+- [x] T024 [US2] Implement the Review view in `src/views/question-management.tsx` with full body, local/time-zone/UTC deadline, sealed explanation, irreversibility, explicit acknowledgment, and Edit path
+- [x] T025 [US2] Implement owner-draft edit GET/POST, latest-state retrieval, 400/404/409/503 classifications, and 303-to-Review in `src/routes/question-management.tsx`
+- [x] T026 [US2] Implement Review GET and publication POST in `src/routes/question-management.tsx`, revalidating confirmPublication, expectedUpdatedAt, and execution-time input conditions before a 303 to detail
+- [x] T027 [US2] Align editing/publication fixtures in `tests/helpers/question-repository.ts` with real-D1 ownership, conflict, deadline, and exactly-once semantics, making US2 integration tests pass
 
-**Checkpoint**: User Story 3を本人一覧として独立検証可能
-
----
-
-## Phase 6: ユーザーストーリー4 — 権限外の閲覧・変更を拒否する (優先度: P2)
-
-**目標**: 未認証、他人所有、存在しない、Personal Agent向け経路、cross-site FormからQuestion管理情報と変更を保護する
-
-**独立テスト**: 2利用者で全管理GET／POSTを試し、他人所有とmissingが同じ404になり、未認証は401、cross-site unsafe requestは403、WebMCPに管理Toolが増えず、保存値が変化しない
-
-### テスト
-
-- [x] T034 [P] [US4] `tests/integration/question-management.test.ts` に全管理routeの未認証、missing／other owner同一応答、cross-site Form、Personal Agent管理操作不存在を含む20件以上の失敗先行認可Matrixを追加する
-- [x] T035 [P] [US4] `tests/d1/question-management-repository.test.ts` に他人の本文を返さない本人所有Queryと、権限外編集・公開で全Question列が不変であることを検証するD1 Testを追加する
-
-### 実装
-
-- [x] T036 [US4] `src/routes/question-management.tsx` の全管理handlerを本人所有Repositoryだけから取得するよう統一し、missing／other ownerを同じ404・`Question unavailable.` へ写像する
-- [x] T037 [US4] `src/app.tsx` のQuestion管理CSRF適用pathとroute順を最終化し、`src/client.ts` に管理用WebMCP Toolを登録しないことを認可Matrixで固定する
-
-**Checkpoint**: 4ユーザーストーリーと全権限境界を独立検証可能
+**Checkpoint**: User Stories 1 and 2 independently verify draft creation through irreversible publication.
 
 ---
 
-## Phase 7: 仕上げと横断品質
+## Phase 5: User Story 3 — Manage Personal Questions in My Questions (Priority: P2)
 
-**目的**: 全ストーリーを統合し、文書・自動品質ゲート・手動導線を完了する
+**Goal**: List only the current User's Questions newest first with state, deadline, answer count, and state-specific actions.
 
-- [x] T038 [P] Question作成・My Questions・公開不可逆性・ローカル検証導線を `README.md` に追記し、実装上の重要判断を `USE_CODEX.md` に記録する
-- [x] T039 `npm run typecheck`、`npm run lint`、`npm run format`、`npm test`、`npm run test:d1`、`npm run build` を実行し、件数・結果・未解決事項を `specs/006-question-publishing/validation-record.md` に記録する
-- [x] T040 全開発可能タスクの完了後に `specs/006-question-publishing/quickstart.md` の2利用者・入力境界・公開・My Questions・所有者・CSRF・キーボード手動確認を実施し、結果を同ファイルへ記録する
+**Independent Test**: With two Users and Questions in four states, `/my/questions` shows only the current User's items in stable newest-first order, separates Draft and published actions correctly, and includes no Answer content.
+
+### Tests
+
+- [x] T028 [P] [US3] Add failing-first D1 tests to `tests/d1/question-management-repository.test.ts` for owner filtering, `createdAt DESC + id DESC`, empty results, per-Question answerCount, and no Answer retrieval
+- [x] T029 [P] [US3] Add at least fifteen failing-first display tests to `tests/integration/question-management.test.ts` covering four states, empty state, owner-only results, state-specific English actions, and absence of Answer body/excerpt/submitter
+
+### Implementation
+
+- [x] T030 [US3] Implement `listByCreator` in `src/repositories/question-repository.ts`, aggregating Question and Answer counts in one query and returning only owner Questions in stable newest-first order
+- [x] T031 [US3] Implement My Questions view in `src/views/question-management.tsx` with body prefix, current state, deadline, answer count, Draft/published actions, and English empty state
+- [x] T032 [US3] Implement `GET /my/questions` in `src/routes/question-management.tsx` using Session User ID, shared `now`, owner-list query, and 503 classification
+- [x] T033 [US3] Connect `/my/questions` and English navigation for authenticated Humans in `src/app.tsx`, preserving existing Question-detail paths
+
+**Checkpoint**: User Story 3 is independently verifiable as an owner-only list.
 
 ---
 
-## 依存関係と実行順
+## Phase 6: User Story 4 — Reject Unauthorized Viewing and Changes (Priority: P2)
 
-### Phase依存関係
+**Goal**: Protect management information and changes from unauthenticated Users, non-owners, missing targets, Personal Agent paths, and cross-site forms.
 
-- **Phase 1（セットアップ）**: 依存なし
-- **Phase 2（基盤）**: Phase 1完了後。全ユーザーストーリーをblockする
-- **Phase 3（US1）**: Phase 2完了後。Draft作成MVP
-- **Phase 4（US2）**: Phase 2完了後に開始可能だが、統合時はUS1のForm／Draft作成を利用する
-- **Phase 5（US3）**: Phase 2完了後に開始可能。実データ導線の確認はUS1／US2後
-- **Phase 6（US4）**: Phase 2完了後に開始可能。全管理routeの最終MatrixはUS1〜US3後
-- **Phase 7（仕上げ）**: 対象とする全ストーリー完了後
+**Independent Test**: Across all management GET/POST operations with two Users, other-owner and missing targets return the same 404, unauthenticated access returns 401, cross-site unsafe requests return 403, WebMCP gains no management tool, and stored values remain unchanged.
 
-### ユーザーストーリー依存グラフ
+### Tests
+
+- [x] T034 [P] [US4] Add a failing-first authorization matrix of at least twenty cases to `tests/integration/question-management.test.ts`, covering unauthenticated access to all management routes, identical missing/other-owner responses, cross-site forms, and absence of Personal Agent management operations
+- [x] T035 [P] [US4] Add D1 tests to `tests/d1/question-management-repository.test.ts` verifying owner-only queries do not return another User's body and unauthorized edits/publications leave every Question column unchanged
+
+### Implementation
+
+- [x] T036 [US4] Standardize all handlers in `src/routes/question-management.tsx` on owner-only repository retrieval and map missing/other-owner targets to the same 404 and `Question unavailable.`
+- [x] T037 [US4] Finalize Question-management CSRF paths and route ordering in `src/app.tsx`, and lock down in the authorization matrix that `src/client.ts` registers no management WebMCP tools
+
+**Checkpoint**: All four user stories and authorization boundaries are independently verifiable.
+
+---
+
+## Phase 7: Polish and Cross-Cutting Quality
+
+**Purpose**: Integrate every story and complete documentation, automated gates, and manual flows.
+
+- [x] T038 [P] Add Question creation, My Questions, publication irreversibility, and local verification to `README.md`, and record important implementation decisions in `USE_CODEX.md`
+- [x] T039 Run `npm run typecheck`, `npm run lint`, `npm run format`, `npm test`, `npm run test:d1`, and `npm run build`; record counts, results, and unresolved items in `specs/006-question-publishing/validation-record.md`
+- [x] T040 After all implementable tasks are complete, perform the two-User, input-boundary, publication, My Questions, ownership, CSRF, and keyboard checks in `specs/006-question-publishing/quickstart.md` and record results there
+
+---
+
+## Dependencies and Execution Order
+
+### Phase Dependencies
+
+- **Phase 1 (Setup)**: No dependencies
+- **Phase 2 (Foundation)**: After Phase 1; blocks every user story
+- **Phase 3 (US1)**: After Phase 2; draft-creation MVP
+- **Phase 4 (US2)**: Can start after Phase 2, but integration reuses US1 forms/draft creation
+- **Phase 5 (US3)**: Can start after Phase 2; real-data flow checks follow US1/US2
+- **Phase 6 (US4)**: Can start after Phase 2; final matrix across all management routes follows US1–US3
+- **Phase 7 (Polish)**: After all in-scope stories
+
+### User Story Dependency Graph
 
 ```text
 Setup → Foundation → US1 ──> US2 ──┐
@@ -162,72 +162,72 @@ Setup → Foundation → US1 ──> US2 ──┐
                      └────────────┘
 ```
 
-- **US1 (P1)**: Foundation後に開始。独立したDraft作成MVP
-- **US2 (P1)**: Foundation後にRepository単位で開始できる。画面統合はUS1 Formを再利用
-- **US3 (P2)**: Foundation後に開始でき、US1／US2の完了を必須とせずfixtureで独立検証可能
-- **US4 (P2)**: 各route単位で並行可能。全経路Matrixの完了はUS1〜US3のroute実装後
+- **US1 (P1)**: Starts after Foundation; independent draft-creation MVP
+- **US2 (P1)**: Repository work can start after Foundation; screen integration reuses US1 forms
+- **US3 (P2)**: Can start after Foundation and is independently verifiable with fixtures without US1/US2 completion
+- **US4 (P2)**: Route-level work can run in parallel; the full-path matrix follows route implementation for US1–US3
 
-### 各ストーリー内の順序
+### Order Within Each Story
 
-- 失敗先行Testを作成し、対象要件を満たさないことを確認する
-- Domain／Repository契約を先に実装する
-- Viewを実装する
-- RouteとApp wiringを実装する
-- ストーリーの独立Testを通してから次のCheckpointへ進む
+- Create failing-first tests and confirm the requirement is not yet met
+- Implement domain/repository contracts first
+- Implement views
+- Implement routes and app wiring
+- Pass the story's independent tests before the next checkpoint
 
-## 並行実行例
+## Parallel Execution Examples
 
 ### User Story 1
 
 ```text
-T011: tests/integration/question-management.test.ts のSSR／Form Test
-T012: tests/d1/question-management-repository.test.ts のDraft永続化Test
+T011: SSR/form tests in tests/integration/question-management.test.ts
+T012: Draft persistence tests in tests/d1/question-management-repository.test.ts
 ```
 
 ### User Story 2
 
 ```text
-T018: tests/integration/question-management.test.ts の編集／Review／公開Test
-T019: tests/d1/question-management-repository.test.ts のDraft競合更新Test
+T018: Edit/Review/publication tests in tests/integration/question-management.test.ts
+T019: Draft-conflict update tests in tests/d1/question-management-repository.test.ts
 ```
 
 ### User Story 3
 
 ```text
-T028: tests/d1/question-management-repository.test.ts の集計Query Test
-T029: tests/integration/question-management.test.ts の一覧表示Test
+T028: Aggregate-query tests in tests/d1/question-management-repository.test.ts
+T029: List-display tests in tests/integration/question-management.test.ts
 ```
 
 ### User Story 4
 
 ```text
-T034: tests/integration/question-management.test.ts の認可Matrix
-T035: tests/d1/question-management-repository.test.ts の所有者不変条件Test
+T034: Authorization matrix in tests/integration/question-management.test.ts
+T035: Ownership-invariant tests in tests/d1/question-management-repository.test.ts
 ```
 
-## 実装戦略
+## Implementation Strategy
 
 ### MVP First
 
-1. Phase 1を完了する
-2. Phase 2を完了する
-3. Phase 3のUS1を完了する
-4. Draft作成を独立検証する
-5. US2の公開導線へ進む
+1. Complete Phase 1.
+2. Complete Phase 2.
+3. Complete US1 in Phase 3.
+4. Independently verify draft creation.
+5. Continue to US2 publication.
 
-### 段階的提供
+### Incremental Delivery
 
-1. Setup + Foundation: 入力・認証・Repository基盤
-2. US1: Draft作成
-3. US2: Draft編集・Review・公開
+1. Setup + Foundation: input, authentication, and repository foundation
+2. US1: draft creation
+3. US2: draft editing, Review, and publication
 4. US3: My Questions
-5. US4: 全管理経路の権限hardening
-6. Polish: 全品質ゲートと手動確認
+5. US4: authorization hardening across every management path
+6. Polish: all quality gates and manual verification
 
-## 注記
+## Notes
 
-- `[P]` は異なるファイルで未完了タスクに依存しない作業だけに付ける
-- 各ストーリーのTestは実装前に失敗を確認する
-- Migration追加は計画しない。既存Schemaで満たせない事実が判明した場合は実装を停止し、設計を再確認する
-- 手動テストは自動品質ゲートと全開発可能タスクの完了後にまとめて実施する
-- 他人のQuestion本文、Answer内容、Session／OAuth情報をtest logや検証記録へ残さない
+- Apply `[P]` only to work in separate files without unfinished-task dependencies.
+- Confirm each story's tests fail before implementation.
+- No migration is planned. If the existing schema proves insufficient, stop implementation and revisit the design.
+- Perform manual testing together only after automated quality gates and all implementable tasks are complete.
+- Do not record another User's Question body, Answer content, or Session/OAuth information in test logs or validation records.

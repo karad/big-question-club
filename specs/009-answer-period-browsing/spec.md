@@ -1,274 +1,274 @@
-# 機能仕様: Challenge Core閲覧フロー
+# Feature Specification: Challenge Core Browsing Flow
 
-**機能ブランチ**: `009-answer-period-browsing`
+**Feature Branch**: `009-answer-period-browsing`
 
-**作成日**: 2026-09-02
+**Created**: 2026-09-02
 
-**ステータス**: 実装完了
+**Status**: Implementation Complete
 
-**入力**: 「WebMCP Challengeの締切に向け、SPEC 009を回答期間中の必須機能だけへ絞り、表現品質とReveal体験は必須のSPEC 010で完成させる」
+**Input**: “For the WebMCP Challenge deadline, limit SPEC 009 to the essential answer-period features and complete presentation quality and the Reveal experience in the required SPEC 010.”
 
-## ユーザーシナリオとテスト *(必須)*
+## User Scenarios and Tests *(required)*
 
-### ユーザーストーリー 1 - Open Questionを見つける (優先度: P1)
+### User Story 1 - Find an Open Question (Priority: P1)
 
-HumanはHomeを開き、現在回答を受け付けているBig Questionを見つける。各Questionの本文、回答数、回答締切、残り時間、Answerが非公開であることを確認し、自分で選んだQuestion Detailへ進む。
+A human opens Home, finds Big Questions currently accepting answers, confirms each Question's body, answer count, deadline, remaining time, and sealed status, and proceeds to the selected Question Detail.
 
-**この優先度である理由**: Humanが回答対象を選ぶことが、Personal Agentへ明示的に参加を依頼するWebMCP体験の起点だからである。
+**Why this priority**: Selecting a Question is the starting point of the WebMCP experience in which a human explicitly asks a Personal Agent to participate.
 
-**独立テスト**: `DRAFT`、`OPEN`、`CLOSED`、`REVEALED` と回答数0・1・複数のQuestionを用意し、Homeに `OPEN` だけが締切順で表示され、選択したDetailへ移動できることを確認する。
+**Independent Test**: Prepare `DRAFT`, `OPEN`, `CLOSED`, and `REVEALED` Questions with zero, one, and multiple Answers. Confirm that Home shows only `OPEN` Questions in deadline order and links to the selected Detail.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** 回答受付中のQuestionが複数ある、**操作** HumanがHomeを開く、**結果** `OPEN` Questionだけが回答締切の早い順で表示される。
-2. **前提** Homeに `OPEN` Questionがある、**操作** Humanが一覧項目を確認する、**結果** Question本文、回答数、絶対締切、残り時間、`Answers are sealed` が英語のラベルとともに表示される。
-3. **前提** Humanが一覧のQuestionを選択する、**操作** Detailへの導線を実行する、**結果** 選択したQuestion Detailへ移動する。
-4. **前提** `OPEN` Questionがない、**操作** HumanがHomeを開く、**結果** `No open questions right now.` と既存のQuestion作成またはSign inへの導線が表示される。
-5. **前提** Questionが締切へ到達した、**操作** HumanがHomeを再読込する、**結果** 対象Questionは一覧から除かれ、負の残り時間は表示されない。
-
----
-
-### ユーザーストーリー 2 - 回答期間中のsealed状態を理解する (優先度: P1)
-
-HumanはQuestion DetailでQuestion本文、回答数、回答締切、残り時間を確認し、Answerが締切までsealedであることを理解する。未ログインHumanにはSign inへの導線、認証済みで未回答のHumanにはSPEC 007のAgent依頼プロンプトを表示する。
-
-**この優先度である理由**: 「HumanがQuestionを選び、Personal Agentが互いの回答を見ずに答える」というChallengeの中心的な仕組みを画面上で成立させるため。
-
-**独立テスト**: 他者Answerへ一意な秘密値を入れた `OPEN` Questionを未ログイン、作成者、認証済み未回答の各状態で開き、公開情報と正しい次の行動だけが表示され、他者Answer情報がHTMLに含まれないことを確認する。
-
-**受け入れシナリオ**:
-
-1. **前提** Answerがある `OPEN` Questionである、**操作** HumanがDetailを開く、**結果** Question本文、回答数、絶対締切、残り時間、`Answers are sealed`、独立回答のため締切まで非公開である旨が表示される。
-2. **前提** 未ログインHumanが `OPEN` Questionを開いている、**操作** 参加方法を確認する、**結果** `Sign in to answer with your personal agent.` と既存Google Sign inへの導線が表示され、Agent依頼プロンプトと本人投稿情報は表示されない。
-3. **前提** 認証済みHumanが `OPEN` Questionへ未回答である、**操作** Detailを開く、**結果** SPEC 007の `Ask your personal agent`、ChatGPTの組み込みブラウザを指定して既存Chrome Tabを除外し、現在のOriginを含みQueryとFragmentを除いたQuestion絶対URL入りの確定済み1行英語プロンプト、`Copy prompt` が表示される。
-4. **前提** Question作成者が自分の `OPEN` Questionを開く、**操作** Detailを確認する、**結果** 作成者であることを確認できるが、Reveal前の他者Answerを閲覧する特権は与えられない。
-5. **前提** Questionが `CLOSED` である、**操作** HumanがDetailを開く、**結果** 回答受付終了とsealed継続が表示され、新規Agent依頼プロンプトと他者Answer内容は表示されない。
-6. **前提** 存在しないQuestionまたは `DRAFT` の公開URLである、**操作** Humanがアクセスする、**結果** 両者は同じ `Question unavailable.` となり、Draftの存在や内容を推測できない。
+1. **Given** multiple Questions are accepting Answers, **When** the human opens Home, **Then** only `OPEN` Questions appear in ascending deadline order.
+2. **Given** an `OPEN` Question appears on Home, **When** the human inspects it, **Then** the body, answer count, absolute deadline, remaining time, and `Answers are sealed` appear with English labels.
+3. **Given** the human selects a listed Question, **When** they follow its Detail action, **Then** the selected Question Detail opens.
+4. **Given** no `OPEN` Question exists, **When** the human opens Home, **Then** `No open questions right now.` and the existing create-Question or Sign in action appear.
+5. **Given** a Question reaches its deadline, **When** Home is reloaded, **Then** the Question disappears and no negative remaining time appears.
 
 ---
 
-### ユーザーストーリー 3 - Agent回答後の変化を確認する (優先度: P1)
+### User Story 2 - Understand the Sealed State During the Answer Period (Priority: P1)
 
-認証済みHumanはPersonal Agentが回答した後にQuestion Detailを再読込し、回答数が増えたこと、自分のAgentが回答済みであること、自分のAnswerが締切までsealedであることを確認する。他者Answerの内容は確認できない。
+On Question Detail, a human confirms the body, answer count, deadline, and remaining time and understands that Answers remain sealed until the deadline. A signed-out human sees a Sign in action; an authenticated human without an Answer sees the SPEC 007 Agent request prompt.
 
-**この優先度である理由**: 3分デモに必要な「0件→1件→複数件」「回答本文は見えない」という視覚的な変化を成立させるため。
+**Why this priority**: This establishes the Challenge's central mechanism: a human selects a Question and Personal Agents answer without seeing one another's Answers.
 
-**独立テスト**: 同じQuestionへ2利用者のPersonal Agentが順に回答し、各再読込で回答数と本人状態が正しく変化し、双方のHumanにも他者Answerが表示されないことを確認する。
+**Independent Test**: Open an `OPEN` Question containing a unique secret in another user's Answer while signed out, as the creator, and as an authenticated unanswered user. Confirm that only public information and the correct next action appear and no other-user Answer data exists in the HTML.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** 認証済みHumanのPersonal Agentが回答を投稿した、**操作** HumanがQuestion Detailを再読込する、**結果** `Your agent has answered.`、`Your answer remains sealed until the deadline.`、本人Answerが表示され、新規回答用プロンプトは表示されない。
-2. **前提** 1人目のPersonal Agentが回答済みである、**操作** 別利用者のPersonal Agentが同じQuestionへ回答し画面を再読込する、**結果** 回答数が2件へ増え、各利用者は本人Answerだけを確認できる。
-3. **前提** 他者Answerに識別可能な本文・Excerptがある、**操作** 未ログインHuman、Question作成者、未回答Human、回答済みHumanが `OPEN` または `CLOSED` Detailを開く、**結果** 他者Answerの本文、Excerpt、識別子、投稿者、個別時刻の露出は0件である。
-4. **前提** 本人投稿状態の取得に失敗する、**操作** 認証済みHumanがDetailを開く、**結果** 未回答と誤表示せず `Your submission status is temporarily unavailable. Try again.` と表示し、Agent依頼プロンプトと本人Answerを表示しない。
-5. **前提** Questionが `REVEALED` である、**操作** HumanがDetailを開く、**結果** SPEC 008で実装済みのReveal最小閲覧を後退させず、新規回答用プロンプトは表示されない。Challenge向けの完成表示はSPEC 010で扱う。
-
----
-
-### ユーザーストーリー 4 - 運用操作を監査する (優先度: P1)
-
-管理者は、公開アプリで行われたLogin、Logout、Questionの作成・更新・公開、Answerの投稿・更新・削除を、実行したアカウント、対象、成否、発生時刻とともに確認する。
-
-**この優先度である理由**: 誰でもアクセスできる公開環境で、不適切な利用や削除後の経緯を調査する最低限の運用証跡が必要だからである。
-
-**独立テスト**: 2利用者で対象操作を行い、操作ごとに一意な監査記録が作成され、Question・Answer本文、認証情報、Cookieが監査記録へ複製されないことを確認する。
-
-**受け入れシナリオ**:
-
-1. **前提** HumanがLoginまたはLogoutに成功する、**操作** 管理者が監査記録を確認する、**結果** 実行アカウント、操作種別、発生時刻が表示される。
-2. **前提** HumanがQuestionまたはAnswerを作成・更新・削除する、**操作** 管理者が監査記録を確認する、**結果** 実行アカウント、対象種別、対象識別子、操作種別、発生時刻が表示される。
-3. **前提** QuestionまたはAnswerに秘密値が含まれる、**操作** 監査記録を取得する、**結果** 本文、Excerpt、Cookie、Token、OAuth値は監査記録に含まれない。
+1. **Given** an `OPEN` Question with Answers, **When** the human opens Detail, **Then** the body, answer count, absolute deadline, remaining time, `Answers are sealed`, and an explanation of independent answering appear.
+2. **Given** a signed-out human views an `OPEN` Question, **When** they inspect how to participate, **Then** `Sign in to answer with your personal agent.` and the existing Google Sign in action appear, while the Agent prompt and submission information do not.
+3. **Given** an authenticated unanswered human views an `OPEN` Question, **When** Detail opens, **Then** SPEC 007's `Ask your personal agent`, the finalized one-line English prompt specifying ChatGPT's built-in browser rather than an existing Chrome tab and containing the current-origin absolute Question URL without query or fragment, and `Copy prompt` appear.
+4. **Given** the creator views their own `OPEN` Question, **When** they inspect Detail, **Then** creator status is visible but grants no pre-Reveal access to other Answers.
+5. **Given** a Question is `CLOSED`, **When** Detail opens, **Then** acceptance-ended and still-sealed states appear, without a new Agent prompt or other Answers.
+6. **Given** a missing Question or a public URL for a `DRAFT`, **When** a human accesses it, **Then** both return the same `Question unavailable.` result without revealing the Draft.
 
 ---
 
-### ユーザーストーリー 5 - 単一管理者として管理画面へ入る (優先度: P1)
+### User Story 3 - Confirm the Change After an Agent Answers (Priority: P1)
 
-環境設定で指定された1人の管理者は、通常のGoogle Login後に管理画面へアクセスできる。未ログインHumanと管理者以外の認証済みHumanは管理情報へアクセスできない。
+After a Personal Agent answers, an authenticated human reloads Question Detail and confirms the increased count, their Agent's completed status, and that their own Answer remains sealed until the deadline. They cannot inspect another user's Answer.
 
-**この優先度である理由**: 管理情報と削除・BAN操作を一般利用者から隔離する認可境界が、以降の管理機能すべての前提だからである。
+**Why this priority**: This enables the visible “zero to one to multiple Answers, while bodies remain hidden” change required by the three-minute demo.
 
-**独立テスト**: 未ログイン、一般アカウント、設定された管理アカウントで管理画面と各管理操作へ直接アクセスし、管理者だけが成功することを確認する。
+**Independent Test**: Two users' Personal Agents answer the same Question in sequence. Confirm that each reload updates the count and current-user state correctly while neither human sees the other's Answer.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** 環境設定と一致する管理者がLogin済みである、**操作** 管理画面を開く、**結果** 管理画面が表示される。
-2. **前提** 未ログインHumanである、**操作** 管理画面または管理操作へ直接アクセスする、**結果** 通常の404と同じ応答となり、Login案内、管理画面の存在、管理情報は含まれない。
-3. **前提** 管理者以外の認証済みHumanである、**操作** 管理画面または管理操作へ直接アクセスする、**結果** 通常の404と同じ応答で拒否され、管理画面の存在と管理情報は含まれない。
-4. **前提** 管理者設定が欠落または不正である、**操作** 管理画面へアクセスする、**結果** 誰にも管理権限を付与せず、通常の404と同じ応答となる。
-5. **前提** Humanが一般画面を閲覧する、**操作** Linkを確認する、**結果** 管理画面へのLinkはなく、旧 `/admin` もRedirectせず404となる。
-
----
-
-### ユーザーストーリー 6 - 公開データを一覧する (優先度: P1)
-
-管理者は、管理画面でUser、Question、Answer、監査記録の一覧を確認し、問題のある対象を識別できる。
-
-**この優先度である理由**: 削除やBANの前に、対象、所有者、内容、状態、時刻を誤りなく確認する必要があるため。
-
-**独立テスト**: 複数User、Question、Answer、監査記録を用意し、管理者だけが各一覧の必要情報を新しい順で確認できることを検証する。
-
-**受け入れシナリオ**:
-
-1. **前提** 複数のUserが存在する、**操作** 管理者がUser一覧を確認する、**結果** User ID、表示名、Email、BAN状態、作成時刻が表示される。
-2. **前提** 複数のQuestionとAnswerが存在する、**操作** 管理者が各一覧を確認する、**結果** 内容、所有者、状態、作成・更新時刻を対象識別子とともに確認できる。
-3. **前提** 監査記録が存在する、**操作** 管理者が一覧を確認する、**結果** 新しい順でActor、Action、Target、Outcome、発生時刻が表示される。
+1. **Given** the authenticated human's Personal Agent posted an Answer, **When** Detail is reloaded, **Then** `Your agent has answered.`, `Your answer remains sealed until the deadline.`, and the current user's Answer appear, without a new-answer prompt.
+2. **Given** one Personal Agent already answered, **When** another user's Agent answers and the page reloads, **Then** the count becomes two and each user sees only their own Answer.
+3. **Given** another user's Answer has identifiable body text or an excerpt, **When** any signed-out, creator, unanswered, or answered human opens `OPEN` or `CLOSED` Detail, **Then** exposure of that Answer's body, excerpt, identifier, author, and individual timestamps is zero.
+4. **Given** current-user submission retrieval fails, **When** Detail opens, **Then** show `Your submission status is temporarily unavailable. Try again.` rather than treating it as unanswered, and show neither the Agent prompt nor the Answer.
+5. **Given** a Question is `REVEALED`, **When** Detail opens, **Then** preserve SPEC 008's minimal Reveal browsing and show no new-answer prompt. SPEC 010 handles the finished Challenge presentation.
 
 ---
 
-### ユーザーストーリー 7 - 不適切なQuestionを削除する (優先度: P1)
+### User Story 4 - Audit Operational Actions (Priority: P1)
 
-管理者は、内容を編集せず、不適切なQuestionを削除できる。Questionに属するAnswerも同時に削除され、削除操作の監査記録は残る。
+The administrator can inspect public-app login, logout, Question create/update/publish, and Answer create/update/delete operations with the acting account, target, outcome, and occurrence time.
 
-**この優先度である理由**: 公開サービスとして、不適切なQuestionとそれに紐づく公開情報を速やかに除去できる必要があるため。
+**Why this priority**: A public environment needs a minimum operational trail for investigating misuse and events after deletion.
 
-**独立テスト**: Answerを持つQuestionを管理者が削除し、Questionと配下Answerが一般画面・API・管理一覧から消え、管理者の削除記録だけが残ることを確認する。
+**Independent Test**: Perform the operations with two users and confirm one unique audit record per operation without duplicating Question or Answer bodies, authentication information, or cookies.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** Questionが存在する、**操作** 管理者が対象を確認して削除する、**結果** Questionと配下Answerが削除され、元に戻せないことが管理画面に示される。
-2. **前提** 対象が存在しない、**操作** 管理者が削除を試みる、**結果** 他のQuestionへ影響せず対象なしとして表示される。
-3. **前提** 一般利用者が同じ削除操作を試みる、**操作** 直接要求する、**結果** Questionは変化せず拒否される。
-
----
-
-### ユーザーストーリー 8 - 不適切なAnswerを削除する (優先度: P1)
-
-管理者は、内容を編集せず、不適切なAnswerだけを削除できる。Questionと他のAnswerは維持され、削除操作の監査記録は残る。
-
-**この優先度である理由**: Question全体を失わずに、個別の不適切な公開回答へ対処するため。
-
-**独立テスト**: 同一Questionの複数Answerから1件を管理者が削除し、対象だけが消え、Questionと他のAnswerが維持されることを確認する。
-
-**受け入れシナリオ**:
-
-1. **前提** 複数Answerを持つQuestionがある、**操作** 管理者が1件を削除する、**結果** 対象Answerだけが削除され、回答数へ反映される。
-2. **前提** 対象Answerが存在しない、**操作** 管理者が削除を試みる、**結果** 他のAnswerへ影響せず対象なしとして表示される。
-3. **前提** 一般利用者が同じ削除操作を試みる、**操作** 直接要求する、**結果** Answerは変化せず拒否される。
+1. **Given** a human logs in or out successfully, **When** the administrator inspects audit records, **Then** the acting account, action type, and time appear.
+2. **Given** a human creates, updates, or deletes a Question or Answer, **When** records are inspected, **Then** the actor, target type and ID, action, and time appear.
+3. **Given** a Question or Answer contains a secret, **When** audit records are retrieved, **Then** no body, excerpt, cookie, token, or OAuth value is present.
 
 ---
 
-### ユーザーストーリー 9 - UserをBANする (優先度: P1)
+### User Story 5 - Enter the Administration Interface as the Sole Administrator (Priority: P1)
 
-管理者は、問題のある一般UserをBANし、既存Sessionを失効させ、新規Loginと認証済み操作を停止できる。誤操作へ対処できるようBAN解除も可能とする。
+The one environment-configured administrator can access the administration interface after ordinary Google Login. Signed-out humans and other authenticated humans cannot access administration information.
 
-**この優先度である理由**: 公開サービスへの継続的な不正利用を、コンテンツ単位の削除だけでなくアカウント単位で停止する必要があるため。
+**Why this priority**: This authorization boundary is required by every subsequent administration feature.
 
-**独立テスト**: 一般UserをBANし、既存Sessionが失効して新規Sessionも作成されず、解除後に再びLoginできること、管理者自身はBANできないことを確認する。
+**Independent Test**: Directly access administration pages and operations while signed out, as a regular account, and as the configured administrator; only the administrator succeeds.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** 一般UserがLogin済みである、**操作** 管理者がBANする、**結果** UserはBAN状態となり、全Sessionが失効し、以降の認証済み操作が拒否される。
-2. **前提** BAN中のUserである、**操作** Google Loginを試みる、**結果** 新しいSessionは作成されずアプリを利用できない。
-3. **前提** BAN中のUserである、**操作** 管理者がBANを解除する、**結果** Userは次回Loginからアプリを再利用できる。
-4. **前提** 管理者自身である、**操作** 自分をBANしようとする、**結果** 操作は拒否され管理アクセスは維持される。
+1. The signed-in configured administrator can open the administration interface.
+2. A signed-out request receives the same response as an ordinary 404, with no login guidance, administration disclosure, or data.
+3. A non-administrator authenticated request receives the same ordinary 404 without disclosure.
+4. Missing or invalid administrator configuration grants authority to nobody and returns the ordinary 404.
+5. Public pages contain no administration link, and former path `/admin` returns 404 without redirecting.
 
-### エッジケース
+---
 
-- 回答締切の直前・同時刻・直後はサービス側のQuestion状態を正とし、同時刻以後に新規Agent依頼プロンプトや負の残り時間を表示しない。
-- 回答数は `0 answers`、`1 answer`、`n answers` と単複を正しく表示し、投票数や世論の代表数と誤解させない。
-- Question本文が日本語でもApplication UIは英語とし、Question本文を翻訳しない。
-- Question本文と本人AnswerにHTML、Script、長い文字列が含まれても、画面構造や実行可能な内容として解釈しない。
-- HomeまたはDetailの公開情報取得に失敗した場合、空一覧や回答0件と誤表示せず、一時的に利用できないことを表示する。
-- 認証または本人Answer取得に失敗した場合、Private情報とAgent依頼プロンプトを表示しない。
-- 利用者ごとに異なるDetail応答を別利用者または未ログインHumanへ再利用しない。
-- 同じ削除またはBAN操作が再送されても、別の対象へ影響せず、監査記録は確定した状態変更に対して一意に作成する。
-- Question削除時は配下Answerを削除するが、監査記録は削除せず運用証跡を維持する。
-- BANとSession作成が競合しても、BAN確定後に有効なSessionを残さない。
+### User Story 6 - List Public Data (Priority: P1)
 
-## 要件 *(必須)*
+The administrator can list Users, Questions, Answers, and audit records to identify problematic targets.
 
-### 機能要件
+**Why this priority**: The target, owner, content, state, and time must be checked before deletion or banning.
 
-- **FR-001**: システムは、Homeにサービス側現在時刻で `OPEN` と判定した公開Questionだけを表示しなければならない。
-- **FR-002**: システムは、HomeのQuestionを回答締切の昇順、同一締切では一貫した順序で表示しなければならない。
-- **FR-003**: システムは、Homeの各Questionに本文、回答数、絶対締切、非負の残り時間、`Answers are sealed`、Detailへの導線を表示しなければならない。
-- **FR-004**: システムは、Open QuestionがないHomeに `No open questions right now.` と既存のQuestion作成またはSign inへの導線を表示しなければならない。
-- **FR-005**: システムは、公開済みQuestion Detailを未ログインHumanと認証済みHumanに提供し、Question本文、現在状態、回答数、絶対締切、残り時間を表示しなければならない。
-- **FR-006**: システムは、`OPEN` Questionに `Answers are sealed` と、独立回答を守るため締切までAnswerが非公開である英語説明を表示しなければならない。
-- **FR-007**: システムは、未ログインHumanに既存Google Sign inへの導線を表示し、Agent依頼プロンプトと本人投稿情報を表示してはならない。
-- **FR-008**: システムは、認証済みかつ未回答のHumanの `OPEN` Questionに限り、SPEC 007のChatGPT組み込みブラウザ指定と既存Chrome Tab除外、現在のOriginを含みQueryとFragmentを除いたQuestion絶対URL入りの確定済み1行Agent依頼プロンプト、選択可能な全文、`Copy prompt`、コピー結果を表示しなければならない。詳細なAgent向け指示と安全境界はPromptへ重複させず、各WebMCP Tool契約から提供しなければならない。Tool契約は利用可能なUser自身の記述を優先し、Assistant提案や検討候補をUserの事実とみなしてはならない。明示的な個人見解がない場合は未確認の個人事実や既知の信条として断定しない最善の代理回答を作成・投稿し、その不足だけを理由にHumanへ確認してはならない。初回Promptは投稿許可を含み、追加Previewや承認を要求しない。
-- **FR-009**: システムは、認証済みかつ回答済みのHumanに `Your agent has answered.`、`Your answer remains sealed until the deadline.`、本人Answerを表示し、新規Agent依頼プロンプトを表示してはならない。
-- **FR-010**: システムは、Question作成者であることを本人投稿状態やReveal前のAnswer閲覧権限と混同してはならない。
-- **FR-011**: システムは、`CLOSED` Questionに回答受付終了とsealed継続を表示し、新規Agent依頼プロンプトと他者Answer内容を表示してはならない。
-- **FR-012**: システムは、`REVEALED` QuestionでSPEC 008の既存閲覧・アクセス制御を維持し、新規Agent依頼プロンプトを表示してはならない。
-- **FR-013**: システムは、Question Detailの回答数を再読込時の最新集計値として表示し、0件から複数件への変化をHumanが確認できるようにしなければならない。
-- **FR-014**: システムは、`OPEN` と `CLOSED` で他者Answerの本文、Excerpt、識別子、投稿者、個別時刻をHTML本文、属性、埋め込みデータ、Errorへ含めてはならない。
-- **FR-015**: システムは、存在しないQuestionと公開URLから指定された `DRAFT` Questionを同じ利用不能結果で扱わなければならない。
-- **FR-016**: システムは、本人投稿状態を有効なSessionからだけ判定し、取得不能時は未回答へ変換せず、Private情報とAgent依頼プロンプトを非表示にしなければならない。
-- **FR-017**: システムは、Application UIを英語で表示し、Question本文と本人Answerを保存言語の未信頼テキストとして扱わなければならない。
-- **FR-018**: システムは、利用者ごとに内容が異なるQuestion Detailを別Sessionへ再利用してはならない。
-- **FR-019**: システムは、Home一覧、Question Detailの閲覧者状態、締切境界、回答数、Reveal前秘密値非露出を自動回帰テストで保証しなければならない。
-- **FR-020**: 本SPECの完了判定は、専用Login画面、Login後の高度な戻り先管理、My Questionsの再設計、Reveal結果の完成表示、Challenge Visual Design、包括的なAccessibility監査に依存してはならない。
-- **FR-021**: システムは、成功したLogin、Logout、Questionの作成・更新・公開、Answerの投稿・更新・削除、管理者による削除、BAN、BAN解除を永続的な監査記録として保存しなければならない。
-- **FR-022**: 監査記録は一意な識別子、Actor User ID、操作種別、対象種別、対象識別子、成功結果、サービス側発生時刻を持ち、Question本文、Answer本文、Excerpt、Cookie、Token、OAuth値を含めてはならない。
-- **FR-023**: システムは、環境設定のEmailと完全一致する1人の認証済みUserだけを管理者として扱い、設定不備時は管理権限を付与してはならない。
-- **FR-024**: システムは、未ログイン、一般User、設定不備、認可時障害の管理要求を通常の404と同じ応答で拒否し、管理画面の存在、管理用Link、管理対象情報を含めてはならない。
-- **FR-024a**: システムは管理画面を `/club-operations` に限定し、一般画面からLinkせず、旧 `/admin` をRedirectせず404とし、管理画面へ `noindex, nofollow` を設定しなければならない。
-- **FR-025**: 管理者は、User ID、表示名、Email、BAN状態、作成時刻をUser一覧で確認できなければならない。
-- **FR-026**: 管理者は、Questionの識別子、本文、作成者、状態、作成・更新時刻、およびAnswerの識別子、本文、Excerpt、投稿者、Question識別子、作成・更新時刻を確認できなければならない。
-- **FR-027**: 管理者は、監査記録を発生時刻の新しい順で確認できなければならない。
-- **FR-027a**: 管理画面トップはUser、Question、Answer、Audit logの件数と各専用一覧へのLinkを表示し、個別Recordを表示してはならない。4つの専用一覧はすべてTable形式とし、1ページ20件でページ分割しなければならない。
-- **FR-028**: 管理者はQuestionを編集せず削除でき、Question削除時は配下Answerも削除しなければならない。
-- **FR-029**: 管理者はAnswerを編集せず個別削除でき、Questionと他のAnswerを変更してはならない。
-- **FR-030**: 管理者は一般UserをBAN・BAN解除でき、管理者自身をBANしてはならない。
-- **FR-031**: BAN確定時、システムは対象Userの既存Sessionをすべて失効し、BAN中は新規Session作成を拒否しなければならない。
-- **FR-032**: 管理画面と管理操作は利用者別の共有Cacheへ保存せず、直接URLおよびForm再送を含む全経路で同じ認可を実施しなければならない。
-- **FR-033**: 管理者の削除・BAN・BAN解除は対象を明示した同一Originの確認済みFormからだけ実行し、成功後は対象種別の専用一覧へRedirectしなければならない。
+**Independent Test**: Prepare multiple records and confirm that only the administrator can inspect the required fields in newest-first order.
 
-### 主要エンティティ
+**Acceptance Scenarios**:
 
-- **Open Question一覧項目**: Homeで発見できるQuestionの本文、回答数、締切、残り時間、sealed状態、Detail導線。
-- **Question閲覧状態**: Question状態、認証状態、作成者一致、本人Submission状態を組み合わせた排他的な表示判断。
-- **本人Submission**: 未投稿、投稿済み、取得不能のいずれか。投稿済みの場合だけ本人Answerを表示する。
-- **表示期限**: 絶対締切と、同じサービス時刻Snapshotから導出した非負の残り時間。
-- **管理者設定**: 環境設定で指定する単一の管理者Email。認証済みUserのEmailとの完全一致だけで管理権限を与える。
-- **BAN**: User ID、実行した管理者、理由、BAN時刻を持つ利用停止状態。解除時は削除する。
-- **監査記録**: Actor、Action、Target、Outcome、発生時刻からなる追記専用の運用証跡。入力本文や認証秘密を複製しない。
+1. The User list shows user ID, display name, email, ban state, and creation time.
+2. The Question and Answer lists show content, owner, state, creation/update times, and target identifiers.
+3. The audit list shows actor, action, target, outcome, and occurrence time in newest-first order.
 
-## 成功基準 *(必須)*
+---
 
-### 測定可能な成果
+### User Story 7 - Delete an Inappropriate Question (Priority: P1)
 
-- **SC-001**: 4つのQuestion状態を含む検証データで、Homeに表示されるQuestionの100%が `OPEN` であり、対象の全 `OPEN` Questionが締切順に表示される。
-- **SC-002**: 未ログイン、作成者、認証済み未回答、認証済み回答済みの各状態で、Question、回答数、期限、sealed、次の行動の表示が100%期待結果と一致する。
-- **SC-003**: 2人のPersonal Agentが順に回答したとき、再読込後の回答数が0件、1件、2件へ正しく変化し、各Humanに表示されるAnswerは本人分だけである。
-- **SC-004**: `OPEN` と `CLOSED` の全検証主体で、他者Answer由来の秘密値露出がHTML本文、属性、埋め込みデータ、Errorのいずれにも0件である。
-- **SC-005**: 回答締切の直前・同時刻・直後で、Question状態、残り時間、新規Agent依頼プロンプトの表示がサービス側判定と100%一致し、負の残り時間が0件である。
-- **SC-006**: HumanはHomeを開いてから2分以内にOpen Questionを選び、sealedの意味と締切を確認し、Personal Agentへ渡すPromptへ到達できる。
-- **SC-007**: 既存のQuestion作成、Google認証、5つのWebMCP Tool、Answer更新・削除、Reveal最小閲覧に関する自動回帰テストが100%成功する。
-- **SC-008**: Login、Logout、Question操作、Answer操作、管理操作の全検証ケースで、Actorと対象を持つ監査記録の作成率が100%、秘密値の混入が0件となる。
-- **SC-009**: 未ログイン・一般Userによる管理画面閲覧と管理操作の全検証ケースで、成功件数、管理画面の存在を示す文言・Link、管理情報露出が0件となる。
-- **SC-010**: 管理者がUser、Question、Answer、監査記録の対象を2分以内に特定できる。
-- **SC-011**: 管理者によるQuestion・Answer削除の全検証ケースで対象だけが削除され、意図しないデータ変更が0件となる。
-- **SC-012**: BANしたUserの既存Sessionと新規Sessionが利用可能になるケースが0件で、BAN解除後は再Loginできる。
+The administrator can delete, but not edit, an inappropriate Question. Its Answers are deleted with it while the deletion audit record remains.
 
-## 前提
+**Why this priority**: A public service must promptly remove inappropriate Questions and associated public information.
 
-- SPEC 005のQuestion状態判定、SPEC 006のQuestion作成・My Questions、SPEC 007のAgent依頼Promptと5 Tool、SPEC 008のAnswerアクセス制御とReveal最小閲覧を再利用する。
-- Homeと公開済みQuestion Detailは、Challengeの体験を理解してからSign inを判断できるよう未ログインHumanにも提供する。
-- 回答数はAnswer内容を含まない集計値としてHuman向け画面へ表示し、WebMCPへは追加しない。
-- Question作成者は自分のQuestionへ回答できるが、作成者であることによるReveal前の閲覧特権は持たない。
-- Questionは任意の言語で記述できる。主言語の入力・表示・APIメタデータは設けず、Personal AgentがQuestion本文から回答言語を判断する。
-- 本SPECは本日中にChallenge Core機能を完成させる単位とする。画面のVisual Design、表現の磨き込み、Reveal後の比較体験は、必須のSPEC 010でまとめて完成させる。
-- Manual TestはSPEC 010の画面実装完了後に、Core Demo全体としてまとめて実施する。
-- 監査記録は操作の存在と実行者を追跡するためのもので、削除対象コンテンツの複製・復元用途には使わない。
-- 管理者は既存Google Loginを利用し、専用のPasswordや別のLogin方式は追加しない。
+**Independent Test**: Delete a Question with Answers and confirm that it and its children disappear from public pages, APIs, and administration lists while only the administrator deletion record remains.
 
-## 依存関係
+**Acceptance Scenarios**:
 
-- SPEC 005「ドメインデータモデルとQuestionライフサイクル」
-- SPEC 006「Question作成・公開フロー」
-- SPEC 007「WebMCP MVP Tool群」
-- SPEC 008「Sealed Answersのアクセス制御」
+1. Deleting an existing Question deletes its Answers and the interface explains that the action cannot be undone.
+2. Deleting a missing target changes no other Question and reports it as missing.
+3. A direct deletion request from a regular user is rejected without changing the Question.
 
-## 対象外
+---
 
-- Challenge向けVisual Direction、Typography、Color、Layout、Motion、完成版Responsive表現（SPEC 010）
-- Reveal後のAnswer一覧・比較を伝える完成版Human UI（SPEC 010）
-- 専用Login画面、Login前Pageへの高度な復帰、認証Navigationの全面再設計
-- My QuestionsとQuestion管理画面の再設計
-- `axe-core`など新規Accessibility Test依存、VoiceOver、200% Zoom、JavaScript無効の網羅検証
-- Question検索、推薦、ページ分割、`My Answers`
-- 投票、順位付け、Best Answer、Winner、Consensus、AI Summary
-- 追加の提出文書、包括的Cross-browser検証、非必須Hardening（SPEC 011）
-- 複数管理者、Role管理、権限委譲、削除済み本文の復元、監査記録の編集・削除・外部転送
+### User Story 8 - Delete an Inappropriate Answer (Priority: P1)
+
+The administrator can delete, but not edit, only an inappropriate Answer. The Question and other Answers remain, and the audit record is retained.
+
+**Why this priority**: This handles one inappropriate public Answer without losing the entire Question.
+
+**Independent Test**: Delete one of multiple Answers to a Question and confirm only that Answer disappears.
+
+**Acceptance Scenarios**:
+
+1. Deleting one Answer removes only that Answer and updates the count.
+2. Deleting a missing Answer changes no other Answer and reports it as missing.
+3. A direct deletion request from a regular user is rejected without changing the Answer.
+
+---
+
+### User Story 9 - Ban a User (Priority: P1)
+
+The administrator can ban a problematic regular user, invalidate existing sessions, and stop new login and authenticated operations. The ban can be removed to recover from mistakes.
+
+**Why this priority**: Persistent abuse must be stoppable at the account level, not only by deleting individual content.
+
+**Independent Test**: Ban a regular user and confirm existing and new sessions are unavailable, login works after unbanning, and the administrator cannot ban themselves.
+
+**Acceptance Scenarios**:
+
+1. Banning a signed-in regular user marks them banned, invalidates all sessions, and rejects later authenticated operations.
+2. Google Login by a banned user creates no new session.
+3. Removing a ban allows the user's next login.
+4. An attempt by the administrator to ban themselves is rejected and administration access remains.
+
+### Edge Cases
+
+- Immediately before, exactly at, and after the deadline, server-side Question state is authoritative; no new Agent prompt or negative remaining time appears at or after the deadline.
+- Render `0 answers`, `1 answer`, and `n answers` correctly without implying vote totals or representative public opinion.
+- Keep application UI in English even when a Question is Japanese; never translate the Question body.
+- Treat HTML, scripts, and long strings in Question bodies and the current user's Answer as text, never executable structure.
+- A public-data failure on Home or Detail must show temporary unavailability, not an empty list or zero Answers.
+- On authentication or current-user Answer retrieval failure, show neither private information nor the Agent prompt.
+- Never reuse a user-specific Detail response for another session or signed-out human.
+- Repeated deletion or ban requests must not affect another target, and create a unique audit record only for a committed state change.
+- Question deletion removes child Answers but retains audit records.
+- A race between banning and session creation must leave no valid session after the ban commits.
+
+## Requirements *(required)*
+
+### Functional Requirements
+
+- **FR-001**: The system MUST show on Home only public Questions classified as `OPEN` using current server time.
+- **FR-002**: The system MUST order Home Questions by ascending answer deadline with stable tie-breaking.
+- **FR-003**: Each Home Question MUST show its body, answer count, absolute deadline, nonnegative remaining time, `Answers are sealed`, and a Detail action.
+- **FR-004**: Home with no Open Questions MUST show `No open questions right now.` and the existing create-Question or Sign in action.
+- **FR-005**: Published Question Detail MUST be available to signed-out and authenticated humans and show the body, current state, answer count, absolute deadline, and remaining time.
+- **FR-006**: An `OPEN` Question MUST show `Answers are sealed` and an English explanation that Answers stay private until the deadline to preserve independent answering.
+- **FR-007**: A signed-out human MUST see the existing Google Sign in action and MUST NOT see the Agent prompt or current-user submission information.
+- **FR-008**: Only an authenticated unanswered human viewing an `OPEN` Question MUST see SPEC 007's finalized one-line Agent request prompt, specifying ChatGPT's built-in browser and excluding existing Chrome tabs, containing the current-origin absolute Question URL without query or fragment, along with selectable full text, `Copy prompt`, and copy status. Detailed Agent instructions and safety boundaries MUST come from each WebMCP tool contract, not be duplicated in the prompt. Tool contracts MUST prioritize available user-authored statements and MUST NOT treat assistant suggestions or options under consideration as user facts. When no explicit personal view exists, they MUST create and submit the best proxy answer without asserting unverified personal facts or known beliefs, and MUST NOT ask the human solely due to that absence. The initial prompt grants submission permission, so no additional preview or approval is required.
+- **FR-009**: An authenticated answered human MUST see `Your agent has answered.`, `Your answer remains sealed until the deadline.`, and their own Answer, and MUST NOT see a new-answer prompt.
+- **FR-010**: The system MUST NOT confuse Question creator status with current-user submission state or pre-Reveal Answer access.
+- **FR-011**: A `CLOSED` Question MUST show acceptance ended and still sealed, without a new Agent prompt or another user's Answer.
+- **FR-012**: A `REVEALED` Question MUST preserve SPEC 008 browsing and access control and MUST NOT show a new Agent prompt.
+- **FR-013**: Question Detail MUST show the latest aggregate answer count on reload so humans can observe changes from zero to multiple.
+- **FR-014**: In `OPEN` and `CLOSED`, the system MUST NOT include another user's Answer body, excerpt, ID, author, or individual timestamps in HTML text, attributes, embedded data, or errors.
+- **FR-015**: A missing Question and a `DRAFT` requested through its public URL MUST produce the same unavailable result.
+- **FR-016**: Current-user submission state MUST be derived only from a valid session; if unavailable, it MUST NOT be converted to unanswered, and private information and the Agent prompt MUST remain hidden.
+- **FR-017**: Application UI MUST be English, while Question bodies and the current user's Answer MUST remain untrusted text in their stored language.
+- **FR-018**: The system MUST NOT reuse user-specific Question Detail content for another session.
+- **FR-019**: Automated regression tests MUST cover the Home list, Question Detail viewer states, deadline boundaries, answer counts, and non-exposure of pre-Reveal secrets.
+- **FR-020**: Completion of this SPEC MUST NOT depend on a dedicated Login screen, advanced post-login return destinations, My Questions redesign, finished Reveal presentation, Challenge visual design, or a comprehensive accessibility audit.
+- **FR-021**: The system MUST persist audit records for successful login, logout, Question create/update/publish, Answer create/update/delete, administrator deletion, ban, and unban.
+- **FR-022**: Audit records MUST contain a unique ID, actor user ID, action, target type, target ID, successful outcome, and server occurrence time, and MUST NOT contain Question bodies, Answer bodies, excerpts, cookies, tokens, or OAuth values.
+- **FR-023**: Only one authenticated User whose email exactly matches the environment configuration MUST be treated as administrator; invalid configuration MUST grant no authority.
+- **FR-024**: Administration requests by signed-out users, regular Users, with invalid configuration, or during authorization failure MUST return the same response as an ordinary 404 and MUST disclose no administration interface, link, or target information.
+- **FR-024a**: The administration interface MUST exist only at `/club-operations`, MUST NOT be linked from public screens, MUST return 404 for former path `/admin` without redirecting, and MUST set `noindex, nofollow`.
+- **FR-025**: The administrator MUST be able to inspect user ID, display name, email, ban state, and creation time in the User list.
+- **FR-026**: The administrator MUST be able to inspect each Question's ID, body, creator, state, and create/update times, and each Answer's ID, body, excerpt, author, Question ID, and create/update times.
+- **FR-027**: The administrator MUST be able to inspect audit records in newest-first order.
+- **FR-027a**: The administration landing page MUST show counts and dedicated list links for Users, Questions, Answers, and Audit Logs, and MUST NOT show individual records. All four dedicated lists MUST use tables and paginate at 20 records per page.
+- **FR-028**: The administrator MUST be able to delete but not edit a Question, and deletion MUST remove its Answers.
+- **FR-029**: The administrator MUST be able to delete but not edit an individual Answer without changing the Question or other Answers.
+- **FR-030**: The administrator MUST be able to ban and unban regular Users and MUST NOT ban themselves.
+- **FR-031**: When a ban commits, the system MUST invalidate every existing session for the target User and reject new session creation while banned.
+- **FR-032**: Administration pages and operations MUST NOT be stored in shared per-user caches and MUST apply identical authorization on every path, including direct URLs and form resubmission.
+- **FR-033**: Administrator deletion, ban, and unban MUST be executed only from a confirmed same-origin form naming the target, and success MUST redirect to the dedicated list for that target type.
+
+### Key Entities
+
+- **Open Question List Item**: Question body, answer count, deadline, remaining time, sealed state, and Detail action discoverable from Home.
+- **Question Viewer State**: Mutually exclusive presentation decision combining Question state, authentication state, creator match, and current-user submission state.
+- **Current User Submission**: Unsubmitted, submitted, or unavailable. Show the current user's Answer only when submitted.
+- **Display Deadline**: Absolute deadline and nonnegative remaining time derived from the same server-time snapshot.
+- **Administrator Configuration**: One environment-configured administrator email; authority is granted only by exact match with the authenticated User's email.
+- **Ban**: Suspension state containing user ID, acting administrator, reason, and ban time; deletion removes the ban.
+- **Audit Record**: Append-only operational trail containing actor, action, target, outcome, and occurrence time, without duplicated input bodies or authentication secrets.
+
+## Success Criteria *(required)*
+
+### Measurable Outcomes
+
+- **SC-001**: With validation data covering four Question states, 100% of Questions shown on Home are `OPEN`, and all eligible `OPEN` Questions appear in deadline order.
+- **SC-002**: For signed-out, creator, authenticated-unanswered, and authenticated-answered states, Question, count, deadline, sealed state, and next action match expectations in 100% of cases.
+- **SC-003**: When two Personal Agents answer sequentially, reloaded counts change correctly through zero, one, and two, and each human sees only their own Answer.
+- **SC-004**: Across all `OPEN` and `CLOSED` subjects, exposure of secret values from other Answers in HTML text, attributes, embedded data, and errors is zero.
+- **SC-005**: Immediately before, exactly at, and after the deadline, Question state, remaining time, and new Agent prompt visibility agree 100% with server classification, and negative remaining time occurs zero times.
+- **SC-006**: Within two minutes of opening Home, a human can select an Open Question, understand sealing and the deadline, and reach the Prompt to give their Personal Agent.
+- **SC-007**: Automated regression tests for existing Question creation, Google authentication, five WebMCP tools, Answer update/delete, and minimal Reveal browsing succeed 100%.
+- **SC-008**: Across all validation cases for login, logout, Question, Answer, and administrator operations, 100% create audit records with actor and target and zero contain secret values.
+- **SC-009**: Across all administration-page and operation cases for signed-out and regular users, successful accesses, administration-disclosing text or links, and exposed administration information are all zero.
+- **SC-010**: The administrator can identify a target User, Question, Answer, or audit record within two minutes.
+- **SC-011**: In every administrator Question/Answer deletion case, only the intended target is removed and unintended data changes are zero.
+- **SC-012**: No existing or new session of a banned User remains usable, and login succeeds after unbanning.
+
+## Assumptions
+
+- Reuse SPEC 005 Question-state decisions, SPEC 006 Question creation and My Questions, SPEC 007 Agent prompts and five tools, and SPEC 008 Answer access control and minimal Reveal browsing.
+- Home and published Question Detail are available to signed-out humans so they can understand the Challenge before deciding to sign in.
+- Show answer counts, but not Answer contents, in human-facing screens; do not add counts to WebMCP.
+- A Question creator may answer their Question but receives no creator-based pre-Reveal browsing privilege.
+- Questions may use any language. There is no primary-language input, display, or API metadata; the Personal Agent infers answer language from the body.
+- This SPEC completes Challenge Core functionality today. SPEC 010 completes visual design, presentation polish, and post-Reveal comparison.
+- Conduct the Core Demo manual test after SPEC 010 screen implementation is complete.
+- Audit records track operations and actors; they are not content copies or restoration storage.
+- The administrator uses existing Google Login; add no dedicated password or authentication method.
+
+## Dependencies
+
+- SPEC 005, “Domain Data Model and Question Lifecycle”
+- SPEC 006, “Question Creation and Publication Flow”
+- SPEC 007, “WebMCP MVP Tool Set”
+- SPEC 008, “Access Control for Sealed Answers”
+
+## Out of Scope
+
+- Challenge visual direction, typography, color, layout, motion, and finished responsive presentation (SPEC 010)
+- Finished human UI communicating post-Reveal Answer lists and comparison (SPEC 010)
+- Dedicated Login page, advanced return to the pre-login page, or complete authentication-navigation redesign
+- Redesign of My Questions and the Question administration screen
+- New accessibility test dependencies such as `axe-core`, VoiceOver, 200% zoom, and exhaustive JavaScript-disabled verification
+- Question search, recommendations, pagination, and `My Answers`
+- Voting, ranking, Best Answer, Winner, Consensus, and AI Summary
+- Additional submission documents, comprehensive cross-browser verification, and nonessential hardening (SPEC 011)
+- Multiple administrators, role management, delegated authority, restoration of deleted bodies, or editing, deleting, or externally forwarding audit records

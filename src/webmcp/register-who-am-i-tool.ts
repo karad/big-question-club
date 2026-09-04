@@ -6,10 +6,18 @@ import {
 } from '../domain/identity';
 import { getWebMcpSupport } from './browser-support';
 
+/** Public WebMCP name for retrieving the current identity. */
 export const WHO_AM_I_TOOL_NAME = 'who_am_i';
 
 type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
+/**
+ * Registers the identity WebMCP tool when browser support is available.
+ * @param documentLike - Document-like object that exposes the model context.
+ * @param fetchLike - Fetch implementation used by the tool.
+ * @param endpoint - Identity endpoint.
+ * @returns The registration outcome.
+ */
 export async function registerWhoAmITool(
   documentLike: Pick<Document, 'modelContext'>,
   fetchLike: FetchLike,
@@ -38,6 +46,14 @@ export async function registerWhoAmITool(
   }
 }
 
+/**
+ * Executes a current-identity lookup against the application endpoint.
+ * @param input - Untrusted tool input.
+ * @param signal - Abort signal supplied by the WebMCP runtime.
+ * @param fetchLike - Fetch implementation used for the request.
+ * @param endpoint - Identity endpoint.
+ * @returns A validated identity result.
+ */
 export async function executeWhoAmITool(
   input: unknown,
   signal: AbortSignal | undefined,

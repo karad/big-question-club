@@ -1,27 +1,27 @@
-# 検証記録: Question作成・公開フロー
+# Validation Record: Question Creation and Publication Flow
 
-## 実装前ベースライン（2026-09-02）
+## Pre-Implementation Baseline (2026-09-02)
 
-- `npm run typecheck`: 成功
-- `npm run lint`: 成功
-- `npm run format`: 成功
-- `npm test`: 19ファイル、118テスト成功
-- `npm run test:d1`: 8ファイル、21テスト成功（ローカルportを使用するため権限昇格環境で実行）
-- `npm run build`: 成功
+- `npm run typecheck`: passed
+- `npm run lint`: passed
+- `npm run format`: passed
+- `npm test`: 118 tests across 19 files passed
+- `npm run test:d1`: 21 tests across 8 files passed, run in an escalated environment because it uses a local port
+- `npm run build`: passed
 
-実装前の未解決事項はない。D1テストで表示されるNode.js `punycode` deprecation warningは既存依存関係由来であり、テスト結果には影響しない。
+There were no unresolved pre-implementation items. The Node.js `punycode` deprecation warning shown by D1 tests comes from an existing dependency and does not affect results.
 
-## 実装後（2026-09-02）
+## Post-Implementation (2026-09-02)
 
-- `npm run typecheck`: 成功
-- `npm run lint`: 成功
-- `npm run format`: 成功
-- `npm test`: 21ファイル、198テスト成功
-- `npm run test:d1`: 9ファイル、36テスト成功（ローカルportを使用するため権限昇格環境で実行）
-- `npm run build`: 成功（Wranglerのログ出力先制約を除外するため権限昇格環境で最終確認）
+- `npm run typecheck`: passed
+- `npm run lint`: passed
+- `npm run format`: passed
+- `npm test`: 198 tests across 21 files passed
+- `npm run test:d1`: 36 tests across 9 files passed, run in an escalated environment because it uses a local port
+- `npm run build`: passed, with final verification in an escalated environment to avoid Wrangler log-output restrictions
 
-入力契約は30件以上、Question管理の認証・所有者・CSRF・表示契約は20件以上、`My Questions` は15件以上の表示ケースで検証した。逐次10回および同時10件の公開要求でも、公開確定は1回だけであることをD1テストで確認した。
+The input contract was verified with at least thirty cases, Question-management authentication, ownership, CSRF, and display contracts with at least twenty cases, and `My Questions` with at least fifteen display cases. D1 tests confirmed that publication commits only once under both ten sequential and ten concurrent requests.
 
-ローカルD1とGoogle OAuthの2利用者を用いた手動確認では、Draft作成・入力保持・編集・Review・公開確認・1回だけの公開・公開後編集拒否・4状態の一覧・利用者Bの空状態・所有者非列挙・Answer内容非露出を確認した。手動確認中に発見した空の締切をUnix epochとして初期表示する問題は修正し、再確認済みである。
+Manual verification with local D1 and two Google OAuth Users covered draft creation, retained input, editing, Review, publication acknowledgment, exactly-once publication, post-publication edit rejection, four-state lists, User B's empty state, ownership non-enumeration, and absence of Answer content. A defect found during manual testing—displaying an empty deadline initially as the Unix epoch—was fixed and reverified.
 
-未解決の実装事項はない。Node.js `punycode` deprecation warningは既存依存関係由来である。共有D1へのMigration適用は本SPECでは実施せず、既存のデプロイ手順に従う。
+No implementation items remain unresolved. The Node.js `punycode` deprecation warning comes from an existing dependency. No migration was applied to shared D1 in this specification; follow the existing deployment procedure.

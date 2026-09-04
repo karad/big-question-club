@@ -1,65 +1,65 @@
-# 技術調査: Sealed Answersのアクセス制御
+# Technical Research: Sealed Answer Access Control
 
-## 1. 認可ポリシー
+## 1. Authorization Policy
 
-**決定**: `authenticated`、Route用途、Question状態、情報種別を入力し許可可否を返す純粋な決定表を `answer-visibility` Domainへ集約する。作成者は特別扱いしない。
+**Decision**: Centralize a pure decision table in the `answer-visibility` domain. It accepts `authenticated`, route purpose, Question state, and information type and returns allow/deny. Creators receive no special treatment.
 
-**理由**: 全Routeで同じ規則を使い、180組以上を外部依存なしで網羅できる。
+**Rationale**: Every route uses identical rules, and at least 180 combinations can be covered without external dependencies.
 
-**検討した代替案**: Routeごとの条件分岐は差異が生じ、Roleベース認可は不要な作成者特権を招くため不採用。
+**Alternatives Considered**: Per-route branching was rejected because it drifts; role-based authorization was rejected because it introduces unnecessary creator privilege.
 
-## 2. 経路識別
+## 2. Channel Identity
 
-**決定**: 偽装可能なHeaderではなく、登録Routeの用途を `human-ssr`、`human-detail`、`self-submission`、`webmcp-question` に固定する。
+**Decision**: Fix route purpose as `human-ssr`, `human-detail`, `self-submission`, or `webmcp-question`, never a spoofable header.
 
-**理由**: 各Routeが返せる情報を静的に限定できる。
+**Rationale**: Each registered route can be statically limited to its permitted information.
 
-**検討した代替案**: Human／Agent判別Headerと汎用Answer APIは過剰公開につながるため不採用。
+**Alternatives Considered**: Human/Agent headers and generic Answer APIs were rejected because they overexpose data.
 
-## 3. 状態と時刻
+## 3. State and Time
 
-**決定**: 各要求でサービス側時刻を1回取得し、既存 `getQuestionState` の状態Snapshotを画面生成と認可に共用する。
+**Decision**: Capture service time once per request and share the existing `getQuestionState` snapshot across screen rendering and authorization.
 
-**理由**: 境界を処理中にまたいでも1応答内でsealed表示と公開データが混在しない。
+**Rationale**: Crossing a boundary mid-request cannot mix sealed UI with disclosed data.
 
-**検討した代替案**: Queryごとの再評価と状態名保存は既存契約との矛盾を生むため不採用。
+**Alternatives Considered**: Per-query reevaluation and stored state names conflict with existing contracts.
 
-## 4. 安全な投影
+## 4. Safe Projections
 
-**決定**: 回答数、本人Answer、Reveal後Excerpt、指定本文を別投影とし、Domainが許可した投影だけをRepositoryから取得する。
+**Decision**: Separate answer count, own Answer, post-Reveal excerpts, and selected body, retrieving only domain-authorized projections from the repository.
 
-**理由**: Userや個別時刻など不要な列の偶発的直列化を防げる。
+**Rationale**: Prevents accidental serialization of unnecessary columns such as User and individual times.
 
-**検討した代替案**: 全Answer取得後のRouteフィルタと専用公開Tableは秘密値の持込みと重複保存を招くため不採用。
+**Alternatives Considered**: Fetch-all then route-filter and a dedicated public table were rejected for secret-data ingress and duplicated storage.
 
-## 5. 詳細非列挙
+## 5. Detail Non-Enumeration
 
-**決定**: 未認証、Reveal前、不在、別Questionを同じ `404 ANSWER_UNAVAILABLE` とし、認可成功後だけ本文を取得する。
+**Decision**: Return the same `404 ANSWER_UNAVAILABLE` for unauthenticated, pre-Reveal, missing, and wrong-Question requests; retrieve body only after authorization.
 
-**理由**: Status、code、Bodyから実在やQuestion間対応を判別できず、SPEC 004とも互換である。
+**Rationale**: Status, code, and body reveal neither existence nor cross-Question association and remain compatible with SPEC 004.
 
-**検討した代替案**: `401`／`403`／`404`の分類は識別子列挙を助けるため不採用。
+**Alternatives Considered**: Distinct `401`/`403`/`404` results assist identifier enumeration.
 
-## 6. 応答再利用防止
+## 6. Response-Reuse Prevention
 
-**決定**: 利用者依存の成功・失敗へ `Cache-Control: private, no-store` と `Vary: Cookie` を付ける。
+**Decision**: Add `Cache-Control: private, no-store` and `Vary: Cookie` to User-dependent success and failure.
 
-**理由**: 本人AnswerとReveal結果を共有Cacheや別Sessionへ再利用させない。
+**Rationale**: Prevents reuse of own Answers and Reveal results by shared caches or another Session.
 
-**検討した代替案**: `no-cache` は保存を許し、URLへのUser ID追加は本人判定契約を壊すため不採用。
+**Alternatives Considered**: `no-cache` still permits storage; putting User IDs in URLs breaks identity contracts.
 
-## 7. 未信頼Answer
+## 7. Untrusted Answers
 
-**決定**: 本文とExcerptはescapeしたテキストとして扱い、初期SSRはExcerpt、詳細成功は本文1件だけを返す。
+**Decision**: Treat bodies and excerpts as escaped text. Initial SSR returns excerpts; successful detail returns only one body.
 
-**理由**: 許可後も保存済みAnswerは未信頼入力である。
+**Rationale**: Stored Answers remain untrusted after authorization.
 
-**検討した代替案**: HTML除去は原文を変え、Markdown／HTML renderingは本SPECに不要なため不採用。
+**Alternatives Considered**: HTML stripping changes source text; Markdown/HTML rendering is unnecessary here.
 
-## 8. テスト分担
+## 8. Test Allocation
 
-**決定**: 決定表はUnit、認証・Header・SSR・HTTP・WebMCP非露出はHono Integration、列投影とQuestion間分離はD1 Integration、実SessionはQuickstart手動E2Eで検証する。
+**Decision**: Verify the decision table with unit tests; authentication, headers, SSR, HTTP, and WebMCP non-exposure with Hono integration tests; projections and cross-Question isolation with D1 integration tests; and real Sessions through quickstart manual E2E.
 
-**理由**: 分岐原因を切り分けながら公開経路の最終導線も確認できる。
+**Rationale**: This isolates branch causes while verifying final publication paths.
 
-**検討した代替案**: E2Eだけ／Unitだけでは必要な境界を網羅できないため不採用。
+**Alternatives Considered**: E2E-only or unit-only testing cannot cover the required boundaries.

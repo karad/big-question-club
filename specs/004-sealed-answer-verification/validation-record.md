@@ -1,46 +1,46 @@
-# 検証記録: Agent回答投稿の完全性・Sealed Answersの検証
+# Validation Record: Agent Answer Submission Integrity and Sealed Answers
 
-**実施日**: 2026-09-02  
-**実施者**: Codex、検証実施者  
-**検証環境**: ローカルWorker（リモートD1）、WebMCP対応Chrome  
-**総合判定**: Go
+**Execution Date**: 2026-09-02
+**Evaluators**: Codex and validation evaluator
+**Validation Environment**: Local Worker (remote D1), WebMCP-compatible Chrome
+**Overall Decision**: Go
 
-> Answer本文、Excerpt、Cookie、トークン、OAuth情報、スクリーンショットを記録しない。
+> Do not record Answer Bodies, Excerpts, Cookies, tokens, OAuth information, or screenshots.
 
-## 自動検証
+## Automated Verification
 
-| 確認項目 | 結果 | 備考 |
+| Check | Result | Notes |
 | --- | --- | --- |
-| Unit／Integration Test | Pass | 17 files、85 tests |
-| TypeScript型検査 | Pass | `npm run typecheck` |
+| Unit / Integration Tests | Pass | 17 files, 85 tests |
+| TypeScript type check | Pass | `npm run typecheck` |
 | Lint | Pass | `npm run lint` |
 | Format | Pass | `npm run format` |
 
-## 成功基準と自動テストの対応
+## Mapping Between Success Criteria and Automated Tests
 
-| 成功基準 | 自動テスト |
+| Success Criteria | Automated Test |
 | --- | --- |
-| SC-001、SC-002 | `tests/integration/answer-submission-api.test.ts` の再投稿・10並行投稿 |
-| SC-003 | `tests/integration/answer-submission-api.test.ts` のWorker時刻境界 |
-| SC-004 | `tests/integration/question-visibility.test.ts` のSealed SSR／HTTP／本人状態API |
-| SC-005 | `tests/integration/question-visibility.test.ts` のReveal SSRと単一詳細API |
-| SC-007 | `tests/unit/answer-submission.test.ts` のExcerpt入力境界 |
+| SC-001, SC-002 | Resubmission and ten concurrent submissions in `tests/integration/answer-submission-api.test.ts` |
+| SC-003 | Worker time boundary in `tests/integration/answer-submission-api.test.ts` |
+| SC-004 | Sealed SSR, HTTP, and own-status API in `tests/integration/question-visibility.test.ts` |
+| SC-005 | Reveal SSR and single-detail API in `tests/integration/question-visibility.test.ts` |
+| SC-007 | Excerpt input boundaries in `tests/unit/answer-submission.test.ts` |
 
-## 手動E2Eマトリクス
+## Manual E2E Matrix
 
-| 主体 | 経路 | 締切状態 | 期待結果 | 合否 |
+| Actor | Route | Deadline State | Expected Result | Decision |
 | --- | --- | --- | --- | --- |
-| 投稿者本人 | WebMCP | 締切前 | 1件だけ投稿できる | Pass（投稿済みの再投稿は`ANSWER_ALREADY_SUBMITTED`） |
-| 別の認証済みHuman | SSR | 締切前 | 他者本文・Excerptなし | Pass |
-| 認証済みHuman | SSR | 締切後 | Excerpt一覧とクリックした1件の本文だけ | Pass |
-| 未認証者 | Answer詳細API | 締切前後 | `ANSWER_UNAVAILABLE`だけ | Pass（締切前・未認証で確認） |
-| Personal Agent | WebMCP | 締切後 | 他者Answerなし | Pass（`get_my_submission`は本人状態のみ） |
+| Submitting participant | WebMCP | Before deadline | Can submit exactly one | Pass (resubmission returns `ANSWER_ALREADY_SUBMITTED`) |
+| Another authenticated Human | SSR | Before deadline | No other participant's Body or Excerpt | Pass |
+| Authenticated Human | SSR | After deadline | Excerpt list and only one clicked Body | Pass |
+| Unauthenticated participant | Answer detail API | Before and after deadline | Only `ANSWER_UNAVAILABLE` | Pass (confirmed before deadline and unauthenticated) |
+| Personal Agent | WebMCP | After deadline | No other participant's Answer | Pass (`get_my_submission` returns own status only) |
 
 ## Go/No-Go
 
-- 1 Question・1利用者につき確定Answerが1件だけであること。
-- 締切前の他者Answer本文・Excerpt露出が0件であること。
-- 締切後は認証済みHumanのクリックした1件だけが詳細APIから取得できること。
-- WebMCPが他者Answerを返さないこと。
+- Exactly one committed Answer per Question and participant.
+- Zero exposures of another participant's Answer Body or Excerpt before the deadline.
+- After the deadline, only the one item clicked by an authenticated Human can be retrieved from the detail API.
+- WebMCP returns no other participant's Answer.
 
-すべて満たした。10並行投稿、締切境界、空状態、Excerpt入力境界は自動テストで確認した。
+All conditions were met. Ten concurrent submissions, the deadline boundary, the empty state, and Excerpt input boundaries were verified by automated tests.

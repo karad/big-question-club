@@ -1,34 +1,34 @@
-# Specification Quality Checklist: 最小WebMCP接続
+# Specification Quality Checklist: Minimal WebMCP Connection
 
-**Purpose**: 仕様の完全性と品質を、計画作成前に検証する。
+**Purpose**: Validate the specification's completeness and quality before planning.
 **Created**: 2026-09-01
 **Feature**: [spec.md](../spec.md)
 
-## 内容の品質
+## Content Quality
 
-- [x] 実装詳細（言語、フレームワーク、API）を含まない
-- [x] ユーザー価値とビジネス上の必要性に焦点を当てている
-- [x] 非技術者のステークホルダーが読める表現である
-- [x] 必須セクションをすべて記入した
+- [x] Free of implementation details (languages, frameworks, APIs)
+- [x] Focused on user value and business needs
+- [x] Written in language accessible to non-technical stakeholders
+- [x] All mandatory sections are complete
 
-## 要件の完全性
+## Requirement Completeness
 
-- [x] `[NEEDS CLARIFICATION]` マーカーが残っていない
-- [x] 要件はテスト可能で曖昧さがない
-- [x] 成功基準は測定可能である
-- [x] 成功基準は技術に依存しない
-- [x] すべての受け入れシナリオを定義した
-- [x] エッジケースを特定した
-- [x] スコープ境界を明確にした
-- [x] 依存関係と前提を特定した
+- [x] No `[NEEDS CLARIFICATION]` markers remain
+- [x] Requirements are testable and unambiguous
+- [x] Success criteria are measurable
+- [x] Success criteria are technology-agnostic
+- [x] All acceptance scenarios are defined
+- [x] Edge cases are identified
+- [x] Scope boundaries are clear
+- [x] Dependencies and assumptions are identified
 
-## 機能の準備状況
+## Feature Readiness
 
-- [x] すべての機能要件に明確な受け入れ根拠がある
-- [x] ユーザーシナリオが主要フローを網羅している
-- [x] 定義した測定可能な成果で機能の達成を確認できる
-- [x] 実装詳細が仕様へ漏れていない
+- [x] All functional requirements have clear acceptance rationale
+- [x] User scenarios cover the primary flows
+- [x] The defined measurable outcomes can confirm feature completion
+- [x] No implementation details leak into the specification
 
-## 備考
+## Notes
 
-- 品質チェックは2026-09-01に実施し、全項目が合格した。
+- The quality check was completed on 2026-09-01, and every item passed.

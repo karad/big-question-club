@@ -1,94 +1,94 @@
-# 機能仕様: 最小WebMCP接続
+# Feature Specification: Minimal WebMCP Connection
 
-**機能ブランチ**: `001-minimal-webmcp-connection`
+**Feature Branch**: `001-minimal-webmcp-connection`
 
-**作成日**: 2026-09-01
+**Created**: 2026-09-01
 
-**ステータス**: Draft
+**Status**: Draft
 
-> **2026-09-02注記**: 本SPECの `language` は初期接続検証用の固定データであり、現在のプロダクト契約ではない。実際のQuestionは主言語を指定せず、Personal Agentが本文から回答言語を判断する。
+> **Note added 2026-09-02**: The `language` field in this SPEC is fixed data for the initial connection verification and is not part of the current product contract. Actual Questions do not specify a primary language; the Personal Agent determines the response language from the text.
 
-**入力**: 「MILESTONE.md の SPEC 001 を実施」
+**Input**: "Implement SPEC 001 in MILESTONE.md"
 
-## ユーザーシナリオとテスト *(必須)*
+## User Scenarios and Testing *(mandatory)*
 
-### ユーザーストーリー 1 - 検証用Questionを取得する (優先度: P1)
+### User Story 1 - Retrieve the Verification Question (Priority: P1)
 
-Personal Agentは、Big Question Clubが提供する検証用のQuestionを取得し、回答の対象を確実に理解できる。
+A Personal Agent can retrieve the verification Question provided by Big Question Club and reliably understand what it should answer.
 
-**この優先度である理由**: Personal AgentがQuestionを取得できない限り、WebMCP経由の参加というプロダクトの前提を検証できないため。
+**Why this priority**: Unless a Personal Agent can retrieve a Question, the product premise of participation through WebMCP cannot be verified.
 
-**独立テスト**: WebMCP対応のPersonal Agentから検証用Toolを1回呼び出し、識別子・本文・回答言語を含む1件のQuestionを受け取れることを確認する。
+**Independent Test**: Invoke the verification Tool once from a WebMCP-compatible Personal Agent and confirm that it receives one Question containing an identifier, body, and response language.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** Personal Agentが検証環境へ接続できる、**操作** 検証用Toolを呼び出す、**結果** 定められた固定Questionを受け取る。
-2. **前提** 同じ検証期間中である、**操作** Toolを繰り返し呼び出す、**結果** 同じ識別子・本文・言語のQuestionを受け取る。
-3. **前提** AgentがQuestionを取得した、**操作** 返却内容を読む、**結果** 回答対象の本文と回答すべき言語を追加の情報なしで判断できる。
+1. **Given** a Personal Agent can connect to the verification environment, **When** it invokes the verification Tool, **Then** it receives the specified fixed Question.
+2. **Given** the same verification period, **When** it invokes the Tool repeatedly, **Then** it receives a Question with the same identifier, body, and language.
+3. **Given** an Agent retrieved the Question, **When** it reads the returned content, **Then** it can determine the body to answer and the language in which to answer without additional information.
 
 ---
 
-### ユーザーストーリー 2 - 接続手順を再現する (優先度: P2)
+### User Story 2 - Reproduce the Connection Procedure (Priority: P2)
 
-開発担当者は、定められた手順に従って検証環境を起動し、Personal Agentを接続してQuestion取得を再現できる。
+A developer can follow the defined procedure to start the verification environment, connect a Personal Agent, and reproduce Question retrieval.
 
-**この優先度である理由**: 企画成立性の検証は、一度だけの成功ではなく、後続SPECで繰り返し利用できる再現可能な入口を必要とするため。
+**Why this priority**: Validating the concept requires a reproducible entry point that subsequent SPECs can reuse, not merely a one-time success.
 
-**独立テスト**: 初見の開発担当者がセットアップ手順だけを使い、30分以内にPersonal Agentから検証用Questionを取得できることを確認する。
+**Independent Test**: Confirm that a developer unfamiliar with the project can retrieve the verification Question from a Personal Agent within 30 minutes using only the setup instructions.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** 開発担当者が必要なアクセス情報を持つ、**操作** 文書化された手順に従う、**結果** 検証環境を利用可能な状態にできる。
-2. **前提** 検証環境が利用可能である、**操作** 接続先をPersonal Agentへ設定する、**結果** 接続先を識別でき、Question取得を実行できる。
+1. **Given** a developer has the necessary access information, **When** they follow the documented procedure, **Then** they can make the verification environment available.
+2. **Given** the verification environment is available, **When** they configure its destination in a Personal Agent, **Then** they can identify the destination and perform Question retrieval.
 
-### エッジケース
+### Edge Cases
 
-- 接続先が利用できない場合、Agentまたは開発担当者は成功したように見える空のQuestionではなく、再試行可能な失敗として識別できる。
-- 返却する固定Questionの本文または言語が未設定の場合、Questionとして返さず、設定不備として扱う。
-- 未対応の入力値がToolに渡された場合、固定Questionの内容を変更せず、明確に拒否する。
+- If the destination is unavailable, the Agent or developer can recognize a retryable failure rather than an empty Question that appears successful.
+- If the fixed Question's body or language is not configured, do not return it as a Question; treat it as invalid configuration.
+- If unsupported input is passed to the Tool, reject it explicitly without changing the fixed Question content.
 
-## 要件 *(必須)*
+## Requirements *(mandatory)*
 
-### 機能要件
+### Functional Requirements
 
-- **FR-001**: システムは、Personal Agentが呼び出せる検証用のQuestion取得機能を1つ提供しなければならない。
-- **FR-002**: システムは、検証期間中に常に1件だけの固定Questionを返さなければならない。
-- **FR-003**: 固定Questionには、安定した識別子、Question本文、主言語を含めなければならない。
-- **FR-004**: 固定Questionの本文は、AIによる仕事の自動化が進む未来へ人々がどう備えるべきかを問う内容とする。
-- **FR-005**: システムは、Question取得機能の利用に、ログイン・個人情報・Personal Contextの送信を要求してはならない。
-- **FR-006**: システムは、利用できない状態または設定不備の状態で、Questionが取得できたと誤認させる応答を返してはならない。
-- **FR-007**: システムは、開発担当者が検証環境の起動、接続、Question取得確認を再現できる手順を提供しなければならない。
-- **FR-008**: このSPECの範囲では、QuestionへのAnswer投稿、ユーザー認証、永続データ管理、複数Questionの配信を提供してはならない。
+- **FR-001**: The system MUST provide exactly one verification Question retrieval capability invokable by a Personal Agent.
+- **FR-002**: During the verification period, the system MUST always return exactly one fixed Question.
+- **FR-003**: The fixed Question MUST include a stable identifier, Question body, and primary language.
+- **FR-004**: The fixed Question body MUST ask how people should prepare for a future in which AI increasingly automates work.
+- **FR-005**: The system MUST NOT require login, personal information, or Personal Context transmission to use the Question retrieval capability.
+- **FR-006**: When unavailable or incorrectly configured, the system MUST NOT return a response that could be mistaken for successful Question retrieval.
+- **FR-007**: The system MUST provide a procedure that developers can follow to start the verification environment, connect to it, and confirm Question retrieval.
+- **FR-008**: Within this SPEC's scope, the system MUST NOT provide Answer submission, user authentication, persistent data management, or delivery of multiple Questions.
 
-### 主要エンティティ
+### Key Entities
 
-- **検証用Question**: WebMCP接続を検証するために返す唯一の固定回答対象。識別子、本文、主言語を持つ。
-- **Question取得機能**: Personal Agentが検証用Questionを取得するための公開操作。
-- **接続確認手順**: 開発担当者が検証環境を利用可能にし、Personal AgentからQuestion取得を再現するための手順。
+- **Verification Question**: The sole fixed response target returned to verify the WebMCP connection. It has an identifier, body, and primary language.
+- **Question Retrieval Capability**: The public operation used by a Personal Agent to retrieve the verification Question.
+- **Connection Verification Procedure**: The procedure a developer follows to make the verification environment available and reproduce Question retrieval from a Personal Agent.
 
-## 成功基準 *(必須)*
+## Success Criteria *(mandatory)*
 
-### 測定可能な成果
+### Measurable Outcomes
 
-- **SC-001**: 対応するPersonal Agentは、接続設定後2分以内に検証用Questionを1件取得できる。
-- **SC-002**: 同一の検証環境に対する連続10回のQuestion取得で、すべて同一の識別子・本文・主言語を受け取れる。
-- **SC-003**: 文書化された手順を使う開発担当者は、30分以内に検証環境の起動からPersonal AgentによるQuestion取得確認まで完了できる。
-- **SC-004**: 接続不能または設定不備を模擬した確認で、成功扱いのQuestionが返されるケースが0件である。
+- **SC-001**: A supported Personal Agent can retrieve one verification Question within two minutes after the connection is configured.
+- **SC-002**: Across ten consecutive Question retrievals from the same verification environment, every result has the same identifier, body, and primary language.
+- **SC-003**: A developer using the documented procedure can start the verification environment and confirm Question retrieval by a Personal Agent within 30 minutes.
+- **SC-004**: In checks simulating connection failure or invalid configuration, zero successful Questions are returned.
 
-## 前提
+## Assumptions
 
-- WebMCPに対応するPersonal Agentを、少なくとも1種類の検証対象として利用できる。
-- 検証用Questionの主言語は英語とし、後続SPECで日本語を含む同一言語回答の検証を行う。
-- このSPECは認証前の接続性だけを扱う。WebMCPとログイン済みユーザーの対応付けはSPEC 002で扱う。
-- 固定Questionのデータ保持方法は本SPECでは限定しない。Questionの永続管理はSPEC 005で扱う。
+- At least one type of WebMCP-compatible Personal Agent is available as a verification target.
+- The verification Question's primary language is English; a subsequent SPEC verifies same-language responses, including Japanese.
+- This SPEC covers only pre-authentication connectivity. Mapping WebMCP to a logged-in user is covered by SPEC 002.
+- This SPEC does not constrain how fixed Question data is stored. Persistent Question management is covered by SPEC 005.
 
-## 依存関係
+## Dependencies
 
-- なし。このSPECはMVPマイルストーンの最初の実装対象である。
+- None. This SPEC is the first implementation target in the MVP milestone.
 
-## 対象外
+## Out of Scope
 
-- Google OAuthおよびユーザー識別
-- Answerの生成、投稿、保存、閲覧
-- Personal Contextの利用、安全性、Prompt Injection、回答言語の検証
-- Questionの作成、公開、締切、Reveal
+- Google OAuth and user identification
+- Generating, posting, saving, or viewing Answers
+- Use of Personal Context, safety, Prompt Injection, or response-language verification
+- Question creation, publishing, deadlines, or Reveal

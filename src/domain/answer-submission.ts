@@ -23,9 +23,19 @@ const messages: Record<AnswerErrorCode, string> = {
   TOOL_UNAVAILABLE: 'The requested operation is temporarily unavailable.',
   ANSWER_UNAVAILABLE: 'The requested answer is unavailable.',
 };
+/**
+ * Creates a stable answer error for an error code.
+ * @param code - Machine-readable answer error code.
+ * @returns The code and its user-facing message.
+ */
 export function answerError(code: AnswerErrorCode): AnswerError {
   return { code, message: messages[code] };
 }
+/**
+ * Validates and normalizes an answer-submission payload.
+ * @param input - Untrusted payload to validate.
+ * @returns Normalized submission input, or a structured validation error.
+ */
 export function parseSubmissionInput(input: unknown): SubmissionInput | AnswerError {
   if (typeof input !== 'object' || input === null || Array.isArray(input))
     return answerError('INVALID_INPUT');

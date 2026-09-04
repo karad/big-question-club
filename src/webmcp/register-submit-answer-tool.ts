@@ -1,6 +1,7 @@
 import { answerError, parseSubmissionInput, type AnswerError } from '../domain/answer-submission';
 import { getWebMcpSupport } from './browser-support';
 
+/** Public WebMCP name for submitting an answer. */
 export const SUBMIT_ANSWER_TOOL_NAME = 'submit_answer';
 type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 type Result = { questionId: string; status: 'submitted'; submittedAt: string } | AnswerError;
@@ -17,6 +18,14 @@ function parseInput(
   return 'code' in submission ? submission : { questionId: value.questionId, ...submission };
 }
 
+/**
+ * Executes an answer submission against the application endpoint.
+ * @param input - Untrusted tool input.
+ * @param signal - Abort signal supplied by the WebMCP runtime.
+ * @param fetchLike - Fetch implementation used for the request.
+ * @param endpoint - Answer-submission endpoint.
+ * @returns The endpoint result or a structured answer error.
+ */
 export async function executeSubmitAnswerTool(
   input: unknown,
   signal: AbortSignal | undefined,
@@ -43,6 +52,12 @@ export async function executeSubmitAnswerTool(
   }
 }
 
+/**
+ * Registers the answer-submission WebMCP tool when browser support is available.
+ * @param documentLike - Document-like object that exposes the model context.
+ * @param fetchLike - Fetch implementation used by the tool.
+ * @returns The registration outcome.
+ */
 export async function registerSubmitAnswerTool(
   documentLike: Pick<Document, 'modelContext'>,
   fetchLike: FetchLike,

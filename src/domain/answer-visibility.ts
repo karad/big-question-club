@@ -9,6 +9,11 @@ export type AnswerAccessContext = {
   state: QuestionState;
 };
 
+/**
+ * Applies answer-visibility rules for a resource and access path.
+ * @param context - Viewer authentication, access path, resource, and question state.
+ * @returns True when the requested resource may be exposed.
+ */
 export function canAccessAnswerResource({
   authenticated,
   path,
@@ -26,6 +31,13 @@ export function canAccessAnswerResource({
 }
 
 export type AccessPath = 'ssr' | 'api' | 'webmcp' | 'detail';
+/**
+ * Checks whether another participant's full answer may be read.
+ * @param isAuthenticated - Whether the viewer has a valid identity.
+ * @param path - Route or tool used to access the answer.
+ * @param state - Current lifecycle state of the question.
+ * @returns True when full answer access is permitted.
+ */
 export function canReadOtherAnswerBody(
   isAuthenticated: boolean,
   path: AccessPath,
@@ -38,6 +50,12 @@ export function canReadOtherAnswerBody(
     state,
   });
 }
+/**
+ * Checks whether revealed answer excerpts may be listed.
+ * @param isAuthenticated - Whether the viewer has a valid identity.
+ * @param state - Current lifecycle state of the question.
+ * @returns True when excerpts are visible.
+ */
 export function canListAnswerExcerpts(isAuthenticated: boolean, state: QuestionState): boolean {
   return canAccessAnswerResource({
     authenticated: isAuthenticated,

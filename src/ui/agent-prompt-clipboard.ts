@@ -1,5 +1,11 @@
 type ClipboardLike = Pick<Clipboard, 'writeText'>;
 
+/**
+ * Initializes buttons that copy agent prompts to the clipboard.
+ * @param root - Document containing prompt-copy controls.
+ * @param clipboard - Clipboard implementation used to write prompt text.
+ * @returns Nothing.
+ */
 export function initializeAgentPromptClipboard(
   root: Pick<Document, 'querySelector'> & Partial<Pick<Document, 'querySelectorAll'>>,
   clipboard: ClipboardLike | undefined = navigator.clipboard,

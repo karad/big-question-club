@@ -117,3 +117,13 @@
 ## 2026-09-04
 
 - `gpt-5.6-sol`: Times系の表示用Font stackをGoogle FontsのPatua Oneへ置き換え、共通見出しと強調されたQuestion本文へ適用し、Patua One要素の重複する疑似Bold指定を除去した。
+- `gpt-5.6-sol`: `src`配下でexportされる全ての定数・interface・functionへ、parameterとreturn valueを含む英語JSDocを追加した。並行制御、監査、部分失敗、Avatar生成の複雑な処理には判断理由を示す英語Commentも追加した。
+- `gpt-5.6-sol`: SPEC 001のMarkdown 9文書を英語正本と完全な`*_ja.md`のペアへ変換し、言語別リンクを調整して全ペアを検証した。
+- `gpt-5.6-sol`: ChatGPTまたはCodex以外のサービスやモデルを原則として使用せず、例外的に必要な場合は事前に明示的な承認を得る永続的なプロジェクト指示を追加した。
+- `gpt-5.6-sol`: ChatGPT／Codex以外のサービスやモデルを使用せず、SPEC 002のMarkdown 10文書を英語正本と完全な`*_ja.md`のペアへ変換し、言語別リンクを調整して全ペアを検証した。
+- `gpt-5.6-sol`: Codexのみを使用してSPEC 003のMarkdown 9文書を英語正本と完全な`*_ja.md`のペアへ変換し、安全性検証の判断と状態を維持して言語別リンクを調整し、全ペアを検証した。
+- `gpt-5.6-sol`: Codexのみを使用してSPEC 004のMarkdown 10文書を英語正本と完全な`*_ja.md`のペアへ変換し、Sealed Answer契約、検証状態、識別子、日付、経路別公開規則を維持してリンクを調整し、全ペアを検証した。
+- `gpt-5.6-sol`: Codexのみを使用してSPEC 005・SPEC 006・SPEC 007のMarkdown 29文書を英語正本と完全な`*_ja.md`のペアへ変換し、ライフサイクル、Question公開、WebMCP、HTTP、Prompt、Migration、競合、検証契約を維持して言語別リンクを調整し、全ペアを検証した。
+- `gpt-5.6-sol`: README上部へBig Question ClubのLogoを中央寄せで追加した。
+- `gpt-5.6-sol`: SQL Injection、XSS、CSRF、Clickjacking、認可境界、安全でないBrowser Sinkを含む古典的なWeb脆弱性を監査した。再現したAnswer変更のSame-site CSRF不足をOrigin対応MiddlewareとJSON Media Type制約で解消し、CSPとFrame拒否Security HeaderでClickjackingを防止した。
+- `gpt-5.6-sol`: Codexのみを使用してSPEC 008・SPEC 009・SPEC 010のMarkdown 36文書を英語正本と完全な`*_ja.md`のペアへ変換し、アクセス制御、閲覧、管理、Reveal、視覚設計、タスク進捗、検証契約を維持して言語別リンクを調整し、全ペアを検証した。

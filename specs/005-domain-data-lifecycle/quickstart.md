@@ -1,69 +1,69 @@
-# Quickstart: ドメインデータモデルとQuestionライフサイクルの検証
+# Quickstart: Verifying the Domain Data Model and Question Lifecycle
 
-## 目的
+## Purpose
 
-空DBとSPEC 004 Schemaの両方からMigrationでき、4状態、時刻境界、一意性、参照整合性、`OPEN`だけのAnswer受付を自動検証する。実装方針は [plan.md](./plan.md)、Entityと制約は [data-model.md](./data-model.md)、内部結果は [domain-persistence.md](./contracts/domain-persistence.md) を参照する。
+Automatically verify migrations from both an empty database and the SPEC 004 schema, the four states, time boundaries, uniqueness, referential integrity, and acceptance of Answers only while `OPEN`. See [plan.md](./plan.md) for the implementation approach, [data-model.md](./data-model.md) for entities and constraints, and [domain-persistence.md](./contracts/domain-persistence.md) for internal results.
 
-## 前提
+## Prerequisites
 
-- Node.js 22.13以上または24以上
-- npm 10系
-- リポジトリルートで実行する
-- 依存関係が `npm install` 済みである
-- Remote D1は使わず、テストごとに分離されたローカルD1を使う
+- Node.js 22.13 or later, or 24 or later
+- npm 10.x
+- Run commands from the repository root
+- Dependencies installed with `npm install`
+- Use an isolated local D1 database for each test; do not use remote D1
 
-## 1. 純粋なライフサイクル検証
+## 1. Verify the Pure Lifecycle Logic
 
 ```bash
 npm test -- tests/unit/question-lifecycle.test.ts
 ```
 
-期待結果:
+Expected results:
 
-- `DRAFT`、`OPEN`、`CLOSED`、`REVEALED`と全境界を含む20件以上が成功する。
-- `closesAt === revealsAt`の境界で `REVEALED`だけが返る。
-- 不正な時刻順序、未来の公開、過去状態への巻き戻しが拒否される。
-- 実時間待機や外部サービスを必要としない。
+- At least twenty cases covering `DRAFT`, `OPEN`, `CLOSED`, `REVEALED`, and every boundary pass.
+- Only `REVEALED` is returned at the `closesAt === revealsAt` boundary.
+- Invalid time ordering, future publication, and rollback to an earlier state are rejected.
+- No real-time waits or external services are required.
 
-## 2. 空DBへの全Migration
+## 2. Apply All Migrations to an Empty Database
 
 ```bash
 npm run test:d1 -- tests/d1/fresh-schema.test.ts
 ```
 
-期待結果:
+Expected results:
 
-- `0001`〜`0004`が空の分離D1へ順に適用される。
-- User、Session、Account、Verification、Question、Answerの必須列、外部キー、CHECK、一意Indexが存在する。
-- 存在しないUser／Questionを参照するデータと不正なQuestion時刻が拒否される。
+- `0001` through `0004` are applied in order to an empty isolated D1 database.
+- Required columns, foreign keys, CHECK constraints, and unique indexes exist for User, Session, Account, Verification, Question, and Answer.
+- Data that references a nonexistent User or Question, and Questions with invalid times, are rejected.
 
-## 3. SPEC 004 Schemaからの差分Migration
+## 3. Apply the Differential Migration from the SPEC 004 Schema
 
 ```bash
 npm run test:d1 -- tests/d1/legacy-upgrade.test.ts
 ```
 
-期待結果:
+Expected results:
 
-- `0001`〜`0003`適用後に用意したUser、Session、検証Question、検証Answerへ`0004`を適用できる。
-- UserとSessionは同じIDと認証値で残る。
-- 旧検証Question／Answerは本番用構造へ置換される。
-- 部分適用や外部キー違反を成功として扱わない。
+- `0004` can be applied after preparing a User, Session, validation Question, and validation Answer following migrations `0001` through `0003`.
+- User and Session retain the same IDs and authentication values.
+- The old validation Question/Answer tables are replaced with the production structure.
+- Partial application and foreign-key violations are not treated as success.
 
-## 4. Repositoryと同時書き込み
+## 4. Verify Repositories and Concurrent Writes
 
 ```bash
 npm run test:d1 -- tests/d1/question-repository.test.ts
 ```
 
-期待結果:
+Expected results:
 
-- Draft作成、公開確定、4状態の取得が内部契約どおり動く。
-- `OPEN`だけがAnswerを受け付ける。
-- 同じUser・Questionへの逐次10回と同時10件の投稿でAnswerは1件だけ確定する。
-- 重複、Question不存在、Question非公開・締切済み、参照先不存在、想定外障害を混同しない。
+- Draft creation, publication, and retrieval of all four states follow the internal contract.
+- Answers are accepted only while the Question is `OPEN`.
+- Only one Answer is committed after ten sequential or ten concurrent submissions for the same User and Question.
+- Duplicate submissions, missing Questions, unpublished or closed Questions, missing references, and unexpected failures remain distinguishable.
 
-## 5. 全品質ゲート
+## 5. Run All Quality Gates
 
 ```bash
 npm test
@@ -74,24 +74,24 @@ npm run format
 npm run build
 ```
 
-期待結果: すべて終了コード0で完了し、既存の認証、SSR、HTTP API、WebMCPテストに回帰がない。
+Expected result: every command exits with status 0, with no regressions in existing authentication, SSR, HTTP API, or WebMCP tests.
 
-## 6. ローカルMigrationの手動確認
+## 6. Manually Verify the Local Migration
 
-自動テスト完了後、必要な場合だけ既存のローカルD1へ適用する。
+After all automated tests pass, apply the migrations to the existing local D1 database only if needed.
 
 ```bash
 npm run db:migrate:local
 ```
 
-期待結果:
+Expected results:
 
-- 未適用のMigrationだけが適用される。
-- 同じコマンドを再実行しても0004は再適用されない。
+- Only migrations that have not yet been applied are applied.
+- Running the same command again does not reapply `0004`.
 
-## Remote適用前の停止条件
+## Stop Conditions Before Remote Application
 
-適用判断の前に、必ず読み取り確認と復旧用exportを行う。
+Before deciding whether to apply the migration, always perform read-only checks and create a recovery export.
 
 ```bash
 npx wrangler d1 migrations list big-question-club-auth --remote
@@ -99,11 +99,11 @@ npx wrangler d1 execute big-question-club-auth --remote --command "SELECT id FRO
 npx wrangler d1 export big-question-club-auth --remote --output ./big-question-club-auth-backup.sql
 ```
 
-exportファイルには認証情報が含まれるため、Gitへ追加せず、安全な保管先と復旧担当者を確認する。
+Because the export contains authentication information, do not add it to Git. Confirm its secure storage location and the person responsible for recovery.
 
-- Remoteの `questions` または `answers` にSPEC 004の検証用途ではないデータが1件でも存在する。
-- Remote適用台帳で0001または0002の状態を確認できない。
-- User／Session保持テスト、外部キー検査、全品質ゲートのいずれかが失敗する。
-- Migration適用前のexportまたは復旧手段を確認できていない。
+- The remote `questions` or `answers` table contains even one record that was not created for SPEC 004 validation.
+- The application status of `0001` or `0002` cannot be confirmed in the remote migration ledger.
+- Any User/Session preservation test, foreign-key check, or quality gate fails.
+- The pre-migration export or recovery procedure has not been confirmed.
 
-本QuickstartではRemote Migrationを実行しない。Remote適用はレビューとデータ確認後に別途行う。
+This quickstart does not apply remote migrations. Apply them separately only after review and data verification.

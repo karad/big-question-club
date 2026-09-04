@@ -1,21 +1,21 @@
-# クイックスタート: Question作成・公開フロー
+# Quickstart: Question Creation and Publication Flow
 
-## 目的
+## Purpose
 
-SPEC 006の実装完了後に、入力境界、認証・所有者境界、下書き編集、不可逆な公開、`My Questions`、英語UI、キーボード導線を再現可能に検証する。実装中は自動テストを先に完了し、手動確認は開発可能な項目がすべて完了してからまとめて実施する。
+After SPEC 006 is implemented, reproducibly verify input boundaries, authentication and ownership boundaries, draft editing, irreversible publication, `My Questions`, English UI, and keyboard flow. Complete automated tests first during implementation, then perform all manual checks together after every implementable item is complete.
 
-詳細な入力・状態は [data-model.md](./data-model.md)、HTTP／画面結果は [contracts/question-management.md](./contracts/question-management.md) を参照する。
+See [data-model.md](./data-model.md) for detailed input and state definitions and [contracts/question-management.md](./contracts/question-management.md) for HTTP and screen outcomes.
 
-## 前提
+## Prerequisites
 
-- Node.js 22.13以上または24以上とnpmが利用できる。
-- 依存関係を `npm install` 済みである。
-- `.dev.vars` にGoogle OAuthのローカル検証値が設定されている。
-- ローカルD1へ全Migrationを適用できる。
-- Google OAuthで使えるテスト利用者を2人用意できる。
-- Questionや画面へ実在の個人情報、機密情報、OAuth値を入力しない。
+- Node.js 22.13 or later or 24 or later, and npm, are available.
+- Dependencies have been installed with `npm install`.
+- `.dev.vars` contains local Google OAuth verification values.
+- All migrations can be applied to local D1.
+- Two test Users are available for Google OAuth.
+- Do not enter real personal information, confidential information, or OAuth values into Questions or screens.
 
-## 1. 自動品質ゲート
+## 1. Automated Quality Gates
 
 ```bash
 npm run typecheck
@@ -26,107 +26,107 @@ npm run test:d1
 npm run build
 ```
 
-期待結果:
+Expected results:
 
-- 30件以上の本文・締切・確認入力ケースがすべて期待結果と一致する。
-- 20件以上の未認証・所有者不一致・存在しない・公開済み操作で不正変更が0件となる。
-- 逐次10回・同時10件の公開要求でも、公開時刻が1つだけ確定する。
-- `My Questions` の15件以上の状態・空状態・複数利用者ケースで本人所有分と回答数だけが返る。
-- Typecheck、Lint、Format、Buildが成功する。
+- At least thirty body, deadline, and acknowledgment input cases all match their expected results.
+- At least twenty unauthenticated, wrong-owner, nonexistent, and already-published operations produce zero unauthorized changes.
+- Only one publication time is committed even after ten sequential and ten concurrent publication requests.
+- At least fifteen `My Questions` state, empty-state, and multi-User cases return only the current User's Questions and answer counts.
+- Typecheck, lint, format, and build succeed.
 
-失敗した品質ゲートがある場合は手動確認へ進まない。
+Do not proceed to manual verification if any quality gate fails.
 
-## 2. ローカル環境
+## 2. Local Environment
 
 ```bash
 npm run db:migrate:local
 npm run dev
 ```
 
-ブラウザーで表示されたローカルURLを開き、利用者AでGoogle OAuthへsign inする。
+Open the local URL shown in the browser and sign in with Google OAuth as User A.
 
-## 3. Draft作成と入力エラー
+## 3. Draft Creation and Input Errors
 
-1. `/questions/new` を開く。
-2. Question、Answer deadline、公開内容の確認が英語で表示されることを確認する。
-3. 空白、9文字、1,001文字、現在から1時間未満、30日超、未選択の確認を順に送信する。
-4. 各送信で保存されず、英語の項目別errorと入力値が表示されることを確認する。
-5. 絵文字・結合文字を含む10文字と1,000文字の境界値で、表示カウンターとサーバー結果が一致することを確認する。
-6. 任意の言語による有効なQuestion、1時間以上30日以内の締切、確認を入力し `Save draft` を実行する。
+1. Open `/questions/new`.
+2. Confirm that Question, Answer deadline, and the public-content acknowledgment appear in English.
+3. Submit whitespace, 9 characters, 1,001 characters, a time less than one hour away, a time more than thirty days away, and an unchecked acknowledgment in turn.
+4. Confirm each submission saves nothing and shows English field errors while retaining input values.
+5. At the 10- and 1,000-character boundaries, including emoji and combining characters, confirm that the display counter agrees with the server result.
+6. Enter a valid Question in any language, a deadline from one hour through thirty days away, check the acknowledgment, and select `Save draft`.
 
-期待結果:
+Expected results:
 
-- 有効な1件だけが `DRAFT` となる。
-- Reviewには本文、ローカル日時、IANAタイムゾーン、UTC締切が表示される。
-- Question本文にHTML風文字列を含めてもtextとして表示され、実行・解釈されない。
+- Exactly one valid item becomes `DRAFT`.
+- Review shows the body, local date/time, IANA time zone, and UTC deadline.
+- HTML-like text in a Question body is displayed as text and is neither executed nor interpreted.
 
-## 4. Draft編集と公開
+## 4. Draft Editing and Publication
 
-1. Reviewから `Edit` を開き、本文と締切を変更して保存する。
-2. Reviewへ変更が反映されることを確認する。
-3. 公開確認を選択せずに `Publish question` を送信し、公開されないことを確認する。
-4. 確認を選択して公開する。
-5. 同じ公開操作を再送信し、既存内容と公開時刻が変わらないことを確認する。
-6. 公開済みQuestionの編集先へ直接アクセスし、変更できないことを確認する。
+1. From Review, open `Edit`, change the body and deadline, and save.
+2. Confirm Review reflects the changes.
+3. Submit `Publish question` without selecting the publication acknowledgment and confirm it is not published.
+4. Select the acknowledgment and publish.
+5. Resubmit the same publication operation and confirm existing content and publication time remain unchanged.
+6. Navigate directly to the edit path for the published Question and confirm it cannot be changed.
 
-期待結果:
+Expected results:
 
-- 公開は1回だけ確定し、直後の状態は `OPEN` となる。
-- 本文、締切、Reveal時刻、作成者は公開後に変化しない。
-- 締切はReveal時刻と同じである。
+- Publication commits exactly once, and the immediate state is `OPEN`.
+- Body, deadline, reveal time, and creator do not change after publication.
+- Deadline equals reveal time.
 
 ## 5. My Questions
 
-1. 利用者AでDraft、Open、Closed、Revealedを少なくとも1件ずつ用意する。
-2. `/my/questions` を開く。
-3. 新しい順、本文の先頭、状態、締切、回答数、状態別導線を確認する。
-4. Draftには `Edit` と `Review and publish`、公開済みには `View question` だけがあることを確認する。
-5. Questionを持たない利用者Bで開き、空状態と `Create a question` を確認する。
+1. Prepare at least one Draft, Open, Closed, and Revealed Question for User A.
+2. Open `/my/questions`.
+3. Confirm newest-first order, beginning of body, state, deadline, answer count, and state-specific actions.
+4. Confirm Drafts have `Edit` and `Review and publish`, while published Questions have only `View question`.
+5. Open the page as User B, who has no Questions, and confirm the empty state and `Create a question`.
 
-期待結果:
+Expected results:
 
-- 各利用者は本人所有Questionだけを確認できる。
-- Answer本文、Excerpt、投稿者情報はHTMLにも含まれない。
+- Each User can see only their own Questions.
+- Answer bodies, excerpts, and submitter information are absent even from the HTML.
 
-## 6. 所有者・認証・CSRF
+## 6. Ownership, Authentication, and CSRF
 
-1. 利用者AのDraft識別子を用意する。
-2. sign out状態で作成、一覧、編集、Review、公開へアクセスする。
-3. 利用者Bで、利用者AのDraftに対するGETとPOSTを直接試す。
-4. 存在しない識別子への同じ操作とResponseを比較する。
-5. 同一Originを示すheaderのないcross-site相当のForm POSTを自動Integration Testで確認する。
+1. Prepare a draft identifier owned by User A.
+2. While signed out, access creation, listing, editing, Review, and publication.
+3. As User B, directly attempt GET and POST operations against User A's draft.
+4. Compare the responses with the same operations against a nonexistent identifier.
+5. Use automated integration tests to verify a cross-site-equivalent form POST without same-origin headers.
 
-期待結果:
+Expected results:
 
-- 未認証操作はQuestionを変更せず、sign-inが必要と英語で案内される。
-- 他人所有と存在しないQuestionは同じ404と文言になり、Draft内容を含まない。
-- CSRF拒否は403で、Question情報を含まず、保存値を変更しない。
+- Unauthenticated operations do not change Questions and explain in English that sign-in is required.
+- Another User's Question and a nonexistent Question return the same 404 response and copy without draft content.
+- CSRF rejection returns 403, includes no Question information, and does not change stored values.
 
-## 7. キーボードとエラー復旧
+## 7. Keyboard and Error Recovery
 
-1. マウスを使わず、作成画面の全項目、`Save draft`、Review、`Edit`、公開確認、`Publish question`、`My Questions` を操作する。
-2. 無効入力を1回送り、error summaryから該当項目へ移動して修正する。
-3. 10分以内にDraft作成から公開、一覧への復帰まで完了する。
+1. Without using a mouse, operate every creation field, `Save draft`, Review, `Edit`, publication acknowledgment, `Publish question`, and `My Questions`.
+2. Submit invalid input once, navigate from the error summary to the corresponding field, and fix it.
+3. Complete draft creation, publication, and return to the list within ten minutes.
 
-期待結果:
+Expected results:
 
-- すべての入力に可視labelがあり、focus順が画面順と一致する。
-- errorは項目と関連付けられ、色だけに依存しない。
-- 操作不能な必須項目が0件である。
+- Every input has a visible label, and focus order follows screen order.
+- Errors are associated with their fields and do not rely on color alone.
+- Zero required controls are inoperable.
 
-## 8. 記録
+## 8. Record
 
-検証日、実行環境、自動品質ゲート結果、2利用者の所有者確認、公開一意性、キーボード所要時間、未解決事項を本ファイル末尾または同等の検証記録へ追記する。実在のUser ID、email、Session値、Question本文の機密情報は記録しない。
+Append the verification date, environment, automated quality-gate results, two-User ownership check, publication uniqueness, keyboard duration, and unresolved items to the end of this file or an equivalent record. Do not record real User IDs, email addresses, Session values, or confidential Question content.
 
-## 9. 実施結果（2026-09-02）
+## 9. Results (2026-09-02)
 
-- 実行環境: macOS、Node.js、Vite開発サーバー、全Migration適用済みローカルD1、Google OAuthテスト利用者2人
-- 自動品質ゲート: Typecheck、Lint、Format、Node Test 198件、D1 Test 36件、Buildがすべて成功
-- 入力境界: 9／10／1,000／1,001書記素、1時間未満、30日超、公開内容の未確認を確認。結合文字と絵文字の表示カウンターはサーバー契約と一致した
-- Draft／公開: 作成、入力保持、編集、Review反映、公開確認未選択時の拒否、1回だけの公開、公開後編集拒否を確認した
-- `My Questions`: `DRAFT`、`OPEN`、`CLOSED`、`REVEALED` の新しい順表示、状態別導線、回答数、利用者Bの空状態を確認した。検証用Answerの本文・ExcerptはHTMLへ含まれなかった
-- 所有者境界: 利用者Bから利用者AのQuestionと存在しないQuestionへアクセスし、同じ `Question unavailable.` 表示となることを確認した。POST、401、403、保存値不変は自動Integration Testで確認した
-- HTML／英語UI: HTML風本文はtextとして保持され、script dialogは発生しなかった。管理UIとerrorは英語で表示された
-- キーボード: すべての操作要素がnative controlまたはlinkで、可視label、error summaryの対象anchor、正の`tabindex`を使わない画面順のfocus順を確認した。Draft作成から公開、一覧復帰までは10分以内だった
-- 公開一意性: 手動で公開後の編集拒否を確認し、逐次10回・同時10件の一意性はD1 Testで確認した
-- 未解決事項: なし。既存依存関係由来のNode.js `punycode` deprecation warningのみ継続して表示される
+- Environment: macOS, Node.js, Vite development server, local D1 with all migrations applied, and two Google OAuth test Users
+- Automated quality gates: typecheck, lint, format, 198 Node tests, 36 D1 tests, and build all passed
+- Input boundaries: verified 9/10/1,000/1,001 graphemes, less than one hour, more than thirty days, and missing public-content acknowledgment. Display counters for combining characters and emoji matched the server contract
+- Draft/publication: verified creation, retained inputs, editing, reflected Review changes, rejection without publication acknowledgment, exactly-once publication, and rejection of post-publication editing
+- `My Questions`: verified newest-first `DRAFT`, `OPEN`, `CLOSED`, and `REVEALED` display, state-specific actions, answer counts, and User B's empty state. Validation Answer bodies and excerpts did not appear in the HTML
+- Ownership boundary: confirmed User B sees the same `Question unavailable.` response for User A's Question and a nonexistent Question. POST, 401, 403, and unchanged stored values were verified by automated integration tests
+- HTML/English UI: HTML-like body content remained text and triggered no script dialog. Management UI and errors appeared in English
+- Keyboard: every interactive element was a native control or link; visible labels, error-summary target anchors, and screen-order focus without positive `tabindex` were confirmed. Draft creation through publication and return to the list took under ten minutes
+- Publication uniqueness: manually verified post-publication edit rejection; sequential and concurrent groups of ten were verified by D1 tests
+- Unresolved items: none. Only the Node.js `punycode` deprecation warning from an existing dependency remains visible

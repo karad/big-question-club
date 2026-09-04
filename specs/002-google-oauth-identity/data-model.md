@@ -1,69 +1,69 @@
-# データモデル: Google OAuthとWebMCPユーザー識別の検証
+# Data Model: Validating Google OAuth and WebMCP User Identification
 
-本SPECでは、認証の成立性を検証するために必要な認証データだけを保存する。Question、Answer、Personal Contextは保存しない。
+This SPEC stores only the authentication data required to validate the feasibility of authentication. It does not store Questions, Answers, or Personal Context.
 
-## エンティティ
+## Entities
 
 ### User
 
-Big Question Clubで識別する利用者。
+A participant identified within Big Question Club.
 
-| 属性 | 説明 | 制約 |
+| Attribute | Description | Constraint |
 | --- | --- | --- |
-| `id` | サービス内の安定したユーザー識別子 | 一意。画面と`who_am_i` Toolで公開できる唯一の識別子 |
-| `name` | OAuthプロバイダーから得られる表示名 | 本SPECのTool応答・検証記録には含めない |
-| `email` | OAuthプロバイダーから得られるメールアドレス | 本SPECの画面・Tool応答・検証記録には含めない |
-| `emailVerified` | メールアドレス確認状態 | 認証データとして保存する |
-| `createdAt` / `updatedAt` | 作成・更新時刻 | 監査とセッション管理に使用する |
+| `id` | Stable service-internal user identifier | Unique. The only identifier that may be exposed on screen or by the `who_am_i` Tool |
+| `name` | Display name obtained from the OAuth provider | Not included in this SPEC's Tool responses or validation records |
+| `email` | Email address obtained from the OAuth provider | Not included in this SPEC's screens, Tool responses, or validation records |
+| `emailVerified` | Email-address verification status | Stored as authentication data |
+| `createdAt` / `updatedAt` | Creation and update times | Used for auditing and Session management |
 
 ### Account
 
-Google OAuthアカウントとUserの対応。
+The association between a Google OAuth account and a User.
 
-| 属性 | 説明 | 制約 |
+| Attribute | Description | Constraint |
 | --- | --- | --- |
-| `id` | Account識別子 | 一意 |
-| `userId` | 対応するUser | 有効なUserを参照する |
-| `providerId` | 認証プロバイダー | 本SPECではGoogleだけを許可する |
-| `accountId` | プロバイダー内のアカウント識別子 | 同一プロバイダー内で同一利用者に重複して対応付けない |
-| 認証トークン関連値 | OAuth処理に必要な値 | Tool応答・ログ・検証記録に含めない |
+| `id` | Account identifier | Unique |
+| `userId` | Associated User | References a valid User |
+| `providerId` | Authentication provider | Only Google is allowed in this SPEC |
+| `accountId` | Account identifier within the provider | Must not be associated with the same participant more than once within one provider |
+| Authentication-token values | Values required for OAuth processing | Not included in Tool responses, logs, or validation records |
 
 ### Session
 
-ブラウザの現在のログイン状態を示すサーバー側のセッション。
+A server-side Session representing the browser's current login state.
 
-| 属性 | 説明 | 制約 |
+| Attribute | Description | Constraint |
 | --- | --- | --- |
-| `id` | Session識別子 | 一意。外部へ返さない |
-| `userId` | 対応するUser | 有効なUserを参照する |
-| `token` | Cookieと対応する不透明なセッション値 | 外部へ返さない、ログへ出力しない |
-| `expiresAt` | 失効時刻 | 失効後は認証済みとして扱わない |
-| `createdAt` / `updatedAt` | 作成・更新時刻 | セッション管理に使用する |
+| `id` | Session identifier | Unique. Never returned externally |
+| `userId` | Associated User | References a valid User |
+| `token` | Opaque Session value corresponding to the Cookie | Never returned externally or written to logs |
+| `expiresAt` | Expiration time | Not treated as authenticated after expiration |
+| `createdAt` / `updatedAt` | Creation and update times | Used for Session management |
 
 ### Verification
 
-OAuthフローの一時的な検証情報。
+Temporary verification information for the OAuth flow.
 
-| 属性 | 説明 | 制約 |
+| Attribute | Description | Constraint |
 | --- | --- | --- |
-| `id` | Verification識別子 | 一意。外部へ返さない |
-| `identifier` / `value` | OAuthフローの検証用データ | Secret相当として扱い、ログ・Tool応答・記録へ出力しない |
-| `expiresAt` | 有効期限 | 期限後は無効 |
+| `id` | Verification identifier | Unique. Never returned externally |
+| `identifier` / `value` | Verification data for the OAuth flow | Treated as Secret-equivalent and never written to logs, Tool responses, or records |
+| `expiresAt` | Expiration time | Invalid after expiration |
 
-## 関係
+## Relationships
 
 ```text
 User 1 ─── * Account
 User 1 ─── * Session
-Verification はOAuthフロー中に独立して作成・失効する
+Verification is created and expires independently during the OAuth flow
 ```
 
-## 本人確認の状態遷移
+## Identity Verification State Transitions
 
 ```text
-未認証 ──Google OAuth成功──> 認証済み
-認証済み ──ログアウト・失効──> 未認証
-認証済み(アカウントA) ──ログアウト→Google OAuth成功(アカウントB)──> 認証済み(アカウントB)
+Unauthenticated ──Google OAuth succeeds──> Authenticated
+Authenticated ──sign out or expiration──> Unauthenticated
+Authenticated (Account A) ──sign out → Google OAuth succeeds (Account B)──> Authenticated (Account B)
 ```
 
-`who_am_i`は認証済みだけでUser IDを返す。未認証、失効、破損したCookie、OAuth拒否はすべてユーザーIDを返さない。
+`who_am_i` returns a User ID only when authenticated. It never returns a User ID for an unauthenticated, expired, or corrupted Cookie, or when OAuth authorization is denied.

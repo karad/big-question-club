@@ -1,21 +1,21 @@
-# Tool契約: `get_verification_question`
+# Tool Contract: `get_verification_question`
 
-## 目的
+## Purpose
 
-Personal Agentへ、WebMCP経由で唯一の検証用Questionを返す。
+Return the single verification Question to a Personal Agent through WebMCP.
 
-## 公開条件
+## Exposure Conditions
 
-- 対応ブラウザのトップレベル同一Originページで公開する。
-- Toolはページ読み込み時に静的登録する。
-- Toolは読み取り専用である。
-- ログイン、個人情報、Personal Context、外部サービスへの接続を要求しない。
+- Expose the Tool on a top-level, same-Origin page in a supported browser.
+- Register the Tool statically when the page loads.
+- The Tool is read-only.
+- Do not require login, personal information, Personal Context, or a connection to an external service.
 
-## 入力
+## Input
 
-入力は受け付けない。入力Schemaは空のオブジェクトであり、余分なプロパティを許可しない。
+No input is accepted. The input Schema is an empty object, and additional properties are not allowed.
 
-## 成功結果
+## Success Result
 
 ```json
 {
@@ -26,7 +26,7 @@ Personal Agentへ、WebMCP経由で唯一の検証用Questionを返す。
 }
 ```
 
-## 失敗結果
+## Failure Result
 
 ```json
 {
@@ -37,11 +37,11 @@ Personal Agentへ、WebMCP経由で唯一の検証用Questionを返す。
 }
 ```
 
-失敗結果には`id`、`question`、`language`を含めない。`INVALID_CONFIGURATION`と`INVALID_ARGUMENT`は再試行不可、`SERVICE_UNAVAILABLE`と`REQUEST_CANCELLED`は再試行可能とする。
+A failure result does not include `id`, `question`, or `language`. `INVALID_CONFIGURATION` and `INVALID_ARGUMENT` are not retryable; `SERVICE_UNAVAILABLE` and `REQUEST_CANCELLED` are retryable.
 
-## 非保証事項
+## Non-Guarantees
 
-- Answerの生成、投稿、保存
-- 認証済みユーザーの識別
-- Questionの一覧、選択、言語切替
-- 他のQuestionまたはUser Generated Contentの返却
+- Generating, posting, or saving an Answer
+- Identifying an authenticated user
+- Listing or selecting Questions, or switching languages
+- Returning other Questions or User Generated Content

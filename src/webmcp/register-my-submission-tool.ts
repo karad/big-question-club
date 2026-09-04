@@ -2,8 +2,17 @@ import { answerError, type AnswerError } from '../domain/answer-submission';
 import { getWebMcpSupport } from './browser-support';
 import { parseQuestionIdInput } from './tool-input';
 
+/** Public WebMCP name for retrieving the viewer's submission. */
 export const GET_MY_SUBMISSION_TOOL_NAME = 'get_my_submission';
 type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+/**
+ * Executes a submission lookup against the application endpoint.
+ * @param input - Untrusted tool input.
+ * @param signal - Abort signal supplied by the WebMCP runtime.
+ * @param fetchLike - Fetch implementation used for the request.
+ * @param endpoint - Submission endpoint base path.
+ * @returns The parsed endpoint payload or a structured answer error.
+ */
 export async function executeMySubmissionTool(
   input: unknown,
   signal: AbortSignal | undefined,
@@ -23,6 +32,12 @@ export async function executeMySubmissionTool(
     return answerError('TOOL_UNAVAILABLE');
   }
 }
+/**
+ * Registers the submission-reading WebMCP tool when browser support is available.
+ * @param documentLike - Document-like object that exposes the model context.
+ * @param fetchLike - Fetch implementation used by the tool.
+ * @returns The registration outcome.
+ */
 export async function registerMySubmissionTool(
   documentLike: Pick<Document, 'modelContext'>,
   fetchLike: FetchLike,

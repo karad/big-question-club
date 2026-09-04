@@ -11,6 +11,16 @@ import type { QuestionRepository } from '../repositories/question-repository';
 import { QuestionListPageView } from '../views/question-list';
 import { PRIVATE_RESPONSE_HEADERS } from './question';
 
+/**
+ * Renders a paginated question list for the requested lifecycle category.
+ * @param context - Hono request context.
+ * @param kind - Question-list category to render.
+ * @param authentication - Authentication service used to resolve the viewer.
+ * @param repository - Question repository used to load page data.
+ * @param now - Current timestamp provider.
+ * @param clientScriptUrl - URL of the browser-side application bundle.
+ * @returns The rendered question-list response.
+ */
 export async function questionListRoute(
   context: Context,
   kind: QuestionListKind,

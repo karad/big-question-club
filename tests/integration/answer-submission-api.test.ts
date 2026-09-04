@@ -108,4 +108,34 @@ describe('Answer submission API', () => {
     expect(response.status).toBe(404);
     expect(await response.json()).toMatchObject({ code: 'QUESTION_NOT_FOUND' });
   });
+
+  it('rejects cross-origin and non-JSON submissions without changing data', async () => {
+    const repository = createInMemoryQuestionRepository({ question: openQuestion });
+    const app = createApp({ authentication: authentication('user-1'), repository, now: () => 99 });
+    const payload = JSON.stringify({ answer: 'Injected', excerpt: 'Injected excerpt' });
+    const crossOrigin = await app.request('http://example.test/api/questions/question-1/answers', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain',
+        Origin: 'https://attacker.example.test',
+        'Sec-Fetch-Site': 'same-site',
+      },
+      body: payload,
+    });
+    const wrongContentType = await app.request(
+      'http://example.test/api/questions/question-1/answers',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain',
+          Origin: 'http://example.test',
+          'Sec-Fetch-Site': 'same-origin',
+        },
+        body: payload,
+      },
+    );
+    expect(crossOrigin.status).toBe(403);
+    expect(wrongContentType.status).toBe(415);
+    expect(await repository.getMine('question-1', 'user-1')).toBeNull();
+  });
 });

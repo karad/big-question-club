@@ -1,6 +1,11 @@
 import type { Child } from 'hono/jsx';
 import { SiteHeader } from './site-header';
 
+/**
+ * Renders the shared HTML document shell for public pages.
+ * @param props - Page metadata, navigation, client bundle, and body content.
+ * @returns The complete site layout markup.
+ */
 export function SiteLayout({
   title,
   clientScriptUrl,

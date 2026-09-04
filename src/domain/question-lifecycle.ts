@@ -14,6 +14,12 @@ const stateRank: Record<QuestionState, number> = {
   REVEALED: 3,
 };
 
+/**
+ * Derives a question's lifecycle state at a point in time.
+ * @param schedule - Publication, closing, and reveal timestamps.
+ * @param now - Reference timestamp in milliseconds since the Unix epoch.
+ * @returns The current question state.
+ */
 export function getQuestionState(schedule: QuestionSchedule, now: number): QuestionState {
   if (schedule.publishedAt === null) return 'DRAFT';
   if (now >= schedule.revealsAt) return 'REVEALED';
@@ -21,6 +27,12 @@ export function getQuestionState(schedule: QuestionSchedule, now: number): Quest
   return 'OPEN';
 }
 
+/**
+ * Validates the chronological ordering of a question schedule.
+ * @param schedule - Schedule to validate.
+ * @param now - Earliest allowed publication timestamp.
+ * @returns A lifecycle error, or null when the schedule is valid.
+ */
 export function validateQuestionSchedule(
   schedule: QuestionSchedule,
   now: number,
@@ -37,6 +49,13 @@ export function validateQuestionSchedule(
   return null;
 }
 
+/**
+ * Validates a proposed lifecycle transition without allowing state regression.
+ * @param current - Existing question schedule.
+ * @param proposed - Proposed replacement schedule.
+ * @param now - Reference timestamp in milliseconds since the Unix epoch.
+ * @returns A lifecycle error, or null when the transition is allowed.
+ */
 export function validateQuestionTransition(
   current: QuestionSchedule,
   proposed: QuestionSchedule,

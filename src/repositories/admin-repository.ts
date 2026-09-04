@@ -39,6 +39,7 @@ export type BanUserResult =
   'banned' | 'already-banned' | 'missing' | 'self-forbidden' | 'unavailable';
 export type UnbanUserResult = 'unbanned' | 'not-banned' | 'missing' | 'unavailable';
 
+/** Defines persistence operations available to administration routes. */
 export interface AdminRepository {
   isAdmin(userId: string): Promise<boolean>;
   isUserBanned(userId: string): Promise<boolean>;
@@ -61,6 +62,12 @@ export interface AdminRepository {
   unbanUser(userId: string, actorUserId: string, now: number): Promise<UnbanUserResult>;
 }
 
+/**
+ * Creates an administration repository backed by Cloudflare D1.
+ * @param database - D1 database binding.
+ * @param adminEmail - Email address whose user account receives administrator access.
+ * @returns The administration repository implementation.
+ */
 export function createAdminRepository(
   database: D1Database,
   adminEmail: string | null,
@@ -177,6 +184,7 @@ export function createAdminRepository(
         ]);
         if (user === null) return 'missing';
         if (existing !== null) return 'already-banned';
+        // Revoke existing sessions in the same batch so a newly banned user cannot keep an active session.
         await database.batch([
           database
             .prepare(
@@ -236,6 +244,7 @@ async function deleteTarget(
       .bind(targetId)
       .first();
     if (target === null) return 'missing';
+    // Batch the audit insert with deletion so a successful audit record cannot outlive a failed delete.
     const results = await database.batch([
       auditExistingTargetStatement(
         database,

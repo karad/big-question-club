@@ -27,6 +27,13 @@ const emptyForm: QuestionDraftForm = {
   contentAcknowledged: false,
 };
 
+/**
+ * Renders the form for creating a question draft.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the creator.
+ * @param clientScriptUrl - URL of the browser-side application bundle.
+ * @returns The rendered form or an authentication error page.
+ */
 export async function newQuestionPageRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -43,6 +50,15 @@ export async function newQuestionPageRoute(
   );
 }
 
+/**
+ * Validates and creates a question draft.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the creator.
+ * @param repository - Question repository used to create the draft.
+ * @param now - Current timestamp provider.
+ * @param clientScriptUrl - URL of the browser-side application bundle.
+ * @returns A redirect, the form with errors, or an availability response.
+ */
 export async function createQuestionRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -104,6 +120,15 @@ export async function createQuestionRoute(
   return unavailable(context, clientScriptUrl);
 }
 
+/**
+ * Deletes a draft owned by the current user.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the owner.
+ * @param repository - Question repository used to delete the draft.
+ * @param now - Current timestamp provider.
+ * @param clientScriptUrl - URL of the browser-side application bundle.
+ * @returns A redirect or a conflict, authentication, or availability response.
+ */
 export async function deleteQuestionRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -130,6 +155,14 @@ export async function deleteQuestionRoute(
   return unavailable(context, clientScriptUrl);
 }
 
+/**
+ * Renders the edit form for a draft owned by the current user.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the owner.
+ * @param repository - Question repository used to load the draft.
+ * @param clientScriptUrl - URL of the browser-side application bundle.
+ * @returns The rendered edit form or an error page.
+ */
 export async function editQuestionPageRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -148,6 +181,15 @@ export async function editQuestionPageRoute(
   );
 }
 
+/**
+ * Validates and updates a draft owned by the current user.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the owner.
+ * @param repository - Question repository used to update the draft.
+ * @param now - Current timestamp provider.
+ * @param clientScriptUrl - URL of the browser-side application bundle.
+ * @returns A redirect, the form with errors, or an availability response.
+ */
 export async function updateQuestionRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -195,6 +237,14 @@ export async function updateQuestionRoute(
   return unavailable(context, clientScriptUrl);
 }
 
+/**
+ * Renders the pre-publication review page for an owned draft.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the owner.
+ * @param repository - Question repository used to load the draft.
+ * @param clientScriptUrl - URL of the browser-side application bundle.
+ * @returns The rendered review page or an error page.
+ */
 export async function reviewQuestionRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -207,6 +257,15 @@ export async function reviewQuestionRoute(
   return context.html(<QuestionReviewPage clientScriptUrl={clientScriptUrl} question={owned} />);
 }
 
+/**
+ * Publishes an owned draft after validating its latest state.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the owner.
+ * @param repository - Question repository used to publish the draft.
+ * @param now - Current timestamp provider.
+ * @param clientScriptUrl - URL of the browser-side application bundle.
+ * @returns A redirect or a validation, conflict, or availability response.
+ */
 export async function publishQuestionRoute(
   context: Context,
   authentication: Authentication | undefined,
@@ -257,6 +316,15 @@ export async function publishQuestionRoute(
   return unavailable(context, clientScriptUrl);
 }
 
+/**
+ * Renders all questions owned by the current user.
+ * @param context - Hono request context.
+ * @param authentication - Authentication service used to resolve the owner.
+ * @param repository - Question repository used to load owned questions.
+ * @param now - Current timestamp provider.
+ * @param clientScriptUrl - URL of the browser-side application bundle.
+ * @returns The rendered management list or an error page.
+ */
 export async function myQuestionsRoute(
   context: Context,
   authentication: Authentication | undefined,

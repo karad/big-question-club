@@ -1,37 +1,37 @@
-# 検証記録: Google OAuthとWebMCPユーザー識別
+# Validation Record: Google OAuth and WebMCP User Identification
 
-**状態**: 完了（Go）  
-**最終更新**: 2026-09-01
+**Status**: Complete (Go)
+**Last Updated**: 2026-09-01
 
-## 自動検証
+## Automated Verification
 
-| 確認 | 結果 | 記録 |
+| Check | Result | Record |
 | --- | --- | --- |
-| Unit・integration tests | PASS | 46 tests passed |
-| TypeScript型チェック | PASS | `npm run typecheck` |
+| Unit and Integration Tests | PASS | 46 tests passed |
+| TypeScript type check | PASS | `npm run typecheck` |
 | ESLint | PASS | `npm run lint` |
 | Prettier | PASS | `npm run format` |
 | Workers build | PASS | `npm run build` |
-| D1 authentication migration | PASS | Better Auth 1.7.2に必要な`account.issuer`を含む2 migrationsを`big-question-club-auth`へ適用 |
+| D1 authentication migration | PASS | Applied two migrations, including `account.issuer` required by Better Auth 1.7.2, to `big-question-club-auth` |
 
-## Go/No-Goマトリクス
+## Go/No-Go Matrix
 
-Cookie値、OAuthトークン、Googleアカウントのメールアドレス、Secretは記録しない。
+Do not record Cookie values, OAuth tokens, Google account email addresses, or Secrets.
 
-| ケース | 実行日時 | Page Origin | HTTP状態 | ブラウザUser ID | Tool User ID | 結果 | 判定 |
+| Case | Execution Time | Page Origin | HTTP Status | Browser User ID | Tool User ID | Result | Decision |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 同一アカウント（10回） | 2026-09-01 | `http://localhost:5173` | 200 | 値は記録しない | 値は記録しない | Google OAuthログイン後、画面表示とToolのIDが一致。連続10回のTool呼び出しでも同一IDを返却 | PASS |
-| アカウント分離（A/B各5回） | 2026-09-01 | `http://localhost:5173` | 200 | 値は記録しない | 値は記録しない | A/Bとも各5回で安定。各画面表示とToolのIDが一致し、D1集計でもユーザー・プロバイダーアカウントは各2件で全て別ID | PASS |
-| ログアウト・認可拒否・失効 | 2026-09-01 | `http://localhost:5173` | 401 | 該当なし | 値は返却されない | ログアウト後、Google認可拒否後、D1上で有効期限を強制失効した後のいずれも、Toolは`AUTHENTICATION_REQUIRED`を返し`userId`を含まない | PASS |
-| アカウント切替 | 2026-09-01 | `http://localhost:5173` | 200 | 値は記録しない | 値は記録しない | Aをログアウト後にBでログインし、Bの画面表示とToolのIDが一致 | PASS |
+| Same account (10 times) | 2026-09-01 | `http://localhost:5173` | 200 | Value not recorded | Value not recorded | After Google OAuth sign-in, the screen and Tool IDs matched. Ten consecutive Tool invocations returned the same ID | PASS |
+| Account isolation (5 times each for A/B) | 2026-09-01 | `http://localhost:5173` | 200 | Value not recorded | Value not recorded | Both A and B were stable across five checks each. Each screen ID matched its Tool ID, and D1 aggregation showed two users and two provider accounts, all with distinct IDs | PASS |
+| Sign-out, authorization denial, and expiration | 2026-09-01 | `http://localhost:5173` | 401 | Not applicable | No value returned | After sign-out, Google authorization denial, and forced expiration in D1, the Tool returned `AUTHENTICATION_REQUIRED` without `userId` in every case | PASS |
+| Account switching | 2026-09-01 | `http://localhost:5173` | 200 | Value not recorded | Value not recorded | After signing out of A and signing in with B, B's screen and Tool IDs matched | PASS |
 
-## 判定規則
+## Decision Rules
 
-- ログイン済みの呼び出しでブラウザとToolのUser IDが1回でも不一致、または未認証になった場合はNo-Go。
-- 異なるアカウントのUser IDが1回でも一致した場合はNo-Go。
-- ログアウト、認可拒否、失効状態でUser IDが1回でも返った場合はNo-Go。
-- 全ケースが期待結果を満たすまで、SPEC 002は完了にせず、後続P0のGo判定を行わない。
+- No-Go if the browser and Tool User IDs differ even once during a signed-in invocation, or if any such invocation is unauthenticated.
+- No-Go if User IDs for different accounts match even once.
+- No-Go if a User ID is returned even once after sign-out, authorization denial, or expiration.
+- Do not complete SPEC 002 or issue a Go decision for the subsequent P0 until every case meets its expected result.
 
-## 最終判定
+## Final Decision
 
-**Go**。SC-001からSC-005を満たした。ログイン済みの同一性、2アカウントの分離、ログアウト・認可拒否・失効時の非識別性、アカウント切替、Secret等を含めない記録を確認した。未解決事項はない。
+**Go**. SC-001 through SC-005 were met. The validation confirmed signed-in identity consistency, isolation between two accounts, non-identification after sign-out, authorization denial, or expiration, account switching, and records that contain no Secrets or equivalent values. There are no unresolved items.

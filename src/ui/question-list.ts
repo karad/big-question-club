@@ -1,3 +1,8 @@
+/**
+ * Initializes client-side controls for question lists.
+ * @param root - Document containing question-list controls.
+ * @returns Nothing.
+ */
 export function initializeQuestionLists(root: Document = document): void {
   root.querySelectorAll<HTMLElement>('[data-question-list-scope]').forEach((scope) => {
     scope.addEventListener('click', (event) => {

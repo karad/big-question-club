@@ -1,44 +1,44 @@
-# 検証ガイド: 最小WebMCP接続
+# Verification Guide: Minimal WebMCP Connection
 
-## 前提条件
+## Prerequisites
 
-- CloudflareアカウントにWorkerを公開できること。
-- Node.jsのプロジェクト推奨バージョンを利用できること。
-- WebMCP対応のChromeと、WebMCP対応Personal Agentを利用できること。
-- ローカル検証ではChromeの`chrome://flags/#enable-webmcp-testing`を有効にすること。
-- 共有検証では、対象Originに有効なWebMCP Origin Trial設定を用意すること。
+- Ability to deploy a Worker to a Cloudflare account.
+- Access to the Node.js version recommended by the project.
+- Access to WebMCP-compatible Chrome and a WebMCP-compatible Personal Agent.
+- For local verification, enable `chrome://flags/#enable-webmcp-testing` in Chrome.
+- For shared verification, configure a valid WebMCP Origin Trial for the target Origin.
 
-## ローカル検証
+## Local Verification
 
-1. Node.js 22.13以降のLTS、またはNode.js 24以降を選択する。
-2. `npm install`を実行する。
-3. `npm run dev`を実行する。
-4. Viteが表示するローカルURLを、Chromeのトップレベルタブで開く。
-5. Chromeの`chrome://flags/#enable-webmcp-testing`を有効にし、Chromeを再起動する。
-6. DevToolsのWebMCPパネルで`get_verification_question`が1件だけ登録されていることを確認する。
-7. Personal Agentの接続先としてそのページを指定し、Toolを呼び出す。
-8. [Tool契約](contracts/get-verification-question.md)どおりの固定Questionを受け取ることを確認する。
-9. 同じ呼び出しを10回繰り返し、`id`、`question`、`language`が毎回一致することを確認する。
+1. Select Node.js LTS 22.13 or later, or Node.js 24 or later.
+2. Run `npm install`.
+3. Run `npm run dev`.
+4. Open the local URL shown by Vite in a top-level Chrome tab.
+5. Enable `chrome://flags/#enable-webmcp-testing` in Chrome and restart Chrome.
+6. Confirm that exactly one `get_verification_question` entry is registered in the DevTools WebMCP panel.
+7. Set that page as the connection target for the Personal Agent and invoke the Tool.
+8. Confirm that the fixed Question matches the [Tool contract](contracts/get-verification-question.md).
+9. Repeat the same invocation ten times and confirm that `id`, `question`, and `language` match every time.
 
-## 共有検証
+## Shared Verification
 
-1. `npm run build`と`npm run preview`を実行し、本番に近いプレビューでローカル検証と同じ手順を確認する。
-2. `npm run deploy`でWorkerを`workers.dev`へ公開する。
-3. Cloudflareの公開URLをWebMCP Origin Trialの対象Originへ追加する。
-4. HTTPSの公開URLをChromeで開き、DevToolsのWebMCPパネルでTool登録を確認する。
-5. Personal AgentからToolを発見し、10回連続でQuestionを取得する。
+1. Run `npm run build` and `npm run preview`, then repeat the local verification steps against the production-like preview.
+2. Run `npm run deploy` to deploy the Worker to `workers.dev`.
+3. Add the public Cloudflare URL to the Origins covered by the WebMCP Origin Trial.
+4. Open the public HTTPS URL in Chrome and confirm Tool registration in the DevTools WebMCP panel.
+5. Discover the Tool from the Personal Agent and retrieve the Question ten consecutive times.
 
-## 失敗確認
+## Failure Verification
 
-1. WebMCPが無効なChrome、または非対応ブラウザでページを開く。
-2. ページに`WebMCP is unavailable`が表示され、通常のHTTP APIの成功ではなく明確な検証失敗になることを確認する。
-3. DevToolsまたはネットワーク遮断で`/api/verification-question`を失敗させる。
-4. ToolがQuestionを返さず、`SERVICE_UNAVAILABLE`か`REQUEST_CANCELLED`を返すことを確認する。
-5. 開発環境で固定Questionの必須項目を欠く状態を作り、`INVALID_CONFIGURATION`が返ることを確認する。
+1. Open the page in Chrome with WebMCP disabled, or in an unsupported browser.
+2. Confirm that the page displays `WebMCP is unavailable` and reports an explicit verification failure rather than a successful ordinary HTTP API result.
+3. Use DevTools or network blocking to make `/api/verification-question` fail.
+4. Confirm that the Tool does not return a Question and instead returns `SERVICE_UNAVAILABLE` or `REQUEST_CANCELLED`.
+5. In the development environment, remove a required field from the fixed Question and confirm that `INVALID_CONFIGURATION` is returned.
 
-## 合格判定
+## Acceptance Criteria
 
-- 接続設定後2分以内に固定Questionを取得できる。
-- 10回連続取得で返却値が完全に一致する。
-- 初見の開発担当者が本書を用い、30分以内に接続確認を再現できる。
-- 接続不能・設定不備時に成功扱いのQuestionが返らない。
+- The fixed Question can be retrieved within two minutes of configuring the connection.
+- All returned values match across ten consecutive retrievals.
+- A developer unfamiliar with the project can reproduce the connection verification within 30 minutes by following this guide.
+- A successful Question is never returned when the connection is unavailable or the configuration is invalid.

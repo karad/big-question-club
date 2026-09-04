@@ -1,54 +1,54 @@
-# 技術調査: WebMCP MVP Tool群
+# Technical Research: WebMCP MVP Tools
 
-## 判断 1: Agent向けの本番Tool面を5 Toolへ限定する
+## Decision 1: Limit the Production Agent Surface to Five Tools
 
-- **決定**: WebMCPへ登録する本番Toolを `get_question`、`submit_answer`、`update_answer`、`remove_answer`、`get_my_submission` の5件に限定し、P0検証用のQuestion取得Toolと `who_am_i` は本番登録から外す。各Toolは名前、英語description、厳密な入力Schema、状態変更annotation、実行関数を個別に持つ。
-- **根拠**: ChromeのImperative APIはToolの名前、description、入力Schemaを主要なAgent契約としており、公開Capabilityを小さくするほどAgentの誤選択と意図しないトークン消費を抑えられる。Question一覧・検索Toolを登録しなければ、Agent自身が回答対象を探索する導線も作られない。
-- **検討した代替案**: P0検証Toolを本番Toolと併存させる案は、利用目的が重複してAgentのTool選択を曖昧にするため不採用。単一の汎用 `manage_answer` Toolは操作ごとの確認意図とSchemaが不明確になるため不採用。
-- **参照**: [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
+- **Decision**: Register only `get_question`, `submit_answer`, `update_answer`, `remove_answer`, and `get_my_submission` in production WebMCP. Remove the P0 validation Question tool and `who_am_i` from production registration. Give each tool its own name, English description, strict input schema, state-change annotation, and execution function.
+- **Rationale**: Chrome's Imperative API uses tool name, description, and input schema as the primary Agent contract. A smaller exposed capability surface reduces mistaken tool selection and unintended token use. Omitting Question list/search tools also prevents Agents from exploring what to answer.
+- **Alternatives Considered**: Keeping P0 validation tools alongside production tools was rejected because overlapping purposes make Agent selection ambiguous. One generic `manage_answer` tool was rejected because confirmation intent and schemas would be unclear for each operation.
+- **Reference**: [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
 
-## 判断 2: Tool出力の信頼境界をannotationと固定descriptionで示す
+## Decision 2: Express Output Trust Boundaries with Annotations and Fixed Descriptions
 
-- **決定**: `get_question` と `get_my_submission` は `readOnlyHint: true`、3つの書き込みToolは `readOnlyHint: false` とする。Question本文または本人Answerを返す読み取りToolは `untrustedContentHint: true`、本文を返さない書き込み結果は `false` とする。Question本文は固定instructionと別フィールドで返し、descriptionにはQuestion探索禁止、Private Context非開示、更新・削除はHumanの明示依頼時だけという境界を含める。
-- **根拠**: Chromeの公式セキュリティガイドは、利用者生成コンテンツを返すToolへ `untrustedContentHint`、状態変更しないToolへ `readOnlyHint` を付けることを推奨している。descriptionだけに安全性を委ねず、サーバーの認証・本人限定Repository・非公開DTOと組み合わせる必要がある。
-- **検討した代替案**: 全Toolを未信頼扱いにする案は状態だけの成功応答まで同じ扱いになり区別が弱まるため不採用。annotationなしはAgentが確認要否と未信頼データを判断しづらいため不採用。
-- **参照**: [Chrome WebMCP tool security](https://developer.chrome.com/docs/ai/webmcp/secure-tools)
+- **Decision**: Set `readOnlyHint: true` for `get_question` and `get_my_submission`, and `false` for the three write tools. Set `untrustedContentHint: true` for read tools returning Question body or the current User's Answer, and `false` for body-free write results. Return Question body separately from fixed instructions. Descriptions include no Question discovery, no Private Context disclosure, and update/delete only on explicit Human request.
+- **Rationale**: Chrome's security guide recommends `untrustedContentHint` for tools returning user-generated content and `readOnlyHint` for tools that do not change state. Safety cannot depend on descriptions alone; combine annotations with server authentication, owner-only repositories, and private DTOs.
+- **Alternatives Considered**: Marking every tool untrusted was rejected because it weakens distinction by treating state-only success results the same. Omitting annotations was rejected because the Agent could not easily judge confirmation needs or untrusted data.
+- **Reference**: [Chrome WebMCP tool security](https://developer.chrome.com/docs/ai/webmcp/secure-tools)
 
-## 判断 3: Toolは同一Originの専用HTTP契約を呼び出す
+## Decision 3: Have Tools Call Dedicated Same-Origin HTTP Contracts
 
-- **決定**: 各WebMCP Toolは同一Originの相対URLだけを `fetch` し、CookieやTokenを入力・出力しない。`get_question` と `get_my_submission` は既存GET経路を契約へ合わせ、`update_answer` と `remove_answer` は本人Answer用の同一路径へ `PUT` と `DELETE` で追加する。全応答を `Cache-Control: no-store` とし、AbortSignalを `fetch` へ渡す。
-- **根拠**: 既存の認証済みブラウザーSessionを自然に利用でき、Tool層とHTTP層の両方で同じ契約をIntegration Testできる。AbortSignalの転送は、Agentや利用者が中断した要求の不要な継続を抑えるChrome公式パターンである。
-- **検討した代替案**: Tool実行関数からRepositoryを直接呼ぶ案はブラウザー側からD1へアクセスできず、HTTP契約の検証も分断されるため不採用。認証値をTool引数にする案はSessionとの二重認証と漏えい面を増やすため不採用。
-- **参照**: [Chrome WebMCP Imperative API - cancellation](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
+- **Decision**: Each tool fetches only same-origin relative URLs and never inputs or outputs Cookies or Tokens. Align `get_question` and `get_my_submission` with existing GET routes; add `PUT` and `DELETE` on the current User's Answer path for `update_answer` and `remove_answer`. Return `Cache-Control: no-store` everywhere and pass AbortSignal to `fetch`.
+- **Rationale**: This naturally uses the existing authenticated browser Session and lets integration tests cover the same contract at both tool and HTTP layers. Forwarding AbortSignal follows Chrome's official pattern and avoids unnecessary continuation after cancellation.
+- **Alternatives Considered**: Direct repository calls from tool functions were rejected because browser code cannot access D1 and HTTP verification would split. Tool-argument credentials were rejected because they duplicate Session authentication and expand leakage risk.
+- **Reference**: [Chrome WebMCP Imperative API - cancellation](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
 
-## 判断 4: Answer更新・削除を条件付き単一Statementで確定する
+## Decision 4: Commit Answer Updates and Deletions with Conditional Single Statements
 
-- **決定**: Repositoryの更新は、対象Answerの `question_id` とSession由来 `user_id`、Questionの公開済み・`now < closes_at` 条件を同じ `UPDATE` Statementへ含める。削除も同じ条件を持つ `DELETE` Statementで行い、`meta.changes === 1` だけを成功とする。動的値はすべてprepared statementへbindする。
-- **根拠**: 事前照会後に更新・削除する二段階処理では、その間に締切到達や削除競合が起こり得る。条件付き単一書き込みなら、本人・受付中・対象存在を確定時点で同時に強制できる。D1の実行結果は変更件数を返し、prepared statementのbindは公式に推奨される。
-- **検討した代替案**: 事前照会と無条件書き込みはTOCTOU競合があるため不採用。利用者別ロックはCloudflare Workers/D1のMVPに対して複雑すぎるため不採用。
-- **参照**: [Cloudflare D1 Prepared statements](https://developers.cloudflare.com/d1/worker-api/prepared-statements/)
+- **Decision**: Repository updates use one `UPDATE` statement conditioned on the Answer's `question_id`, Session-derived `user_id`, published Question, and `now < closes_at`. Deletion uses one `DELETE` with the same conditions. Only `meta.changes === 1` is success. Bind every dynamic value in prepared statements.
+- **Rationale**: A read-then-write sequence allows deadline or deletion races between steps. A single conditional write enforces owner, acceptance period, and target existence together at commit time. D1 returns affected-row counts and officially recommends prepared-statement binding.
+- **Alternatives Considered**: Read plus unconditional write was rejected because of TOCTOU races. Per-User locks were rejected as excessive for the Workers/D1 MVP.
+- **Reference**: [Cloudflare D1 Prepared statements](https://developers.cloudflare.com/d1/worker-api/prepared-statements/)
 
-## 判断 5: 削除はHard Deleteとし、締切前の再投稿を許可する
+## Decision 5: Use Hard Delete and Permit Resubmission Before the Deadline
 
-- **決定**: `remove_answer` は本人Answer行を削除し、`get_my_submission` は直後から `not_submitted` を返す。Questionが `OPEN` なら同じUserは再び `submit_answer` できるが、`UNIQUE(question_id, user_id)`により同時点のAnswerは最大1件に保つ。回答締切以降は更新・削除・再投稿をすべて拒否する。
-- **根拠**: Humanが誤回答や公開したくない内容を締切前に撤回でき、削除後の再参加も直感的である。MVPの監査ログは対象外であり、Tombstoneを導入すると状態、保持期間、公開件数の意味が増える。
-- **検討した代替案**: Tombstoneにより再投稿を永久禁止する案はHumanの訂正目的と合わないため不採用。Soft DeleteはReveal件数、本人状態、保持方針を追加で定義する必要があるため不採用。
+- **Decision**: `remove_answer` deletes the current User's Answer row, and `get_my_submission` immediately returns `not_submitted`. While `OPEN`, the User may call `submit_answer` again; `UNIQUE(question_id, user_id)` preserves at most one Answer at a time. Reject update, deletion, and resubmission after the deadline.
+- **Rationale**: A Human can withdraw a mistaken or unwanted public Answer before the deadline and intuitively participate again. Audit logs are out of scope; tombstones would add state, retention, and answer-count semantics.
+- **Alternatives Considered**: Permanent resubmission bans via tombstones conflict with the correction goal. Soft delete was rejected because it requires additional Reveal-count, personal-state, and retention policy.
 
-## 判断 6: Answerに更新時刻を追加し、書記素制限をDomain契約へ統一する
+## Decision 6: Add Answer Update Time and Unify Grapheme Limits in the Domain Contract
 
-- **決定**: 差分Migrationで `answers.updated_at` を追加し既存行は `created_at` で初期化する。Answer表再構築時にSQLのコードポイント上限CHECKを外し、空白のみ・Excerpt改行禁止・一意性・参照整合性はDBで維持する。1〜5,000および1〜160の表示文字上限は `Intl.Segmenter` を使う共通Domain関数で投稿・更新の両方へ強制する。
-- **根拠**: SQLiteの `length()` は書記素クラスタを数えず、絵文字や結合文字で画面上の文字数と不一致になる。SPEC 006で採用済みの `Intl.Segmenter` と同じ規則をAnswerにも適用すればUIとToolの契約が一致する。更新時刻を保存することで `get_my_submission` と競合検証が最新変更を追跡できる。
-- **検討した代替案**: `created_at`だけを維持する案は更新後の時刻を再取得できないため不採用。SQL `length()`を表示文字数とみなす案はUnicode境界ケースで仕様と一致しないため不採用。
+- **Decision**: Add `answers.updated_at` in a differential migration and initialize existing rows from `created_at`. When rebuilding Answers, remove SQL code-point upper-limit checks while retaining whitespace-only, excerpt-newline, uniqueness, and referential constraints. Enforce display-character limits of 1–5,000 and 1–160 for both submit and update with a shared `Intl.Segmenter` domain function.
+- **Rationale**: SQLite `length()` does not count grapheme clusters and disagrees with displayed characters for emoji and combining sequences. Reusing SPEC 006's `Intl.Segmenter` rule aligns UI and tool contracts. Persisted update time lets `get_my_submission` and race verification track the latest change.
+- **Alternatives Considered**: Keeping only `created_at` was rejected because update time could not be retrieved. Treating SQL `length()` as display length was rejected because Unicode boundary cases would violate the specification.
 
-## 判断 7: コピペ用プロンプトは環境追従する1行としてサーバー生成しClipboard APIを段階的に使う
+## Decision 7: Server-Generate an Environment-Aware One-Line Prompt with Progressive Clipboard Support
 
-- **決定**: 純粋関数が、ChatGPTの組み込みブラウザを使い既存Chrome Tabを使わずに対象ページを開いて、関連するPersonal Contextから回答しWebMCPで投稿するよう依頼する確定済み1行の英語テンプレートへ、閲覧中リクエストのOriginとQuestion Pathから生成した絶対URLだけを埋め込む。Query、Fragment、Question本文は含めない。Tool名、呼出順、Context根拠、安全上の詳細はPromptへ列挙せず、ページを開いた後のTool description、Schema、annotation、返却データからAgentへ渡す。Tool側ではUser自身の明示的・反復された記述を優先し、Assistant提案、比較候補、仮定と区別する。明示的な個人見解がない場合はUserが答えそうな最善の代理回答を作成・投稿するが、未確認の個人事実や既知の信条として断定せず、その不足だけを理由にHumanへ確認しない。初回Promptは投稿許可を含み、追加Previewや承認を要求しない。SSRは未投稿の認証済みUserかつ `OPEN` の場合だけ、選択可能な読み取り専用テキストと `Copy prompt` ボタンを表示する。クリック時に `navigator.clipboard.writeText()`を呼び、成功は `Copied`、失敗は英語のstatusで通知する。失敗してもテキストは残す。
-- **根拠**: Question URLを含めることで、Personal Agentが事前にページを開いていない場合にも対象ページを明示でき、Originを固定しないためローカルと本番の両方で機能する。人間の開始指示は極限まで短くし、Agent向け詳細を実行時のTool契約へ置くことで、重複する長い説明を避けられる。サーバー生成なら表示とコピー元を同一文字列にでき、Question本文のPrompt Injectionもテンプレートへ混入しない。Clipboard APIの `writeText()` はPromiseを返しSecure Contextを必要とするため、ユーザー操作から呼び出し、失敗時の手動コピーを常に残す必要がある。
-- **検討した代替案**: Question IDだけを渡す案は、Agentが対象ページを開いておらずWebMCP Toolを利用できない場合があるため不採用。Tool手順と安全説明をPromptへ列挙する案は、Tool側から提供できる情報を重複させPromptを長くするため不採用。Question本文をプロンプトへ埋め込む案は内容重複とInjection面を増やすため不採用。コピー専用で表示テキストを隠す案は権限拒否時に利用不能になるため不採用。
-- **参照**: [MDN Clipboard.writeText](https://developer.mozilla.org/docs/Web/API/Clipboard/writeText)、[MDN Clipboard API security](https://developer.mozilla.org/docs/Web/API/Clipboard_API)
+- **Decision**: A pure function inserts only an absolute URL derived from the current request Origin and Question path into a finalized one-line English template directing ChatGPT's built-in browser—not an existing Chrome tab—to open the page, answer from relevant Personal Context, and submit via WebMCP. Exclude query, fragment, and Question body. Keep tool names, call order, evidence, and safety details in runtime tool descriptions, schemas, annotations, and returned data. Tool instructions prioritize explicit/repeated User statements over Assistant suggestions, options, or assumptions. With no explicit view, create and submit a best-effort proxy without asserting unsupported facts or known beliefs or asking solely because the view is missing. The initial prompt authorizes submission without extra preview or approval. SSR shows selectable read-only text and `Copy prompt` only for an authenticated, not-submitted User while `OPEN`. On click, call `navigator.clipboard.writeText()` and announce `Copied` or an English failure status, always preserving manual-copy text.
+- **Rationale**: The URL identifies the page even when the Agent has not opened it, and a dynamic Origin works locally and in production. Keeping the Human's instruction short and moving details to runtime contracts avoids duplication. Server generation keeps display and copied text identical and prevents Question-body prompt injection. Clipboard `writeText()` returns a Promise and requires a secure context, so invoke it from User action and retain manual fallback.
+- **Alternatives Considered**: Question ID alone was rejected because the Agent might not have the page/tool context. Listing tool and safety instructions in the prompt was rejected as duplicate length. Embedding Question body was rejected for duplication and injection risk. Hiding text behind copy-only UI was rejected because denial would make it unusable.
+- **References**: [MDN Clipboard.writeText](https://developer.mozilla.org/docs/Web/API/Clipboard/writeText), [MDN Clipboard API security](https://developer.mozilla.org/docs/Web/API/Clipboard_API)
 
-## 判断 8: 自動テストと実ブラウザーWebMCP確認を分担する
+## Decision 8: Split Automated Tests from Real-Browser WebMCP Verification
 
-- **決定**: Domainの書記素境界・Prompt生成・エラー分類・Tool SchemaはUnit Test、D1のMigration・条件付き更新削除・競合はWorkers D1 Integration Test、HTTP認証・DTO・SSR表示・非露出はHono Integration Testで保証する。実際のPersonal AgentによるTool選択、Clipboard、5 ToolのE2EはQuickstartで確認する。
-- **根拠**: 外部AgentのTool解釈と実ブラウザーSessionはVitestだけでは保証できない。一方、所有者条件や締切競合を手動確認だけにすると回帰原因を切り分けられない。
-- **検討した代替案**: すべてを手動E2Eに寄せる案は再現性が低いため不採用。自動テストだけでWebMCP成立を判定する案は実AgentのTool解釈を確認できないため不採用。
+- **Decision**: Cover domain grapheme boundaries, prompt generation, error classification, and tool schemas with unit tests; D1 migration, conditional update/delete, and concurrency with Workers D1 integration tests; and HTTP authentication, DTOs, SSR display, and non-exposure with Hono integration tests. Verify actual Personal Agent tool selection, Clipboard, and five-tool E2E through the quickstart.
+- **Rationale**: Vitest alone cannot guarantee external Agent interpretation or a real browser Session. Conversely, manual-only checks cannot isolate regressions in owner conditions and deadline races.
+- **Alternatives Considered**: All-manual E2E was rejected for poor reproducibility. Automated-only WebMCP acceptance was rejected because it cannot verify real Agent tool interpretation.

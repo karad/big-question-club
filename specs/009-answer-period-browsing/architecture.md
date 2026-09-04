@@ -1,8 +1,8 @@
-# 現時点のアプリケーション構成
+# Current Application Architecture
 
-**記録日**: 2026-09-02
+**Recorded**: 2026-09-02
 
-SPEC 009完了時点の画面、HTTP API、WebMCP Toolと、その依存関係を示す。
+This diagram shows the screens, HTTP APIs, WebMCP tools, and their dependencies after SPEC 009 completion.
 
 ```mermaid
 flowchart LR
@@ -160,4 +160,4 @@ flowchart LR
     Repository --> D1
 ```
 
-WebMCP Toolはブラウザー上の`client.ts`から登録され、対応する既存HTTP APIを呼び出す。認証、Question状態、Answer公開範囲の判定は、画面とWebMCPで同じWorker、Domain、Repositoryを共有する。管理画面はGoogle Sessionと設定Emailを照合し、管理者だけが一覧・削除・BAN操作を実行できる。
+WebMCP tools are registered from browser-side `client.ts` and call the corresponding existing HTTP APIs. Screens and WebMCP share the same Worker, domain, and repository for authentication, Question state, and Answer-disclosure decisions. Administration compares the Google Session with the configured email so only the administrator can list, delete, and ban.

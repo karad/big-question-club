@@ -1,161 +1,109 @@
-# 技術調査: 回答公開体験とチャレンジ向け視覚設計
+# Technical Research: Answer Reveal Experience and Challenge Visual Design
 
-## 1. Tailwind CSSの組み込み
+## 1. Tailwind CSS Integration
 
-**決定**: Tailwind CSS 4系と公式Viteプラグインをクライアント用ビルドへ追加し、`src/styles.css`から生成する単一の`client-dist/styles.css`をすべての人向け画面で読み込む。
+**Decision**: Add Tailwind CSS 4 and its official Vite plugin to the client build and load one fixed `client-dist/styles.css`, generated from `src/styles.css`, on every human-facing screen.
 
-**理由**: 既存のクライアント資材もViteのライブラリモードで`client-dist`へ生成されている。公式Viteプラグインは自動的に利用箇所を検出でき、Viteの`cssFileName`でSSRが参照する名前を固定できる。画面初期表示前に`<link>`で読み込むため、JavaScript実行前も視覚設計が適用される。
+**Rationale**: This matches the existing Vite library-mode asset pipeline, fixes the SSR filename through `cssFileName`, and applies styling before JavaScript runs.
 
-**検討した代替案**:
+**Alternatives Considered**: CDN assets reduce reproducibility; a separate CLI duplicates Vite watching; Hono CSS helpers do not satisfy the Tailwind requirement.
 
-- CDN版: 本番で外部実行資材へ依存し、生成対象の限定と再現可能なビルドを損なうため不採用。
-- 独立CLI: 実現可能だが、既存Viteビルドと監視処理が重複するため不採用。
-- HonoのCSS補助: MILESTONEで指定されたTailwind CSSへの統一を満たさないため不採用。
+**References**: https://tailwindcss.com/docs/installation/using-vite and https://vite.dev/guide/build#css-support
 
-**根拠**:
+## 2. React Icons and the Hono JSX Boundary
 
-- Tailwind CSS公式Vite導入手順: https://tailwindcss.com/docs/installation/using-vite
-- Vite公式ライブラリモードのCSS出力: https://vite.dev/guide/build#css-support
+**Decision**: Use React Icons as the sole icon source, convert an allowlisted set to static SVGs in a Node generation script, and render only generated trusted SVG through shared Hono JSX `Icon`, without React in the Worker runtime.
 
-## 2. React IconsとHono JSXの境界
+**Rationale**: React Icons returns React-specific element types incompatible with existing Hono JSX. Build-time React rendering preserves current SSR and Worker size.
 
-**決定**: React Iconsをアイコンの唯一の取得元とし、選定したアイコンをNode.js上の生成スクリプトで静的SVGへ変換する。生成済みの信頼できるSVGだけをHono JSX用の共通`Icon`表示部品から出力し、React実行環境をCloudflare Workerへ持ち込まない。
+**Safety Boundary**: The allowlist is repository-owned; user input never selects SVG. Track generated output and require clean regeneration. The component emits either `aria-hidden` or an English accessible label.
 
-**理由**: React IconsはReactを同等依存として要求し、返す要素型もReact固有である。一方、既存画面はHono JSXの要素型とSSRを利用しており、React要素を直接子要素として扱えない。生成時だけReactと静的マークアップ変換を使えば、指定されたReact Iconsを利用しつつ、既存SSR構成、Workerの大きさ、画面の安全な文字列境界を維持できる。
+**Alternatives Considered**: Full React migration is too broad; runtime conversion ships React; hand-written or other icons violate the explicit requirement.
 
-**安全境界**:
+**References**: https://react-icons.github.io/react-icons/, https://github.com/react-icons/react-icons/blob/master/packages/react-icons/package.json, and https://hono.dev/docs/guides/jsx
 
-- 生成対象はリポジトリ内の固定許可一覧だけとし、利用者入力からアイコン名やSVGを選ばない。
-- 生成ファイルは差分確認できる状態で追跡し、生成再実行後に差分が残らないことを品質ゲートへ含める。
-- 共通表示部品が装飾用の`aria-hidden`と意味を持つアイコンの英語ラベルを排他的に設定する。
+## 3. Screen Composition and Progressive Enhancement
 
-**検討した代替案**:
+**Decision**: Preserve complete Hono JSX initial HTML. Use the existing client script only for prompt disclosure, global deadline toggling, Answer-body fetching, and duplicate-operation prevention. Centralize shared HTML in `SiteLayout`.
 
-- Reactへの全面移行: 本SPECの範囲を超えて全SSR画面とテストの書き換えが必要なため不採用。
-- React IconsをWorker実行時に静的マークアップへ変換: ReactとReact DOMを本番資材へ含めるため不採用。
-- 手書きSVGまたは別のアイコン集: React Iconsを使うという明示要件を満たさないため不採用。
+**Rationale**: Questions, counts, states, lists, and forms remain readable without JavaScript; client code only enhances state.
 
-**根拠**:
+**Alternatives Considered**: An SPA broadly changes authentication and SSR boundaries; per-screen document shells fragment quality and asset references.
 
-- React Icons公式利用案内: https://react-icons.github.io/react-icons/
-- React Icons公式パッケージ定義: https://github.com/react-icons/react-icons/blob/master/packages/react-icons/package.json
-- Hono公式JSX案内: https://hono.dev/docs/guides/jsx
+## 4. Home and Question-List Retrieval
 
-## 3. 画面構成と段階的機能強化
+**Decision**: Add repository projections for five Open and ten Revealed Home items and 20-item state pages with items, total, current page, and page count. Order Open by `closesAt ASC, id ASC` and Results by `revealsAt DESC, id DESC`.
 
-**決定**: Hono JSXによる完全な初期HTMLを維持し、依頼文開閉、日時一括切替、回答本文取得、二重操作防止だけを既存のクライアントスクリプトで追加する。共通HTML骨格は`SiteLayout`へ集約する。
+**Rationale**: Persistence-layer limits and order avoid fetching all records and keep deterministic results without projecting Answer content or respondents.
 
-**理由**: 質問、回答数、状態、一覧、フォームはJavaScriptなしでも読める必要がある。クライアント側は状態を補助するだけに限定すると、アクセシビリティ、障害時の可読性、既存結合テストを維持しやすい。
+**Alternatives Considered**: Client-side slicing leaks data responsibility; infinite scrolling is worse for demo timing, keyboard navigation, and position clarity.
 
-**検討した代替案**:
+## 5. Authentication-Specific Home Prompts
 
-- クライアント側単一ページアプリへの移行: 認証・非公開境界と既存SSRを広範囲に変更するため不採用。
-- 各画面で個別に`html`、`head`、資材参照を持つ: 視覚品質と資材参照が分散するため不採用。
+**Decision**: Safely read authentication and batch-fetch current-user Answer presence only for five displayed items. On authentication or status failure, hide prompts but keep public lists. User-specific Home uses `private, no-store` and `Vary: Cookie`.
 
-## 4. ホームと質問一覧の取得
+**Rationale**: A prompt requires confirmed unanswered state; treating failure as unanswered creates an incorrect submission path.
 
-**決定**: 質問リポジトリに、ホーム用の回答受付中5件・公開済み10件の投影と、状態別の20件単位ページ投影を追加する。ページ投影は項目、総件数、現在ページ、総ページ数を返す。回答受付中は`closesAt ASC, id ASC`、公開済みは`revealsAt DESC, id DESC`で固定する。
+**Alternatives Considered**: Showing prompts to everyone violates authorization; per-Question retrieval adds five sequential queries.
 
-**理由**: 件数上限、順序、ページ情報を永続化層で確定すれば、全件取得後の切り詰めを避け、同じ入力時刻に対して決定的な結果を返せる。回答本文・要約文・投稿者は投影に含めない。
+### Current-User Answer State
 
-**検討した代替案**:
+**Decision**: Batch-project answered Question IDs for Home/lists and reuse the minimal current-user Answer projection on Detail. Show green `Answered` only when answered; show no answer-state tag for unanswered, signed-out, or failed determination.
 
-- 全件取得後に画面側で分割: データ量と回答内容非露出の責務が画面へ漏れるため不採用。
-- 無限スクロール: 3分デモ、キーボード移動、現在位置の説明性でページ移動より劣るため不採用。
+**Rationale**: This prevents duplicate requests while keeping simple, accurate presentation.
 
-## 5. ホームの認証別依頼文
+## 6. Comparing Revealed Answers
 
-**決定**: ホーム要求で認証状態を安全に読み取り、認証済み利用者についてのみ表示対象5件に対する本人回答有無を一括取得する。認証確認または本人回答取得に失敗した場合は依頼文を出さず、質問一覧自体は公開情報として表示する。利用者別のホーム応答は`private, no-store`と`Vary: Cookie`を付ける。
+**Decision**: SSR returns only sequence, ID, and excerpt in initial-submission order. Fetch each selected body through the existing authenticated detail route, cache it within its item, and permit multiple independent expanded/loading/error states.
 
-**理由**: 依頼文を未回答者だけに表示するには本人状態が必要である。障害を未回答と誤認すると誤った投稿導線を出すため、安全側の非表示とする。
+**Rationale**: This preserves SPEC 008 lazy exposure while enabling side-by-side vertical comparison.
 
-**検討した代替案**:
+**Alternatives Considered**: Bulk bodies regress minimal exposure; a single-open accordion fails the comparison criterion.
 
-- 全利用者へ依頼文を表示: 仕様の認証・本人回答条件に反するため不採用。
-- 質問ごとの逐次取得: 最大5回の追加問い合わせとなるため不採用。
+### Own Answer Before and After Reveal
 
-### 本人回答状態の表示
+**Decision**: In `OPEN`/`CLOSED`, show only the existing current-user Answer projection. In `REVEALED`, compare the session user and respondent server-side, pass only `isOwn`, and show green `Your answer`.
 
-**決定**: ホームと状態別一覧では表示対象のQuestion識別子をまとめて本人回答済みQuestion集合へ投影し、Question詳細では既存の本人Answer最小取得を再利用する。本人回答済みの場合だけ、既存の封印・公開Tagの隣に緑色の`Answered`を表示する。未回答、未認証、または判定失敗時は回答状態Tagを表示しない。
+**Rationale**: Users can review their submission before Reveal and find it afterward without exposing user IDs.
 
-**理由**: 回答導線を開く前に回答済みQuestionを判断でき、重複依頼を避けられる。未回答時には追加Tagを出さないことで状態表示を簡潔にし、判定不能を回答済みと見なさないことで表示の正確性を維持できる。
+## 7. Duplicate Creation and Publication Prevention
 
-## 6. 公開回答の比較
+**Decision**: Disable a form after its first submit and use a unique per-form creation token as Question ID. Replay returns the existing result; receive `draft` or `publish` intent in one request and implement publication as one conditional creation.
 
-**決定**: SSRは回答の連番、識別子、要約文だけを初回投稿順で返す。選択時に既存の認証必須回答詳細経路から本文を1件ずつ取得し、取得済み本文は回答項目内に保持して複数件を同時に開ける。各項目は独立した展開状態、処理中状態、エラー状態を持つ。
+**Rationale**: UI-only disabling cannot prevent replays or multiple tabs. Storage uniqueness guarantees at most one record and avoids unintended Drafts from two-step publication.
 
-**理由**: SPEC 008の遅延取得境界を維持しながら、上下に並ぶ回答を比較できる。本文を要約文一覧へ埋め込まないため、初期HTMLと認可範囲も後退しない。
+**Alternatives Considered**: UI-only guarding is insufficient; deduplicating by body/deadline prevents intentional reuse.
 
-**検討した代替案**:
+## 8. Owner Question Deletion
 
-- 全本文の一括取得: 既存の最小公開契約と初期表示量を後退させるため不採用。
-- 1件だけ開けるアコーディオン: 2件を同時に比較する受け入れ条件を満たさないため不採用。
+**Decision**: Add owner-conditional deletion to Question Repository, batching `QUESTION_DELETED` audit insertion and deletion, with existing Answer cascade. My Questions Cards show body, state, and count; the deletion area contains only irreversible-confirmation checkbox and button.
 
-### 公開前の本人回答と公開後の本人識別
+**Rationale**: Storage-level ownership does not rely on hidden UI. Audit survives because it has no Question foreign key; the string action needs no schema change.
 
-**決定**: `OPEN`と`CLOSED`のQuestion詳細では既存の本人Answer投影だけを表示し、他者Answerを取得しない。`REVEALED`のExcerpt投影では閲覧セッションの利用者IDと保存済み回答者をサーバー側で比較し、画面には`isOwn`の真偽だけを渡して本人回答へ緑色の`Your answer` Tagを表示する。
+**Alternatives Considered**: Admin Repository mixes authorization responsibilities; soft deletion expands every read and state rule.
 
-**理由**: 利用者は公開前でも自分が何を投稿したか確認でき、公開後は匿名性を崩さず回答群の中から自分の回答を見つけられる。利用者IDをHTMLへ渡さないため、本人表示を追加しても一般公開の個人情報境界を維持できる。
+## 9. Default Answer Deadline
 
-## 7. 作成・公開の二重実行防止
+**Decision**: Set `datetime-local` to the first local midnight at least one hour ahead—normally tomorrow, otherwise the following day—while preserving server validation of one hour through 30 days.
 
-**決定**: 画面側で最初の送信直後に同一フォームの送信操作を無効化し、サーバー側では新規作成フォームごとの一意な作成トークンを質問識別子として利用する。同一トークンの再送は新しい質問を作らず、既存結果へ安全に誘導する。`draft`と`publish`の意図を同じ作成要求で受け取り、即時公開は単一の条件付き作成として確定する。
+**Rationale**: This honors the user's time zone and required midnight helper while browser date handling resolves daylight saving.
 
-**理由**: ボタン無効化だけでは再送や複数タブを防げない。保存先の一意制約を利用すれば、通信再試行でも同じ利用者意図から最大1件だけを作成できる。即時公開を下書き作成と別更新へ分けないことで、途中失敗による意図しない下書きを避ける。
+**Alternatives Considered**: Now plus 24 hours is not midnight; server time cannot determine the user's local date.
 
-**検討した代替案**:
+## 10. Visual Quality and Accessibility
 
-- 画面側の無効化だけ: 直接再送や通信再試行を防げないため不採用。
-- 本文と締切の組み合わせを重複判定に使う: 利用者が同じ質問を意図的に再利用できなくなるため不採用。
+**Decision**: Centralize rules in shared layout, Cards, and controls; define warm paper, brown-black ink, orange, and amber through Tailwind theme variables. Communicate meaningful states with color, icon, and English label; provide reduced motion, visible focus, and 4.5:1 or 3:1 contrast targets.
 
-## 8. 所有者による質問削除
+**Rationale**: Meaning never depends on color alone and screens remain consistent without adding a visual-regression framework.
 
-**決定**: 質問リポジトリへ所有者条件付き削除を追加し、`QUESTION_DELETED`監査記録の追記と質問削除を同一D1バッチで実行する。外部キーの既存連鎖削除により関連回答を削除する。`My Questions`のCard本体で質問本文、状態、回答数を示し、削除展開領域は不可逆性の確認Checkboxと削除Buttonだけに限定する。
+**Alternatives Considered**: Per-screen styling harms consistency; continuous animation impairs reading and reduced-motion preferences.
 
-**理由**: 所有者確認を保存先の条件にも含めることで、画面非表示だけに依存しない。監査記録は質問との外部キーを持たないため、削除後も本文なしの履歴を維持できる。監査の`action`列は文字列であり、新しい値のためのスキーマ変更は不要である。
+## 11. Anonymous Authenticated Participants
 
-**検討した代替案**:
+**Decision**: Explain that all Results contain one Answer per signed-in account. Show `Authenticated participant` and a symmetric anonymous icon generated from Question and Answer IDs, never user ID, without persistence.
 
-- 管理者リポジトリの再利用: 管理者認可と所有者認可の責務が混ざるため不採用。
-- 論理削除: 既存の全読取経路と状態判定に新しい条件が必要となり、本SPECの範囲を拡大するため不採用。
+**Rationale**: This communicates authenticated origin without exposing Google data or enabling cross-Question tracking. Answer ID is already required within the Question for body retrieval, so no new public identifier is added; existing uniqueness guarantees one Answer per account.
 
-## 9. 回答締切の初期値
+**Safety Boundary**: Hide the decorative icon from assistive technology and convey meaning in text. Generate palettes/patterns with a deterministic pure function and fixed candidates, never injected SVG/style/HTML. Preserve account linkage only behind administration authorization. Public nicknames require explicit consent and are excluded.
 
-**決定**: ブラウザーのローカル日時から、現在より1時間以上先となる最初の午前0時を計算して`datetime-local`へ設定する。通常は翌日0時、23時台など最短期限を満たさない場合は翌々日0時とする。既存の1時間から30日というサーバー検証は維持する。
-
-**理由**: 利用者のタイムゾーンを入力時点で反映しつつ、既存の公開可能期間を必ず満たせる。日付部品から現地時刻を組み立てることで夏時間の調整をブラウザーの日時処理へ委ねられる。
-
-**検討した代替案**:
-
-- 現在時刻から24時間後: 「1日後の00:00」という入力支援要件を満たさないため不採用。
-- サーバー時刻だけで設定: 利用者のローカル日付を判断できないため不採用。
-
-## 10. 視覚品質とアクセシビリティ
-
-**決定**: 共通レイアウト、共通カード、共通操作部品へ視覚規則を集約し、Tailwindのテーマ変数で温かい紙色・茶墨色・橙色・琥珀色を定義する。意味のある状態は色、アイコン、英語ラベルの3要素で伝え、`prefers-reduced-motion`、視認可能なフォーカス、4.5対1または3対1のコントラスト目標を適用する。
-
-**理由**: 状態の意味を色だけへ依存させず、画面ごとの差異を抑えられる。視覚回帰の専用基盤は追加せず、SSR出力の状態契約と実ブラウザー確認を組み合わせる。
-
-**検討した代替案**:
-
-- 画面ごとの独立した見た目調整: 一貫性と保守性を損なうため不採用。
-- 常時動く演出: 読解と動きの低減設定を妨げるため不採用。
-
-## 11. 認証済み回答者の匿名表示
-
-**決定**: 公開結果の冒頭に、すべての回答がサインイン済み参加者からアカウントごとに1件投稿されたことを英語で明示する。各回答には`Authenticated participant`と、質問識別子・回答識別子から生成する左右対称の匿名アイコンを表示する。生成入力に利用者IDを使わず、新しい値を永続化しない。
-
-**理由**: 認証済みアカウント由来であることを利用者へ伝えつつ、Google表示名・プロフィール画像・利用者IDを公開せず、質問を横断する回答者の追跡を避けられる。回答識別子は公開後の本文取得ですでに必要な質問内識別子であり、質問識別子と組み合わせた表示生成は新しい公開識別子を増やさない。アカウントごとに1回答という事実は既存の保存先一意制約が保証する。
-
-**安全境界**:
-
-- 匿名アイコンは装飾として支援技術から隠し、認証済みである意味は隣接する英語Labelで伝える。
-- 配色と模様は固定候補と決定的な純粋関数から生成し、利用者入力をSVG、Style、HTMLとして挿入しない。
-- 回答と利用者アカウントの保存済み関連は、既存の管理者認可を通る管理画面とModeration用途だけで維持する。
-- 公開ニックネームは明示的な公開同意と設定設計が必要なため、本SPECには含めない。
-
-**検討した代替案**:
-
-- Google表示名またはプロフィール画像: 個人特定と回答履歴の追跡につながり、表示内容も実在人物の本人性を保証しないため不採用。
-- 利用者IDやメールアドレスの単純Hash: 質問横断で安定し、照合と追跡に使われるため不採用。
-- 全回答で同じ汎用アイコン: 認証済みであることは示せるが、同じ質問内で回答を視覚的に区別しづらいため不採用。
+**Alternatives Considered**: Google identity enables identification; user-ID/email hashes enable tracking; one generic icon makes Answers hard to distinguish within a Question.

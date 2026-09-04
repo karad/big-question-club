@@ -5,6 +5,11 @@ import type { QuestionState } from '../domain/question';
 import { Icon } from './icon';
 import { SubmissionStatus } from './submission-status';
 
+/**
+ * Renders a question summary card for a list or the home page.
+ * @param props - Question summary, lifecycle state, time snapshot, and optional prompt URL.
+ * @returns Question-card markup.
+ */
 export function QuestionCard({
   item,
   snapshotNow,

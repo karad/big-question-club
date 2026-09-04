@@ -1,39 +1,39 @@
-# Question画面のAgent依頼Prompt契約
+# Agent Request Prompt Contract for the Question Screen
 
-## 表示条件
+## Display Conditions
 
-次のすべてを満たす場合だけ表示する。
+Display only when all conditions are met:
 
-- 有効なSessionで認証済み
-- Questionが `OPEN`
-- 呼び出し元本人が未投稿
+- Authenticated with a valid Session
+- Question is `OPEN`
+- Current User has not submitted
 
-未認証はログイン案内、非 `OPEN` は受付終了、投稿済みは本人の投稿済み状態を英語で表示し、新規投稿Promptを表示しない。
+For unauthenticated Users, show sign-in guidance. For non-`OPEN` Questions, show that submissions are closed. For a User who already submitted, show their submitted state in English. Do not show the new-submission prompt in any of these cases.
 
 ## UI
 
-- 見出し: `Ask your personal agent`
-- 注意: `Your answer will be public. You can update or remove it until the answer deadline. After the deadline, it cannot be changed.`
-- 読み取り専用かつ選択可能なPrompt全文
-- 操作: `Copy prompt`
-- 成功status: `Copied`
-- 失敗status: `Copy failed. Select the prompt and copy it manually.`
+- Heading: `Ask your personal agent`
+- Notice: `Your answer will be public. You can update or remove it until the answer deadline. After the deadline, it cannot be changed.`
+- Read-only, selectable full prompt
+- Action: `Copy prompt`
+- Success status: `Copied`
+- Failure status: `Copy failed. Select the prompt and copy it manually.`
 
-statusは支援技術へ通知できる領域に表示する。コピー失敗後もPrompt全文を非表示または変更しない。
+Show status in a region that can notify assistive technology. After copy failure, do not hide or change the full prompt.
 
 ## Prompt
 
-`{{questionUrl}}`だけを、閲覧中のリクエストOriginとQuestion Pathから生成した絶対URLへ置換する。Promptは1行とする。QueryとFragmentを除外し、Question本文、作成者、回答数、Answer、User情報、認証情報を埋め込まない。
+Replace only `{{questionUrl}}` with an absolute URL derived from the current request Origin and Question path. The prompt is one line. Exclude query and fragment, and embed no Question body, creator, answer count, Answer, User data, or authentication information.
 
 ```text
 Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}
 ```
 
-このPromptは初回回答の作成と投稿を許可するため、Agentは回答本文の追加Previewや承認を要求しない。明示的な個人見解がない場合は、利用可能な文脈からUserが答えそうな内容を最善の代理回答として作成・投稿し、未確認の個人事実や既知の信条として断定しない。個人見解がないことだけを理由にHumanへ確認しない。`update_answer` と `remove_answer` は、投稿後にHumanが別途明示的に依頼した場合だけ使用する。
+This prompt authorizes creation and submission of the first Answer, so the Agent does not request an additional Answer preview or approval. If no explicit personal view is available, it creates and submits a thoughtful best-effort proxy answer from available context without asserting unverified personal facts or presenting an inferred position as a known belief. It does not ask the Human solely because no personal view exists. Use `update_answer` and `remove_answer` only when the Human explicitly requests them after submission.
 
-## コピー動作
+## Copy Behavior
 
-1. `Copy prompt` の利用者操作から表示中のPrompt全文を取得する。
-2. Clipboard `writeText()`へ同じ全文を渡す。
-3. Promise成功時に `Copied`、失敗またはAPI不在時に失敗statusを表示する。
-4. コピー操作だけではWebMCP Tool、Answer生成、Answer投稿、画面遷移を開始しない。
+1. Read the displayed full prompt from the User's `Copy prompt` action.
+2. Pass the exact text to Clipboard `writeText()`.
+3. Show `Copied` when the Promise succeeds; show the failure status when it fails or the API is unavailable.
+4. Copying alone does not invoke a WebMCP tool, generate or submit an Answer, or navigate the screen.

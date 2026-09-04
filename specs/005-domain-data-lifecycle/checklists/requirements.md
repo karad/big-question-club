@@ -1,38 +1,38 @@
-# 仕様品質チェックリスト: ドメインデータモデルとQuestionライフサイクル
+# Specification Quality Checklist: Domain Data Model and Question Lifecycle
 
-**目的**: 計画へ進む前に仕様の完全性と品質を検証する
+**Purpose**: Validate the specification's completeness and quality before planning
 
-**作成日**: 2026-09-02
+**Created**: 2026-09-02
 
-**対象仕様**: [spec.md](../spec.md)
+**Target Specification**: [spec.md](../spec.md)
 
-## 内容品質
+## Content Quality
 
-- [x] 言語、フレームワーク、APIなどの実装詳細がない
-- [x] 利用者価値と事業上の必要性に焦点を当てている
-- [x] 非技術系の関係者が理解できる内容である
-- [x] 必須セクションがすべて完成している
+- [x] Free of implementation details such as languages, frameworks, and APIs
+- [x] Focused on participant value and business needs
+- [x] Understandable to non-technical stakeholders
+- [x] All mandatory sections are complete
 
-## 要件の完全性
+## Requirement Completeness
 
-- [x] `[NEEDS CLARIFICATION]` マーカーが残っていない
-- [x] 要件がテスト可能で曖昧さがない
-- [x] 成功基準が測定可能である
-- [x] 成功基準が技術非依存である
-- [x] すべての受け入れシナリオが定義されている
-- [x] エッジケースが特定されている
-- [x] スコープが明確に限定されている
-- [x] 依存関係と前提が特定されている
+- [x] No `[NEEDS CLARIFICATION]` markers remain
+- [x] Requirements are testable and unambiguous
+- [x] Success criteria are measurable
+- [x] Success criteria are technology-agnostic
+- [x] All acceptance scenarios are defined
+- [x] Edge cases are identified
+- [x] Scope is clearly bounded
+- [x] Dependencies and assumptions are identified
 
-## 機能の準備状況
+## Feature Readiness
 
-- [x] すべての機能要件に明確な受け入れ基準がある
-- [x] ユーザーシナリオが主要フローを網羅している
-- [x] 成功基準で定義した測定可能な成果を満たせる仕様である
-- [x] 仕様に実装詳細が漏れ込んでいない
+- [x] All functional requirements have clear acceptance criteria
+- [x] User scenarios cover the primary flows
+- [x] The specification can meet the measurable outcomes defined by the success criteria
+- [x] No implementation details leak into the specification
 
-## 注記
+## Notes
 
-- 第2回検証ですべての項目が合格した。第1回では、時刻から状態を導出する規則と時計の巻き戻りに関するエッジケースが両立していなかったため、サービス側時計の前提と公開時刻の制約を明確化した。
-- 状態判定、保存整合性、不正書き込み拒否、Migration検証を独立したシナリオとして定義し、FR-001〜FR-019およびSC-001〜SC-006へ対応付けた。
-- `DRAFT → OPEN → CLOSED → REVEALED` の境界、同時刻の締切・Reveal、既存認証データの維持、後続SPECとの責務境界を明記した。
+- Every item passed on the second review. The first review found a conflict between deriving state from time and the clock-rollback edge case, so the service-clock assumption and publication-time constraints were clarified.
+- State decisions, persistence integrity, rejection of invalid writes, and Migration validation were defined as independent scenarios and mapped to FR-001 through FR-019 and SC-001 through SC-006.
+- The `DRAFT → OPEN → CLOSED → REVEALED` boundaries, simultaneous deadline and Reveal, preservation of existing authentication data, and responsibility boundaries with subsequent SPECs were made explicit.

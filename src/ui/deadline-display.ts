@@ -1,5 +1,10 @@
 import { getInitialLocalDeadline, toDateTimeLocal } from '../domain/question-deadline';
 
+/**
+ * Initializes question deadline inputs and their local-time defaults.
+ * @param root - Document containing deadline inputs.
+ * @returns Nothing.
+ */
 export function initializeQuestionDeadline(root: Document = document): void {
   const input = root.querySelector<HTMLInputElement>('#question-deadline');
   if (input === null) return;

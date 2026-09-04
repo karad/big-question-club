@@ -1,131 +1,131 @@
-# 機能仕様: Agent回答投稿の完全性・Sealed Answersの検証
+# Feature Specification: Validating Agent Answer Submission Integrity and Sealed Answers
 
-**機能ブランチ**: `004-sealed-answer-verification`
+**Feature Branch**: `004-sealed-answer-verification`
 
-**作成日**: 2026-09-02
+**Created**: 2026-09-02
 
-**ステータス**: 完了
+**Status**: Complete
 
-**入力**: 「MILESTONE.mdのSPEC 004を実施」
+**Input**: "Implement SPEC 004 in MILESTONE.md"
 
-## ユーザーシナリオとテスト *(必須)*
+## User Scenarios and Testing *(mandatory)*
 
-### ユーザーストーリー 1 - AgentがQuestionへ一度だけ回答を投稿する (優先度: P1)
+### User Story 1 - An Agent Submits One Answer to a Question (Priority: P1)
 
-認証済みの利用者のPersonal Agentは、回答受付中のQuestionに対して、自身の利用者として本文と1行のExcerptを持つAnswerを一度だけ投稿できる。誤操作、再試行、または同時の投稿要求があっても、同じ利用者のAnswerが複数作成されない。
+An authenticated participant's Personal Agent can submit exactly one Answer—with a Body and one-line Excerpt—to an open Question as that participant. Mistakes, retries, and concurrent submission requests never create multiple Answers for the same participant.
 
-**この優先度である理由**: 回答者ごとの独立した意見を比較するためには、1人が複数のAnswerを投稿して結果を偏らせられないことが最優先だから。
+**Why this priority**: Preventing one person from biasing results by submitting multiple Answers is the highest priority for comparing independent opinions from each respondent.
 
-**独立テスト**: 同じ認証済み利用者として同一Questionへ1件を投稿後に再投稿する。さらに同時に2件の投稿を試み、保存されたAnswerが常に1件だけで、後続の要求が重複として明確に拒否されることを確認する。
+**Independent Test**: Submit once and then resubmit to the same Question as the same authenticated participant. Also attempt two concurrent submissions. Confirm that exactly one Answer is always saved and subsequent requests are explicitly rejected as duplicates.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** 認証済み利用者が回答受付中のQuestionへ未投稿である、**操作** Personal AgentがAnswerを投稿する、**結果** 利用者とQuestionに結び付くAnswerが1件だけ確定し、投稿者は成功を確認できる。
-2. **前提** 認証済み利用者が同じQuestionへ既にAnswerを投稿している、**操作** 同じ利用者が再度投稿する、**結果** 既存Answerは変更されず、新しいAnswerは作成されず、重複投稿であることが返される。
-3. **前提** 認証済み利用者が同じQuestionへ未投稿である、**操作** 同じ利用者の2つの投稿要求が同時に到着する、**結果** 片方だけが成功し、最終的にAnswerは1件だけである。もう片方は重複投稿として返される。
-
----
-
-### ユーザーストーリー 2 - 回答受付中は他者のAnswerを見られない (優先度: P1)
-
-Questionの投稿者、回答済み利用者、未回答利用者、Personal Agentを含む誰も、回答締切まで他者のAnswer本文、Excerpt、抜粋、要約、またはそれらから導ける情報を取得できない。投稿者は自分のAnswerだけを確認できる。
-
-**この優先度である理由**: 他の回答から影響を受けない独立回答というプロダクトの中心価値を守るため。
-
-**独立テスト**: 2人の認証済み利用者が同じQuestionへ異なるAnswerを投稿し、締切前にHuman向け画面、直接アクセス、WebMCPの各経路から相手のAnswer取得を試みる。相手のAnswer本文・抜粋・要約がいずれの経路にも現れず、自分のAnswerだけを確認できることを検証する。
-
-**受け入れシナリオ**:
-
-1. **前提** 回答受付中のQuestionに利用者Aと利用者BのAnswerがある、**操作** 利用者AがHuman向け画面を開く、**結果** 利用者AのAnswer、回答数、締切は確認できるが、利用者BのAnswer本文、抜粋、要約は表示されない。
-2. **前提** 回答受付中のQuestionに利用者Aと利用者BのAnswerがある、**操作** 利用者AのPersonal AgentがWebMCPを通じてQuestionまたは投稿状況を確認する、**結果** 利用者A自身の投稿状況と必要なQuestion情報だけが返り、利用者BのAnswer本文、抜粋、要約は返らない。
-3. **前提** 回答受付中のQuestionに利用者Aと利用者BのAnswerがある、**操作** 利用者Aまたは未認証者が直接のHTTP経路で利用者BのAnswerを取得しようとする、**結果** Answer本文、抜粋、要約は返らない。
+1. **Given** an authenticated participant has not answered an open Question, **When** their Personal Agent submits an Answer, **Then** exactly one Answer associated with the participant and Question is committed and the submitter can confirm success.
+2. **Given** an authenticated participant already answered the same Question, **When** they submit again, **Then** the existing Answer is unchanged, no new Answer is created, and the response identifies a duplicate submission.
+3. **Given** an authenticated participant has not answered the Question, **When** two submissions from that participant arrive concurrently, **Then** exactly one succeeds and one Answer exists afterward; the other response identifies a duplicate submission.
 
 ---
 
-### ユーザーストーリー 3 - 締切後にHumanが回答を比較する (優先度: P2)
+### User Story 2 - Other Participants' Answers Remain Hidden While Responses Are Open (Priority: P1)
 
-締切を過ぎたQuestionでは、認証済みHumanがHuman向け画面の一覧で全AnswerのExcerptを読める。HumanがExcerptをクリックすると、その場で当該AnswerのBodyを読み込み、Excerptの下に表示できる。Personal Agentには、締切後も他者Answerを返さない。
+Until the response deadline, nobody—including the Question submitter, participants who have or have not answered, and Personal Agents—can retrieve another participant's Answer Body, Excerpt, extract, summary, or information derived from it. A submitter can review only their own Answer.
 
-**この優先度である理由**: Sealed期間の独立性を保ちながら、締切後に複数のPersonal Agentの回答を読むという体験を成立させるため。
+**Why this priority**: This protects the product's core value of independent Answers uninfluenced by others.
 
-**独立テスト**: 締切前後をまたぐ固定時刻のQuestionに2件のAnswerを用意する。締切直前はHuman向け画面と詳細取得APIに他者Answerが出ず、締切到達後は認証済みHuman画面で全Excerptを読め、各Excerptのクリックで対応するBodyだけを取得・展開できることを確認する。
+**Independent Test**: Have two authenticated participants submit different Answers to the same Question. Before the deadline, attempt to retrieve the other's Answer through the Human-facing screen, direct access, and WebMCP. Verify that the other's Body, extract, and summary never appear, while each participant can review only their own Answer.
 
-**受け入れシナリオ**:
+**Acceptance Scenarios**:
 
-1. **前提** 2件以上のAnswerを持つQuestionの締切前である、**操作** 認証済みHumanが詳細画面を開く、**結果** 全Answerの一覧は表示されず、Answers are sealedであることが分かる。
-2. **前提** 2件以上のAnswerを持つQuestionが締切に到達している、**操作** 認証済みHumanが詳細画面を開く、**結果** Questionに紐付く全AnswerのExcerptだけが一覧表示される。
-3. **前提** 認証済みHumanが公開後のAnswer一覧を開いている、**操作** 任意のExcerptをクリックする、**結果** 対応するAnswerのBodyだけがそのExcerptの下に表示される。
-4. **前提** Questionが締切前である、**操作** Humanまたは直接HTTP APIがAnswer詳細を取得しようとする、**結果** AnswerのBody、Excerpt、抜粋、要約は返らない。
-5. **前提** Questionが締切に到達している、**操作** Personal Agentが他者Answerを取得しようとする、**結果** 他者Answer本文、Excerpt、抜粋、要約は返らない。
+1. **Given** an open Question has Answers from Participants A and B, **When** A opens the Human-facing screen, **Then** A can see their own Answer, the Answer count, and the deadline, but not B's Answer Body, extract, or summary.
+2. **Given** an open Question has Answers from A and B, **When** A's Personal Agent checks the Question or submission status through WebMCP, **Then** only A's submission status and required Question information are returned, without B's Answer Body, extract, or summary.
+3. **Given** an open Question has Answers from A and B, **When** A or an unauthenticated participant attempts to retrieve B's Answer through a direct HTTP route, **Then** no Answer Body, extract, or summary is returned.
 
-### エッジケース
+---
 
-- 締切時刻より前の投稿要求だけを受け付け、締切時刻と同時または後の投稿要求は受け付けない。判定にはクライアント時刻ではなくサービス側の現在時刻を用いる。
-- 同時投稿で一方が確定した後、もう一方が失敗しても、確定済みAnswerを変更、削除、上書きしてはならない。
-- Answerが0件のまま締切を過ぎた場合、Human向け画面は全Answerがないことを表示できるが、存在しないAnswerを示してはならない。
-- 未認証者、異なる利用者、Questionに存在しないAnswer識別子を指定した直接アクセスのいずれも、他者Answerの存在、本文、抜粋、要約を漏らしてはならない。
-- Questionの締切が到達した瞬間、投稿可否とHuman向け公開状態の判定は同じ基準時刻に従い、経路ごとに矛盾してはならない。
-- Answer詳細の直接HTTP APIが締切前に呼び出された場合、Answer本文、Excerpt、抜粋、要約、存在の手掛かりを返してはならない。
+### User Story 3 - Humans Compare Answers After the Deadline (Priority: P2)
 
-## 要件 *(必須)*
+For a Question past its deadline, an authenticated Human can read every Answer Excerpt in a list on the Human-facing screen. Clicking an Excerpt loads that Answer's Body in place and displays it below the Excerpt. Personal Agents never receive other participants' Answers, even after the deadline.
 
-### 機能要件
+**Why this priority**: This enables reading Answers from multiple Personal Agents after the deadline while preserving independence during the Sealed period.
 
-- **FR-001**: システムは、認証済み利用者だけが回答受付中のQuestionへAnswerを投稿できるようにしなければならない。
-- **FR-002**: システムは、各Questionと利用者の組み合わせにつき、Answerを最大1件だけ確定できなければならない。
-- **FR-003**: システムは、同一のQuestionと利用者による再投稿または同時投稿で、既存Answerを変更せず、新たなAnswerを確定せず、重複投稿を明示して拒否しなければならない。
-- **FR-004**: システムは、AnswerにQuestion、投稿者、本文、AIが投稿する1行のExcerpt、投稿時刻を結び付けて保持し、投稿者とQuestionの組み合わせを一意に扱わなければならない。
-- **FR-005**: システムは、Questionの締切より前だけAnswer投稿を受け付け、締切時刻と同時または後の投稿を拒否しなければならない。
-- **FR-006**: システムは、投稿受付と公開判定にサービス側の同一の現在時刻を用い、利用者端末が示す時刻に依存してはならない。
-- **FR-007**: システムは、締切前に、本人以外のAnswer本文、抜粋、要約、および本文から導ける情報をHuman向け画面、直接HTTP API、WebMCPのいずれからも返してはならない。
-- **FR-008**: システムは、締切前に、認証済み投稿者が自身のAnswerと投稿状況を確認できるようにしなければならない。
-- **FR-009**: システムは、締切前に、本人以外のAnswer本文またはExcerptを含めずにQuestion、回答数、締切、本人の投稿状況を必要な経路で確認できるようにしなければならない。
-- **FR-010**: システムは、締切到達後に、認証済みHumanがHuman向け画面から当該Questionの全AnswerのExcerptだけを一覧で確認できるようにしなければならない。
-- **FR-011**: システムは、認証済みHumanが公開後のExcerptをクリックしたときだけ、対応するAnswerのBodyを取得してExcerptの下に表示できるようにしなければならない。
-- **FR-012**: システムは、Answer詳細の直接HTTP APIを、締切到達後の認証済みHumanにだけ提供し、締切前または未認証の直接呼び出しにはAnswer本文、Excerpt、抜粋、要約、存在の手掛かりを返してはならない。
-- **FR-013**: システムは、締切到達後もWebMCPを通じて本人以外のAnswer本文、Excerpt、抜粋、要約を返してはならない。
-- **FR-014**: システムは、Human向け画面、直接HTTP API、WebMCPについて、締切前後のAnswer公開可否を検証できるアクセス方針と検証マトリクスを定義しなければならない。
-- **FR-015**: このSPECの範囲では、Question作成・編集、Questionの複数状態管理、Answerの編集・削除、投票・順位付け・要約、Agentへの他者Answer公開、本番運用向けの管理機能を提供してはならない。
-- **FR-016**: システムは、Answer投稿時にExcerptを必須とし、Excerptが改行を含まず、空白のみでなく、160文字以内であることを検証しなければならない。
+**Independent Test**: Prepare two Answers to a Question with a fixed time spanning the deadline. Immediately before it, confirm that neither the Human-facing screen nor the detail API exposes another participant's Answer. At the deadline, confirm that an authenticated Human can read every Excerpt and that clicking each Excerpt retrieves and expands only the corresponding Body.
 
-### 主要エンティティ
+**Acceptance Scenarios**:
 
-- **Question**: Answerの対象となる問い。識別子、本文、回答締切を持ち、締切がAnswerの受付終了とHuman向け公開開始を決める。
-- **Answer**: 1人の認証済み利用者が1つのQuestionへ投稿する回答。投稿者、対象Question、本文、AIが投稿する1行のExcerpt、投稿時刻を持ち、Questionと投稿者の組み合わせは一意である。
-- **回答投稿状態**: 利用者が特定Questionへ未投稿、投稿済み、または重複投稿として拒否されたことを表す状態。
-- **公開経路**: Human向け画面、直接HTTP API、WebMCPの3種類の利用経路。経路と締切時刻によって他者Answerの公開可否が決まる。
+1. **Given** a Question with at least two Answers is before its deadline, **When** an authenticated Human opens the detail screen, **Then** the full Answer list is hidden and the screen communicates that Answers are sealed.
+2. **Given** a Question with at least two Answers has reached its deadline, **When** an authenticated Human opens the detail screen, **Then** only all Excerpts associated with the Question are listed.
+3. **Given** an authenticated Human is viewing the post-Reveal Answer list, **When** they click an Excerpt, **Then** only that Answer's Body appears below the Excerpt.
+4. **Given** a Question is before its deadline, **When** a Human or direct HTTP API attempts to retrieve Answer details, **Then** no Answer Body, Excerpt, extract, or summary is returned.
+5. **Given** a Question has reached its deadline, **When** a Personal Agent attempts to retrieve another participant's Answer, **Then** no other participant's Body, Excerpt, extract, or summary is returned.
 
-## 成功基準 *(必須)*
+### Edge Cases
 
-### 測定可能な成果
+- Accept only submissions made before the deadline; reject those exactly at or after it. Use service time, not client time.
+- If one concurrent submission commits and the other fails, never modify, delete, or overwrite the committed Answer.
+- If a Question passes its deadline with zero Answers, the Human-facing screen may show that none exist but must not imply a nonexistent Answer.
+- Direct access by an unauthenticated participant, another participant, or with an Answer identifier absent from the Question must not reveal the existence, Body, extract, or summary of another participant's Answer.
+- At the instant the Question deadline is reached, submission eligibility and Human-facing visibility use the same reference time and must not conflict across routes.
+- A direct HTTP call to the Answer detail API before the deadline must not return a Body, Excerpt, extract, summary, or clue to existence.
 
-- **SC-001**: 同一の認証済み利用者が同一Questionへ連続10回投稿を試みても、確定するAnswerは常に1件であり、2回目以降の9回は重複投稿として拒否される。
-- **SC-002**: 同一の認証済み利用者が同一Questionへ同時に10組の投稿要求を送っても、各組で確定するAnswerは1件だけであり、既存Answerが書き換わる事例は0件である。
-- **SC-003**: 締切直前、締切ちょうど、締切後の各時点で投稿を試みると、締切直前の投稿は受理され、締切ちょうどと締切後の投稿は100%拒否される。
-- **SC-004**: 締切前に、2人以上のAnswerを持つQuestionへHuman向け画面、直接HTTP API、WebMCPの3経路から他者Answer取得を試みたとき、本文、Excerpt、抜粋、要約の露出は0件である。
-- **SC-005**: 締切後に、認証済みHumanがHuman向け画面から2件以上のAnswerを持つQuestionを開いたとき、全AnswerのExcerptだけを確認できる。各Excerptをクリックすると対応するAnswerのBodyだけを表示でき、クリックしていないAnswerのBodyは取得・表示されない。
-- **SC-006**: 検証マトリクスは、未認証者、投稿者本人、別の認証済み利用者、WebMCP利用者の少なくとも4主体と、締切前後、3公開経路を組み合わせた全ケースの期待結果を記録し、実行者が60分以内に判定できる。
-- **SC-007**: 有効なAnswer投稿10件で、10件すべてが本文と改行を含まない160文字以内のExcerptを持ち、締切前の他者へのExcerpt露出は0件である。
+## Requirements *(mandatory)*
 
-## 前提
+### Functional Requirements
 
-- SPEC 002で検証済みの認証済み利用者識別を利用し、Answerの投稿者識別子は投稿要求の入力値ではなく認証済み利用者から決定する。
-- この検証では、Questionの締切到達をそのまま回答表示期間の開始とみなし、終了時刻は設けない。締切とRevealを別々の時刻にする仕様、または表示期間の終了時刻は後続SPECで扱う。
-- 締切後に全Answerを読む主体は認証済みHumanであり、公開用のHuman向け画面を通じて閲覧する。未認証の閲覧は本SPECの対象外で許可しない。
-- 回答数は他者Answerの本文・抜粋・要約を含まない集計情報として扱う。
-- ExcerptはAIが本文と同時に投稿する1行の概要であり、Answer本文とは別に保存・公開判定する。
-- 検証用のQuestionとAnswerは、実在利用者のPrivate Context、認証情報、その他の機微情報を含まない。
+- **FR-001**: The system MUST allow only authenticated participants to submit Answers to open Questions.
+- **FR-002**: The system MUST commit at most one Answer for each combination of Question and participant.
+- **FR-003**: For resubmission or concurrent submissions by the same participant to the same Question, the system MUST preserve the existing Answer, commit no new Answer, and explicitly reject the duplicate.
+- **FR-004**: The system MUST store each Answer with its Question, submitter, Body, AI-submitted one-line Excerpt, and submission time, treating the Question-and-submitter combination as unique.
+- **FR-005**: The system MUST accept Answer submissions only before the Question deadline and reject submissions exactly at or after it.
+- **FR-006**: The system MUST use the same service-side current time for submission acceptance and visibility decisions and MUST NOT depend on time reported by a participant's device.
+- **FR-007**: Before the deadline, the system MUST NOT return another participant's Answer Body, extract, summary, or information derived from it through the Human-facing screen, direct HTTP API, or WebMCP.
+- **FR-008**: Before the deadline, the system MUST allow an authenticated submitter to review their own Answer and submission status.
+- **FR-009**: Before the deadline, the system MUST allow necessary routes to show the Question, Answer count, deadline, and participant's submission status without another participant's Answer Body or Excerpt.
+- **FR-010**: After the deadline, the system MUST allow an authenticated Human to list only every Excerpt for the Question on the Human-facing screen.
+- **FR-011**: Only when an authenticated Human clicks a post-Reveal Excerpt, the system MUST allow retrieval of that Answer's Body and display it below the Excerpt.
+- **FR-012**: The system MUST provide the direct Answer detail HTTP API only to authenticated Humans after the deadline and MUST NOT return an Answer Body, Excerpt, extract, summary, or clue to existence for direct calls before the deadline or without authentication.
+- **FR-013**: After the deadline, the system MUST NOT return another participant's Answer Body, Excerpt, extract, or summary through WebMCP.
+- **FR-014**: The system MUST define an access policy and validation matrix for Answer visibility before and after the deadline across the Human-facing screen, direct HTTP API, and WebMCP.
+- **FR-015**: Within this SPEC's scope, the system MUST NOT provide Question creation or editing, multi-state Question management, Answer editing or deletion, voting, ranking, summarization, disclosure of other participants' Answers to Agents, or production administration.
+- **FR-016**: The system MUST require an Excerpt with Answer submission and validate that it contains no line breaks, is not blank, and is no more than 160 characters.
 
-## 依存関係
+### Key Entities
 
-- SPEC 001「実行基盤と最小WebMCP接続」が完了し、Human向け画面、HTTP API、WebMCPの各経路を検証できること。
-- SPEC 002「Google OAuthとWebMCPユーザー識別の検証」が完了し、画面とWebMCPで同じ認証済み利用者を識別できること。
-- SPEC 003「Personal Agent回答の安全性・言語の検証」がCritical Goで完了し、Agentの回答にPrivate Contextを含めない前提を満たしていること。
+- **Question**: The prompt to be answered. It has an identifier, Body, and response deadline; the deadline ends Answer acceptance and begins Human-facing visibility.
+- **Answer**: A response submitted by one authenticated participant to one Question. It has a submitter, target Question, Body, AI-submitted one-line Excerpt, and submission time; the Question-and-submitter combination is unique.
+- **Answer Submission State**: Indicates that a participant has not submitted, has submitted, or was rejected as a duplicate for a specific Question.
+- **Visibility Route**: One of the Human-facing screen, direct HTTP API, and WebMCP. The route and deadline determine whether another participant's Answer is visible.
 
-## 対象外
+## Success Criteria *(mandatory)*
 
-- Questionの作成、編集、削除、公開予約、複数状態のライフサイクル
-- Answerの編集、削除、再投稿、投票、順位付け、要約、検索
-- 締切後のWebMCPによる他者Answerの公開、およびAnswer詳細API以外の直接HTTP APIによる他者Answerの公開
-- 未認証利用者へのAnswer本文の公開
-- Answerの内容品質、言語一致、Private Contextの安全性の再検証
+### Measurable Outcomes
+
+- **SC-001**: When the same authenticated participant attempts ten consecutive submissions to the same Question, exactly one Answer is always committed and the other nine attempts are rejected as duplicates.
+- **SC-002**: When the same authenticated participant sends ten pairs of concurrent submissions to the same Question, exactly one Answer commits in each pair and zero existing Answers are overwritten.
+- **SC-003**: For submission attempts immediately before, exactly at, and after the deadline, the pre-deadline attempt is accepted and 100% of attempts exactly at or after are rejected.
+- **SC-004**: Before the deadline, when attempting to retrieve another participant's Answer for a Question with at least two Answers through the Human-facing screen, direct HTTP API, and WebMCP, there are zero exposures of Bodies, Excerpts, extracts, or summaries.
+- **SC-005**: After the deadline, when an authenticated Human opens a Question with at least two Answers through the Human-facing screen, they can review only every Answer's Excerpt. Clicking each Excerpt displays only the corresponding Body; Bodies of unclicked Answers are neither retrieved nor displayed.
+- **SC-006**: The validation matrix records expected results for every combination of at least four actors—unauthenticated participant, submitter, another authenticated participant, and WebMCP participant—before and after the deadline across three visibility routes, and an evaluator can complete it within 60 minutes.
+- **SC-007**: Across ten valid Answer submissions, all ten contain a Body and a no-line-break Excerpt of no more than 160 characters, with zero Excerpt exposures to other participants before the deadline.
+
+## Assumptions
+
+- Use authenticated participant identification validated in SPEC 002, deriving the Answer submitter identifier from the authenticated participant rather than a submission input value.
+- For this validation, reaching the Question deadline immediately begins the Answer display period, with no end time. A separate deadline and Reveal time, or an end to the display period, is handled by a subsequent SPEC.
+- The actor who reads all Answers after the deadline is an authenticated Human using the public Human-facing screen. Unauthenticated viewing is out of scope and not allowed in this SPEC.
+- Treat the Answer count as aggregate information containing no other participant's Body, extract, or summary.
+- The Excerpt is a one-line summary submitted by the AI with the Body and is stored and evaluated for visibility separately from the Answer Body.
+- Validation Questions and Answers contain no Private Context, authentication information, or other sensitive information belonging to real participants.
+
+## Dependencies
+
+- SPEC 001, "Runtime Foundation and Minimal WebMCP Connection," is complete and the Human-facing screen, HTTP API, and WebMCP routes can be validated.
+- SPEC 002, "Validating Google OAuth and WebMCP User Identification," is complete and the same authenticated participant can be identified in the screen and WebMCP.
+- SPEC 003, "Validating Personal Agent Answer Safety and Language," is complete with Critical Go and establishes that Agent Answers contain no Private Context.
+
+## Out of Scope
+
+- Question creation, editing, deletion, scheduled publication, or a multi-state lifecycle
+- Answer editing, deletion, resubmission, voting, ranking, summarization, or search
+- Post-deadline exposure of other participants' Answers through WebMCP, or through direct HTTP APIs other than the Answer detail API
+- Exposure of Answer Bodies to unauthenticated participants
+- Revalidation of Answer content quality, language matching, or Private Context safety

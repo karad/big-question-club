@@ -1,17 +1,15 @@
-# 検証ガイド: 回答公開体験とチャレンジ向け視覚設計
+# Verification Guide: Answer Reveal Experience and Challenge Visual Design
 
-このガイドは[質問一覧と回答公開の画面契約](./contracts/browsing-and-reveal.md)および[質問作成と所有者削除の画面・操作契約](./contracts/question-management.md)を、実装完了後に自動テストと実ブラウザーで検証する手順である。
+This guide verifies the [Question Lists and Answer Reveal Contract](./contracts/browsing-and-reveal.md) and [Question Creation and Owner Deletion Contract](./contracts/question-management.md) after implementation using automated tests and a real browser.
 
-## 前提
+## Prerequisites
 
-- Node.js 22.13以上または24以上とnpmが利用できる。
-- 依存関係が`npm ci`で導入済みである。
-- ローカルD1へ既存Migrationが適用済みである。
-- Google認証を使える作成者、回答者A、回答者Bの3アカウントを用意する。
-- `DRAFT`、`OPEN`、`CLOSED`、`REVEALED`状態と、回答0件・1件・2件以上の質問を用意できる。
-- 他者回答の本文と要約文には、露出検知用の一意な秘密値を使う。
+- Node.js 22.13+ or 24+, npm dependencies installed with `npm ci`, and migrated local D1.
+- Three Google-authenticated accounts: creator, respondent A, and respondent B.
+- Questions in `DRAFT`, `OPEN`, `CLOSED`, and `REVEALED`, with zero, one, and at least two Answers.
+- Unique secret markers in other users' bodies and excerpts for exposure detection.
 
-## 資材生成と自動品質ゲート
+## Asset Generation and Automated Quality Gates
 
 ```bash
 npm run generate:icons
@@ -25,132 +23,103 @@ npm run db:schema:check
 git diff --exit-code -- src/generated/icons.ts
 ```
 
-期待結果:
+All commands must exit 0; `client-dist/client.js` and `client-dist/styles.css` must exist; icon regeneration must be clean; production Worker assets must contain no React runtime. The Agent prompt must specify ChatGPT's built-in browser rather than an existing Chrome tab, preserve five WebMCP tools and non-exposure, and direct `get_question`/`submit_answer` to submit the best proxy answer without asserting unknown facts or asking solely because no explicit personal view exists.
 
-- すべてのコマンドが終了コード0となる。
-- `client-dist/client.js`と`client-dist/styles.css`が生成される。
-- アイコン再生成後に`src/generated/icons.ts`の差分が残らない。
-- 本番Worker資材へReactとReact DOMの実行コードが含まれない。
-- Agent依頼PromptはChatGPTの組み込みブラウザを使い既存Chrome Tabを使わないよう明示し、既存の5つのWebMCPツール登録と他者回答非露出契約が変化しない。明示的な個人見解がない場合の`get_question`と`submit_answer`は、未確認事実を断定しない最善の代理回答を作成・投稿し、その不足だけを理由に確認質問しない指示を返す。
-
-## ローカル起動
+## Local Startup
 
 ```bash
 npm run dev
 ```
 
-表示されたローカルURLをChromeで開く。
+Open the displayed local URL in Chrome.
 
-## 1. ホーム
+## 1. Home
 
-1. `OPEN`状態を6件以上、`REVEALED`状態を11件以上用意する。
-2. ホームで`Open questions`が締切順に最大5件、`Results`が公開時刻の新しい順に最大10件であることを確認する。
-3. 両区分の全件リンクが利用できることを確認する。
-4. 各回答受付中項目で、質問直下の1行に回答数と残り時間がアイコン付きで表示されることを確認する。
-5. 1件の残り時間を選択し、表示中の全質問が締切日時へ切り替わること、再選択で全件が残り時間へ戻ることを確認する。
-6. 未認証、認証済み未回答、認証済み回答済みで同じ質問項目を確認し、未回答者だけに依頼文開示操作が表示されることを確認する。
-7. 認証済み回答済みの場合だけ、緑色の`Answered`が封印・公開Tagの隣に表示され、未回答または未認証では回答状態Tagが表示されないことを確認する。
-8. 依頼文を開き、他項目が開かないこと、`Copy prompt`の成功・失敗通知、絶対URL、選択可能な全文を確認する。
-9. 一方の区分が空または取得失敗でも、他方の取得済み公開情報を誤って隠したり秘密値を表示したりしないことを確認する。
-10. `Open questions`ではCard面を選択しても遷移せず、`View question` Buttonだけが詳細へ遷移することを確認する。`Ask your personal agent`と`Copy prompt`が意図どおり動作することも確認する。
-11. `Results`では従来どおりCard面全体から詳細へ遷移できることを確認する。
+1. Prepare at least six `OPEN` and eleven `REVEALED` Questions.
+2. Confirm at most five deadline-ordered `Open questions` and ten newest-first `Results`, with complete-list links.
+3. Confirm each Open Card's one-line count/time icons and global remaining-time/deadline toggle.
+4. Across signed-out, unanswered, and answered states, only unanswered users get prompt disclosure; only answered users get green `Answered` beside the state tag.
+5. Confirm independent prompt disclosure, selectable absolute-URL text, and nearby copy success/failure.
+6. One empty or failed section must not hide the other or reveal secrets.
+7. Open Cards navigate only through `View question`; Agent/copy controls still work. Result Cards navigate through the entire Card.
 
-## 2. 質問一覧とページ移動
+## 2. Question Lists and Pagination
 
-1. 回答受付中一覧と公開済み一覧を開き、各ページが最大20件であることを確認する。
-2. 21件以上のデータで`Previous`、`Next`、現在ページ表示を確認する。
-3. 1ページ目と2ページ目に重複がなく、再読込後も順序が変わらないことを確認する。
-4. `page=0`、負数、小数、文字列、非常に大きな整数、範囲外ページを指定し、安全な空状態と1ページ目への導線を確認する。
-5. 回答受付中一覧でも、日時一括切替と依頼文開閉がホームと同じ規則で動作することを確認する。
-6. 認証済み利用者が回答済みのCardだけに`Answered`が表示され、未回答または未認証では回答状態Tagが表示されないことを確認する。
-7. 一覧の初期HTMLに回答本文・要約文・回答識別子・回答者の秘密値が含まれないことを確認する。
+1. Confirm at most 20 items per state list, and with 21+ records verify `Previous`, `Next`, current page, no overlap, and stable reload order.
+2. For zero, negative, decimal, text, huge, or out-of-range pages, confirm a safe empty state and page-1 action.
+3. Confirm Open-list deadline toggling and prompt disclosure match Home.
+4. Only answered authenticated Cards show `Answered`; no Answer body, excerpt, ID, respondent, or secret appears in initial list HTML.
 
-## 3. 回答公開と比較
+## 3. Reveal and Comparison
 
-1. 回答0件の`REVEALED`質問を認証済みで開き、`No answers were submitted.`を確認する。
-2. 回答一覧の冒頭に`All answers were submitted by signed-in participants. One answer per account.`が表示されることを確認する。
-3. 長さと内容が異なる回答を2件以上用意し、初回投稿時刻昇順、同時刻は識別子昇順で`Answer 1`から表示されることを確認する。
-4. 各回答に異なる匿名アイコンと`Authenticated participant`が表示され、再読込後も同じ質問内の対応が変わらないことを確認する。
-5. 同じ回答者による別質問の結果を開き、Google表示名、プロフィール画像、利用者ID、生のHash値、質問横断識別子が表示されないことを確認する。
-6. 本人の回答だけに緑色の`Your answer`が表示され、他者回答には表示されないことを確認する。
-7. 初期HTMLへ要約文だけが含まれ、本文秘密値と回答者利用者IDが含まれないことを確認する。
-8. `Answer 1`を開き、処理中状態、対応本文、展開状態を確認する。
-9. `Answer 2`を開き、`Answer 1`を開いたまま上下に比較できることを確認する。
-10. 閉じて再度開いた取得済み回答が不要な再取得を行わないことを確認する。
-11. 回答取得を失敗させ、対象項目だけに英語の再試行表示が出て他回答へ影響しないことを確認する。
-12. 未認証者、`OPEN`、`CLOSED`、別質問の回答識別子、WebMCPから同じ秘密値へアクセスし、すべて非公開であることを確認する。
+1. An authenticated zero-Answer Result shows `No answers were submitted.`.
+2. Confirm the explanation `All answers were submitted by signed-in participants. One answer per account.`.
+3. Prepare two different Answers and confirm `Answer 1` ordering by initial time then ID.
+4. Confirm distinct stable per-Question icons and `Authenticated participant`, with no Google name/image, user ID, raw hash, or cross-Question identifier.
+5. Only the current user's Answer shows green `Your answer`.
+6. Initial HTML contains excerpts but no bodies or respondent user IDs.
+7. Open Answer 1 and 2, confirm loading and correct bodies, simultaneous comparison, cached reopening, and item-local retry errors.
+8. Confirm the same secrets remain private to signed-out users, `OPEN`/`CLOSED`, wrong-Question IDs, and WebMCP.
 
-## 3a. 公開前の本人回答
+## 3a. Current User's Answer Before Reveal
 
-1. 回答済みの認証済み利用者として`OPEN`または`CLOSED`のQuestion詳細を開く。
-2. 緑色の`Answered` Tagと、本人のExcerpt・本文が表示されることを確認する。
-3. 同じQuestionへ投稿された他者回答のExcerpt、本文、回答識別子、回答者、個別時刻が初期HTMLに含まれないことを確認する。
-4. 未回答の認証済み利用者と本人回答状態の取得失敗時は、回答状態Tagが表示されないことを確認する。
+1. As an answered authenticated user, open `OPEN` or `CLOSED` Detail.
+2. Confirm green `Answered` and only the current user's excerpt/body.
+3. Confirm no other Answer excerpt, body, ID, respondent, or timestamp in HTML.
+4. Unanswered and indeterminate states show no answer-state tag.
 
-## 4. 質問作成と二重実行防止
+## 4. Creation and Duplicate Prevention
 
-1. 新規質問画面を通常時刻に開き、利用者の現地翌日0時が初期値になることを確認する。
-2. 現地23時台など翌日0時まで1時間未満の条件で、翌々日0時が初期値になることを確認する。
-3. 下書き保存を選び、質問が1件だけ`DRAFT`状態で作成され確認画面へ移動することを確認する。
-4. 新しいフォームで即時公開を選び、下書き確認を挟まず1件だけ`OPEN`状態で作成されることを確認する。
-5. 両操作で、最初の送信直後にボタンが無効化され処理中の英語文言が表示されることを確認する。
-6. 同じ要求のダブルクリック、同じ作成トークンの再送、遅延応答中の再操作を行い、質問が最大1件であることを確認する。
-7. 同じ作成トークンの内容または意図を変えて再送し、安全な競合となり既存質問の内容を漏らさないことを確認する。
-8. 入力エラー後に値と作成トークンが保たれ、修正後の再送が1件だけ作成することを確認する。
+1. Confirm next local midnight by default, or the following midnight when less than one hour away.
+2. Draft creates exactly one `DRAFT` and opens confirmation; immediate publish creates exactly one `OPEN` without confirmation.
+3. Both disable controls and show English progress immediately.
+4. Double-click, token replay, and delayed-response interaction create at most one Question.
+5. Replaying a token with changed content or intent yields a safe conflict without exposure.
+6. Input error preserves values/token, and corrected resubmission creates one record.
 
-## 5. 所有者削除
+## 5. Owner Deletion
 
-1. 作成者の`My Questions`と公開質問詳細で、自分の全状態の質問に削除操作があることを確認する。
-2. Card本体に質問抜粋、状態、回答数が表示され、削除展開領域には不可逆性の確認Checkboxと削除Buttonだけが表示されることを確認する。
-3. 確認なし、古い`expectedUpdatedAt`、非所有者、未認証、別Originからの要求が質問と回答を変更しないことを確認する。
-4. 回答2件以上を持つ質問を所有者として削除し、質問と関連回答が到達不能になり、他質問は残ることを確認する。
-5. `audit_logs`に`QUESTION_DELETED`が1件だけ残り、実行者、対象、成否、時刻が正しいことを確認する。
-6. 監査記録に質問本文、回答本文、要約文、回答者、Cookie、Token、OAuth値が含まれないことを確認する。
-7. 管理者削除の`ADMIN_QUESTION_DELETED`と既存管理操作が後退しないことを確認する。
+1. Confirm deletion for the owner across all states on My Questions and public Detail.
+2. Card shows excerpt/state/count; deletion area shows only irreversible checkbox and delete button.
+3. Missing confirmation, stale version, non-owner, signed-out, and cross-origin requests change nothing.
+4. Deleting a Question with at least two Answers makes it and its Answers unreachable while preserving other Questions.
+5. Exactly one body-free `QUESTION_DELETED` audit record has the correct actor, target, outcome, and time.
+6. Existing administrator deletion and operations do not regress.
 
-## 6. 視覚品質とアクセシビリティ
+## 6. Visual Quality and Accessibility
 
-1. ホーム、両一覧、質問詳細、作成、確認、`My Questions`を320、768、1280ピクセル相当と200%拡大で確認する。
-2. 意図しない横スクロール、文字の重なり、切れた主要操作がないことを確認する。
-3. 通常文字4.5対1以上、大きな文字と主要画面部品3対1以上のコントラスト比を確認する。
-4. キーボードだけで依頼文、コピー、日時切替、ページ移動、回答展開、下書き保存、公開、削除へ到達し、フォーカス位置が見えることを確認する。
-5. 意味のあるアイコンの英語名と、装飾アイコンの支援技術からの非表示を確認する。
-6. 動きの低減設定で装飾的な遷移が停止し、状態の意味が文字とアイコンで残ることを確認する。
-7. 一般利用者向け主要画面に`Signed in as`と生の利用者IDが表示されないことを確認する。
-8. 長い質問、要約文、回答、URL、HTMLに似た文字列が安全に折り返され、実行されないことを確認する。
-9. `My Questions`ではHeaderに同じ画面への`My Questions` Linkがなく、削除操作はゴミ箱アイコンで統一されていることを確認する。
-10. 管理画面トップから`Users`、`Questions`、`Answers`、`Audit log`の専用一覧へ移動し、各一覧がTable形式・1ページ20件であることを確認する。
-11. HomeのHero背景が右中央寄せ、非反復、不透明度30%で表示されることを確認する。
+1. Check Home, lists, Detail, create, confirmation, and My Questions at 320/768/1280 px and 200% zoom.
+2. Confirm no unintended horizontal scroll, overlap, clipped action, insufficient 4.5:1 text or 3:1 large/component contrast.
+3. Complete prompt, copy, toggle, pagination, expansion, draft, publish, and delete by keyboard with visible focus.
+4. Confirm meaningful icon names, decorative hiding, reduced-motion behavior, safe wrapping/escaping, and no `Signed in as` or raw user ID.
+5. On My Questions, confirm no duplicate Header link and trash icons for deletion.
+6. Confirm administration links to four 20-row table lists and the Home Hero uses a right-centered, nonrepeating, 30%-opacity background.
 
-## 7. 3分デモ
+## 7. Three-Minute Demo
 
-1. ホームの回答受付中質問から開始する。
-2. 依頼文を開いてコピーし、回答者Aのパーソナルエージェントに投稿させる。
-3. 再読込して回答数が0件から1件へ変わり、他者回答は封印されたままであることを示す。
-4. 回答者Bでも同じ質問へ投稿し、回答数が2件へ変わることを示す。
-5. 公開時刻後に質問詳細を再表示し、封印から公開への視覚変化を示す。
-6. 2件の本文を開いたまま相違点を読み比べる。
-7. 開始からここまでが3分以内であることを記録する。
+1. Start at an Open Question on Home; disclose/copy the prompt; have respondent A's Agent post.
+2. Reload to show count zero-to-one and sealing; repeat with respondent B to show two.
+3. After Reveal, show the visual transition and compare two expanded bodies.
+4. Record that the flow completes within three minutes.
 
-## 完了判定
+## Completion Criteria
 
-- 自動品質ゲートがすべて成功する。
-- ホーム、一覧、公開比較、作成2意図、二重実行防止、所有者削除の期待結果がすべて一致する。
-- 未認証者とWebMCPへの他者回答秘密値露出が0件である。
-- 対象画面幅、200%拡大、キーボード、動きの低減で主要導線を完了できる。
-- 3分デモを2件以上の異なる回答で再現できる。
-- 実行結果と未解決事項を`validation-record.md`へ記録する。
+- All automated gates pass; all expected Home/list/Reveal/create/replay/delete results match.
+- Other-user secret exposure to signed-out users and WebMCP is zero.
+- Primary flows work at target widths, 200% zoom, keyboard-only, and reduced motion.
+- The demo is reproducible with at least two distinct Answers.
+- Record results and unresolved items in `validation-record.md`.
 
-## 実装済み検証資材
+## Implemented Verification Assets
 
-- `tests/unit/question-deadline.test.ts`: 翌日・翌々日の現地午前0時を検証する。
-- `tests/unit/question-listing.test.ts`: ページ指定と総ページ計算の境界を検証する。
-- `tests/unit/form-submission-guard.test.ts`: 操作意図の保持と二重送信防止を検証する。
-- `tests/unit/revealed-answers.test.ts`: 回答本文の項目別遅延取得と再利用を検証する。
-- `tests/unit/anonymous-participant.test.ts`: 質問単位匿名アイコンの決定性、質問間分離、模様境界を検証する。
-- `tests/unit/question-card.test.ts`: 回答受付中Cardは`View question`だけ、Results CardはCard面全体から遷移する状態分岐を検証する。
-- `tests/integration/question-list.test.ts`: 20件単位のページ移動と範囲外表示を検証する。
-- `tests/integration/challenge-demo.test.ts`: HomeからReveal後の2回答比較までの非露出境界を検証する。
-- `tests/d1/question-management-repository.test.ts`: 作成トークンの冪等性、所有者・版条件付き削除、回答連鎖削除、監査を検証する。
+- `tests/unit/question-deadline.test.ts`: local midnight boundaries.
+- `tests/unit/question-listing.test.ts`: page parsing and counts.
+- `tests/unit/form-submission-guard.test.ts`: intent preservation and duplicate prevention.
+- `tests/unit/revealed-answers.test.ts`: item-local lazy retrieval/cache.
+- `tests/unit/anonymous-participant.test.ts`: deterministic per-Question icons.
+- `tests/unit/question-card.test.ts`: Open button-only versus Result Card-wide navigation.
+- `tests/integration/question-list.test.ts`: 20-item pages and out-of-range behavior.
+- `tests/integration/challenge-demo.test.ts`: Home-to-two-Answer Reveal non-exposure flow.
+- `tests/d1/question-management-repository.test.ts`: token idempotency, owner/version deletion, cascades, and audit.
 
-自動品質ゲートの実行結果と手動確認結果は[validation-record.md](./validation-record.md)へ記録する。
+Automated and manual results are recorded in [validation-record.md](./validation-record.md).

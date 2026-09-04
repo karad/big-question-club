@@ -1,48 +1,48 @@
-# 実装計画: Challenge Core閲覧フロー
+# Implementation Plan: Challenge Core Browsing Flow
 
-**ブランチ**: `009-answer-period-browsing` | **日付**: 2026-09-02 | **仕様**: [spec.md](./spec.md)
+**Branch**: `009-answer-period-browsing` | **Date**: 2026-09-02 | **Specification**: [spec.md](./spec.md)
 
-**入力**: `specs/009-answer-period-browsing/spec.md` の機能仕様
+**Input**: Feature specification at `specs/009-answer-period-browsing/spec.md`
 
-## 概要
+## Summary
 
-WebMCP ChallengeのCore Demoと公開運用の最低限を完成させるため、既存の単一Worker構成を維持し、HomeのOpen Question一覧、Question Detailの回答期間中状態、単一管理者向け管理画面、監査記録、コンテンツ削除、User BANを追加・整理する。SPEC 007のChatGPT組み込みブラウザ指定と既存Chrome Tab除外、現在のOriginへ追従するQuestion絶対URL入り確定済み1行Agent依頼Promptと、User自身の記述を優先し、明示的な個人見解がない場合は未確認の個人事実や既知の信条として断定しない最善の代理回答を作成・投稿するWebMCP instruction、SPEC 008のAnswer認可・Reveal最小表示を再利用する。個人見解不足だけを理由に確認質問をせず、初回Promptは投稿許可を含み追加Previewや承認は不要とする。管理者Emailは環境設定、認可はSession由来User、監査とBANはD1を正本としてUnit・HTTP・D1 Testで固定する。最終Visual DesignとReveal比較表現は必須のSPEC 010へ移す。
+To complete the minimum Core Demo and public operation requirements for the WebMCP Challenge, retain the existing single-Worker architecture while adding and organizing the Home Open Question list, the Question Detail state during the answer period, a single-administrator operations interface, audit records, content deletion, and user bans. Reuse SPEC 007's requirement to use ChatGPT's built-in browser and exclude existing Chrome tabs; its finalized one-line agent-request prompt containing an absolute Question URL that follows the current origin; and its WebMCP instruction to prioritize the user's own statements and create and submit the best proxy answer without asserting unverified personal facts or known beliefs when no explicit personal view is available. Do not ask a clarification question solely because personal context is insufficient; the initial prompt grants submission permission, so no additional preview or approval is required. Reuse SPEC 008's Answer authorization and minimal Reveal display. Configure the administrator email through the environment, derive authorization from the session user, and make D1 the source of truth for auditing and bans, with unit, HTTP, and D1 tests fixing these contracts. Move final visual design and Reveal comparison presentation to the required SPEC 010.
 
-## 技術コンテキスト
+## Technical Context
 
-**言語/バージョン**: TypeScript 6、Node.js 22.13以上または24以上（開発時）、ES2022
-**主要依存関係**: 既存のCloudflare Workers、Hono、Hono JSX、Vite、Better Auth 1.7、Drizzle ORM 0.45系、Wrangler、Vitest 4、WebMCP Imperative API。新規依存は追加しない。
-**保存先**: 既存Cloudflare D1の `user`、`session`、`questions`、`answers` に、`banned_users`、`audit_logs` と操作記録TriggerをMigrationで追加する。
-**テスト**: 表示状態・締切・回答数・管理設定のUnit Test、Home／Question Detail／管理認可・操作のHono Integration Test、Open一覧・監査・削除・BANのD1 Integration Test、既存SPEC 007・008回帰。
-**対象プラットフォーム**: Cloudflare Workers、Cloudflare D1、WebMCP対応Chrome、モダンブラウザー、ローカルMiniflare／workerd。
-**プロジェクト種別**: SSR、HTTP API、WebMCPを同一Workerで提供する単一Webアプリケーション。
-**性能目標**: ローカル検証でHomeとQuestion Detailの初期HTMLを各2秒以内に返し、Home一覧を1回の集計Queryで取得する。
-**制約**: 1要求でサービス時刻を1回だけ取得する。`OPEN` と `CLOSED` では一般画面へ他者Answerを取得・表示・埋め込みしない。管理画面と操作は環境設定Emailに一致する1人だけへ許可し、認可後はprivate no-storeにする。一般画面から管理画面へLinkせず、未認証・権限外・設定不備には通常の404を返す。監査記録へ本文・Excerpt・認証秘密を複製しない。BAN時はSessionを失効し、Session作成HookでもBANを拒否する。`REVEALED` はSPEC 008を後退させない。アプリ表示文言・コメント・識別子は英語、SpecKit文書は日本語とする。
-**規模/範囲**: 9ユーザーストーリー、Home、Question Detail、管理画面、4管理一覧、Question／Answer削除、User BAN／解除、監査記録、認可・障害状態。Visual Design、専用Login、My Questions再設計、複数Role、包括的Accessibilityは対象外。
+**Language/Version**: TypeScript 6, Node.js 22.13 or later or 24 or later for development, ES2022
+**Primary Dependencies**: Existing Cloudflare Workers, Hono, Hono JSX, Vite, Better Auth 1.7, Drizzle ORM 0.45 series, Wrangler, Vitest 4, and the WebMCP Imperative API. Add no new dependencies.
+**Storage**: Add `banned_users`, `audit_logs`, and operation-recording triggers by migration to the existing Cloudflare D1 `user`, `session`, `questions`, and `answers` tables.
+**Testing**: Unit tests for display state, deadline, answer count, and administration settings; Hono integration tests for Home, Question Detail, administrator authorization, and operations; D1 integration tests for the Open list, audit, deletion, and bans; and regression coverage for existing SPEC 007 and 008 behavior.
+**Target Platform**: Cloudflare Workers, Cloudflare D1, WebMCP-capable Chrome, modern browsers, and local Miniflare/workerd.
+**Project Type**: A single web application providing SSR, HTTP APIs, and WebMCP from one Worker.
+**Performance Goals**: Return the initial HTML for Home and Question Detail within two seconds each during local verification, and retrieve the Home list with one aggregate query.
+**Constraints**: Obtain service time only once per request. In `OPEN` and `CLOSED`, do not retrieve, display, or embed other users' Answers in public screens. Allow the administration interface and operations only to one user matching the environment-configured email, and apply private no-store after authorization. Do not link to the administration interface from public screens, and return an ordinary 404 for unauthenticated users, unauthorized users, and configuration failures. Do not duplicate body text, excerpts, or authentication secrets in audit records. Invalidate sessions when banning a user, and reject banned users in the session-creation hook. Do not regress SPEC 008 behavior for `REVEALED`. Application text, comments, and identifiers are English; SpecKit documents are Japanese.
+**Scale/Scope**: Nine user stories covering Home, Question Detail, the administration interface, four administration lists, Question/Answer deletion, user ban/unban, audit records, authorization, and failure states. Visual design, a dedicated Login page, redesign of My Questions, multiple roles, and comprehensive accessibility are out of scope.
 
-## 構成原則チェック
+## Constitution Check
 
-`constitution.md` は未確定テンプレートのため、`AGENTS.md`、機能仕様、既存設計をゲートとする。
+Because `constitution.md` remains an unfinalized template, use `AGENTS.md`, the feature specification, and the existing design as gates.
 
-- 表示状態、回答数単複、残り時間はUnit Test可能な純粋関数として境界を固定する。
-- Question状態は既存 `getQuestionState`、本人はBetter Auth Session、永続化は既存RepositoryとD1を唯一のSource of Truthとする。
-- Open一覧の絞り込み・順序・集計はD1 Integration Test、認証からSSRまでの導線はIntegration Testで保証する。
-- RouteはUser IDを入力から受けず、Session由来本人と要求単位のサービス時刻だけで表示状態を決める。
-- Home投影にAnswer本文・Excerpt・Userを含めず、Question本文と本人Answerを未信頼テキストとして扱う。
-- 既存SPEC 007・008の安全契約を再利用し、短期都合で弱めない。
-- 管理者判定はEmailの入力値やURL parameterを信用せず、環境設定とSession UserのDB情報をRepositoryで比較する。
-- Login／LogoutとQuestion／Answer変更はDB Triggerで監査し、Route追加漏れや直接Repository利用でも記録を落とさない。
-- 管理削除・BANは対象変更と監査記録を同一D1 Batchへ含め、部分成功を避ける。
-- BANは既存Session削除と新規Session作成前Hookの両方で強制する。
-- アプリ表示文言、コメント、識別子は英語、SpecKit成果物は日本語で作成し、重要判断は `USE_CODEX.md` に記録する。
+- Fix display state, singular/plural answer counts, and remaining time at boundaries through unit-testable pure functions.
+- Use the existing `getQuestionState` for Question state, Better Auth sessions for identity, and the existing repositories and D1 as the sole source of truth for persistence.
+- Verify Open-list filtering, ordering, and aggregation with D1 integration tests, and verify the flow from authentication through SSR with integration tests.
+- Routes must not accept a user ID from input; determine display state only from the session-derived identity and one request-scoped service-time snapshot.
+- Do not include Answer bodies, excerpts, or users in the Home projection, and treat Question bodies and the current user's Answer as untrusted text.
+- Reuse the safety contracts from SPEC 007 and 008 without weakening them for short-term convenience.
+- Do not trust email input or URL parameters for administrator determination. Compare the environment configuration with the session user's database record in the repository.
+- Record login/logout and Question/Answer changes with database triggers so records are not lost when routes are omitted or repositories are invoked directly.
+- Include administrator deletion or ban changes and their audit record in the same D1 batch to avoid partial success.
+- Enforce bans both by deleting existing sessions and through the before-session-creation hook.
+- Write application text, comments, and identifiers in English; create SpecKit artifacts in Japanese; and record important decisions in `USE_CODEX.md`.
 
-**Phase 0前の判定**: 適合。Open一覧、状態Snapshot、閲覧者状態、既存認証導線、SPEC境界、テスト分担をPhase 0で解決する。
+**Assessment before Phase 0**: Compliant. Resolve the Open list, state snapshot, viewer states, existing authentication flow, SPEC boundaries, and test allocation in Phase 0.
 
-**Phase 1後の判定**: 適合。新規依存なし、追記型監査とBANの最小Schema、Session由来認可、既存Route／Viewの限定変更、Unit／HTTP／D1回帰により全ゲートを満たす。未解決事項はない。
+**Assessment after Phase 1**: Compliant. No new dependencies, minimal additive audit and ban schemas, session-derived authorization, limited changes to existing routes and views, and unit/HTTP/D1 regression coverage satisfy all gates. No unresolved items remain.
 
-## プロジェクト構成
+## Project Structure
 
-### この機能のドキュメント
+### Documentation for This Feature
 
 ```text
 specs/009-answer-period-browsing/
@@ -63,7 +63,7 @@ specs/009-answer-period-browsing/
 └── tasks.md
 ```
 
-### ソースコード
+### Source Code
 
 ```text
 src/
@@ -103,8 +103,8 @@ tests/
     └── question-browsing.test.ts
 ```
 
-**構成判断**: 既存の単一WorkerとRoute分割を維持する。画面非依存の表示値はDomain、一般Question操作は既存Repository、管理投影・変更は専用Admin Repository、HTTP認可はAdmin Route、SSRは画面別Viewへ置く。Better AuthのSession lifecycle HookとD1 Triggerを監査・BAN境界に使い、大規模な共通Layout化、Client再設計、別の認証方式は追加しない。
+**Structural Decision**: Preserve the existing single Worker and route separation. Put presentation values independent of any screen in the domain layer, general Question operations in the existing repository, administrator projections and mutations in a dedicated Admin Repository, HTTP authorization in the Admin Route, and SSR in per-screen views. Use Better Auth session lifecycle hooks and D1 triggers as the audit and ban boundaries. Do not add large-scale shared-layout changes, client redesigns, or another authentication method.
 
-## 複雑性の追跡
+## Complexity Tracking
 
-違反なし。新規依存やServiceを追加しない。`banned_users` と `audit_logs`、必要なIndex・Triggerを1 Migrationで追加する複雑性は、公開アプリの利用停止と追記型監査をDB正本で保証するために必要である。専用Admin Repository／Route／Viewは一般閲覧の非露出境界と管理者だけの全件投影を分離する最小構成である。
+No violations. No new dependencies or services are added. The complexity of adding `banned_users`, `audit_logs`, and necessary indexes and triggers in one migration is required to guarantee public-app suspension and append-only auditing with the database as source of truth. A dedicated Admin Repository, Route, and View are the minimum structure that separates the non-exposure boundary of public browsing from administrator-only full-record projections.

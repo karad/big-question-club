@@ -1,14 +1,14 @@
-# 検証ガイド: Challenge Core閲覧フロー
+# Verification Guide: Challenge Core Browsing Flow
 
-このガイドは [Core閲覧画面契約](./contracts/core-browsing.md) を自動テストで検証する。Manual TestはSPEC 010のVisual・Reveal実装後にCore Demo全体として実施する。
+This guide verifies the [Core Browsing Screen Contract](./contracts/core-browsing.md) with automated tests. Manual testing will be conducted for the overall Core Demo after the visual and Reveal implementation in SPEC 010.
 
-## 前提
+## Prerequisites
 
-- Node.js 22.13以上または24以上、npm、Wrangler、ローカルD1を利用できる。
-- `DRAFT`、`OPEN`、`CLOSED`、`REVEALED`、回答数0・1・複数のfixtureを利用できる。
-- 他者AnswerにはHTML露出を検出できる一意な秘密値を使う。
+- Node.js 22.13 or later or 24 or later, npm, Wrangler, and a local D1 environment are available.
+- Fixtures are available for `DRAFT`, `OPEN`, `CLOSED`, `REVEALED`, and answer counts of zero, one, and multiple.
+- Use a unique secret value in another user's Answer so HTML exposure can be detected.
 
-## 自動検証
+## Automated Verification
 
 ```bash
 npm run typecheck
@@ -22,47 +22,47 @@ npm run db:schema:check
 
 ## Home
 
-1. `OPEN` だけが締切順で表示されることを確認する。
-2. 本文、0・1・複数の回答数、sealed、絶対締切、非負の残り時間、Detail linkを確認する。
-3. Open 0件の空状態とRepository障害の503を区別する。
-4. Answer秘密値がHTMLに0件であることを確認する。
+1. Confirm that only `OPEN` Questions appear, ordered by deadline.
+2. Confirm the body, zero/one/multiple answer counts, sealed indicator, absolute deadline, nonnegative remaining time, and Detail link.
+3. Distinguish the empty state with zero Open Questions from a repository failure returning 503.
+4. Confirm that the Answer secret value appears zero times in the HTML.
 
 ## Question Detail
 
-1. 未ログイン、作成者、認証済み未回答、認証済み回答済みで同じ `OPEN` Questionを開く。
-2. 公開情報、sealed、Sign in、Agent Prompt、本人Answerが各状態で排他的に表示されることを確認する。未回答時のAgent Promptは `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}` の1行で、ChatGPTの組み込みブラウザを指定し、`{{questionUrl}}` が閲覧中OriginのQuestion絶対URLとなり、QueryとFragmentを含まないことを確認する。
-3. `get_question` が利用可能なUser Context参照元と根拠規則を固定instructionで返すことを確認する。関連するUser自身の記述がある場合は追加Previewや承認なしで投稿し、`get_my_submission` で成功を確認する。根拠不足の場合は一般論を投稿せずHumanへ質問することを確認する。
-4. 2人のAnswer投稿後に回答数が2へ増え、各利用者は本人Answerだけを確認できることを確認する。
-5. `CLOSED` で受付終了・sealed・新規Promptなしを確認する。
-6. Draftとmissingが同じ404になることを確認する。
-7. `REVEALED` でSPEC 008の最小閲覧が後退しないことを確認する。
-8. 締切直前・同時刻・直後で状態、残り時間、Prompt可否が一致することを確認する。
+1. Open the same `OPEN` Question while signed out, as its creator, as a signed-in user without an Answer, and as a signed-in user who has answered.
+2. Confirm that public information, sealed state, Sign in, Agent Prompt, and the current user's Answer are displayed mutually exclusively for the applicable states. For an unanswered Question, confirm that the one-line Agent Prompt is `Use ChatGPT's built-in browser, not an existing Chrome tab, to open this question, answer it using my relevant personal context, and submit via WebMCP: {{questionUrl}}`, specifies ChatGPT's built-in browser, and replaces `{{questionUrl}}` with an absolute Question URL using the currently viewed origin and containing neither query nor fragment.
+3. Confirm that `get_question` returns fixed instructions defining available user-context sources and evidence rules. When relevant user-authored statements exist, submit without an additional preview or approval and confirm success with `get_my_submission`. When evidence is insufficient, confirm that the Agent does not post generic advice and instead asks the human a question.
+4. After two users post Answers, confirm that the answer count increases to two and each user can see only their own Answer.
+5. For `CLOSED`, confirm that acceptance has ended, the content remains sealed, and no new Prompt appears.
+6. Confirm that Draft and missing Questions both return the same 404.
+7. Confirm that `REVEALED` does not regress the minimal browsing behavior from SPEC 008.
+8. Confirm that state, remaining time, and Prompt availability agree immediately before, exactly at, and immediately after the deadline.
 
-## 管理画面
+## Administration Interface
 
-1. `ADMIN_EMAIL`を管理用GoogleアカウントのEmailへ設定する。
-2. 未ログイン、一般User、管理者で `/club-operations` と4つの一覧Pathを開き、管理者だけが閲覧できることを確認する。他の2状態は通常の404と同じ応答で、管理画面を示す文言・リンクを含まないことを確認する。
-3. 管理画面トップにはUser、Question、Answer、Audit logの件数と専用一覧へのLinkだけがあり、個別Recordを含まないことを確認する。
-4. 4つの専用一覧がすべてTable形式で、1ページ20件となり、21件以上では`Previous`と`Next`で重複なく移動できることを確認する。
-5. 旧 `/admin` がRedirectせず404となり、一般画面に管理画面へのリンクがなく、管理画面に `noindex, nofollow` があることを確認する。
-6. Questionを削除し、配下Answerも消え、他QuestionとAudit logが残ることを確認する。
-7. 複数Answerから1件を削除し、Questionと他Answerが残り、回答数が減ることを確認する。
-8. 一般UserをBANし、既存Sessionが失効して再Loginも拒否されることを確認する。
-9. BANを解除し、次回Loginが成功することを確認する。
-10. 管理者自身のBAN、一般Userからの管理POST、存在しない対象の削除が安全に拒否されることを確認する。
+1. Set `ADMIN_EMAIL` to the email address of the Google account used for administration.
+2. Open `/club-operations` and each of its four list paths while signed out, as a regular user, and as the administrator. Confirm that only the administrator can view them. The other two states must return the same response as an ordinary 404, without text or links that reveal the administration interface.
+3. Confirm that the administration landing page contains only counts and dedicated list links for Users, Questions, Answers, and Audit Logs, and contains no individual records.
+4. Confirm that all four dedicated lists use tables with 20 records per page, and that when there are 21 or more records, `Previous` and `Next` navigate without duplicates.
+5. Confirm that the former `/admin` returns 404 without redirecting, public screens contain no link to the administration interface, and administration pages contain `noindex, nofollow`.
+6. Delete a Question and confirm that its child Answers are also deleted while other Questions and audit logs remain.
+7. Delete one Answer from among multiple Answers and confirm that the Question and other Answers remain and that the answer count decreases.
+8. Ban a regular user and confirm that existing sessions are invalidated and a subsequent login is rejected.
+9. Remove the ban and confirm that the next login succeeds.
+10. Confirm that banning the administrator, administration POSTs by a regular user, and deletion of a nonexistent target are rejected safely.
 
-## 監査記録
+## Audit Records
 
-1. Login、Logout、Question作成・更新・公開、Answer投稿・更新・削除を実行する。
-2. 各成功操作についてActor、Action、Target、Outcome、時刻が1件記録されることを確認する。
-3. Question本文とAnswer本文へ秘密値を入れ、Audit logの全列に秘密値、Excerpt、Cookie、Token、OAuth値が含まれないことを確認する。
-4. 管理者削除、BAN、BAN解除の記録が操作した管理者をActorとして残ることを確認する。
+1. Perform login, logout, Question create/update/publish, and Answer create/update/delete operations.
+2. Confirm that one record containing actor, action, target, outcome, and time is created for every successful operation.
+3. Put secret values in a Question body and an Answer body, then confirm that no audit-log column contains those secrets, excerpts, cookies, tokens, or OAuth values.
+4. Confirm that administrator deletion, ban, and unban records preserve the acting administrator as the actor.
 
-## 完了判定
+## Completion Criteria
 
-- HomeのOpen絞り込み、順序、回答数が100%一致する。
-- 閲覧者別表示とPrompt／本人Answerの排他性が100%一致する。
-- `OPEN`／`CLOSED` の他者秘密値露出が0件である。
-- 既存Question管理、Google認証、5 WebMCP Tool、Answer更新・削除、Reveal最小閲覧の全回帰Testが成功する。
-- 管理画面の認可、一覧、削除、BAN／解除、監査記録の全Testが成功する。
-- 自動品質Gateの結果を `validation-record.md` に記録する。
+- Home's Open filtering, ordering, and answer counts match the expected values in 100% of cases.
+- Viewer-specific presentation and the mutual exclusivity of the Prompt and the current user's Answer match in 100% of cases.
+- There are zero exposures of another user's secret value in `OPEN` or `CLOSED`.
+- All regression tests pass for existing Question management, Google authentication, the five WebMCP tools, Answer update/delete, and minimal Reveal browsing.
+- All tests pass for administration authorization, lists, deletion, ban/unban, and audit records.
+- Record the automated quality-gate results in `validation-record.md`.

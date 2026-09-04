@@ -2,9 +2,18 @@ import { answerError, type AnswerError } from '../domain/answer-submission';
 import { getWebMcpSupport } from './browser-support';
 import { parseQuestionIdInput } from './tool-input';
 
+/** Public WebMCP name for retrieving a question. */
 export const GET_QUESTION_TOOL_NAME = 'get_question';
 type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
+/**
+ * Executes a question lookup against the application endpoint.
+ * @param input - Untrusted tool input.
+ * @param signal - Abort signal supplied by the WebMCP runtime.
+ * @param fetchLike - Fetch implementation used for the request.
+ * @param endpoint - Question endpoint base path.
+ * @returns The parsed endpoint payload or a structured answer error.
+ */
 export async function executeGetQuestionTool(
   input: unknown,
   signal: AbortSignal | undefined,
@@ -25,6 +34,12 @@ export async function executeGetQuestionTool(
   }
 }
 
+/**
+ * Registers the question-reading WebMCP tool when browser support is available.
+ * @param documentLike - Document-like object that exposes the model context.
+ * @param fetchLike - Fetch implementation used by the tool.
+ * @returns The registration outcome.
+ */
 export async function registerGetQuestionTool(
   documentLike: Pick<Document, 'modelContext'>,
   fetchLike: FetchLike,
@@ -46,6 +61,10 @@ export async function registerGetQuestionTool(
   }
 }
 
+/**
+ * Creates the shared JSON schema for tools that accept a question ID.
+ * @returns A JSON schema requiring a non-empty `questionId` string.
+ */
 export function questionIdSchema() {
   return {
     type: 'object' as const,
@@ -55,6 +74,10 @@ export function questionIdSchema() {
   };
 }
 
+/**
+ * Creates the standard WebMCP registration-failure result.
+ * @returns A stable unavailable-browser result.
+ */
 export function registrationFailure(): { registered: false; message: string } {
   return {
     registered: false,

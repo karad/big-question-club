@@ -9,6 +9,8 @@ describe('Icon', () => {
     );
   });
   it('hides decorative icons from assistive technology', () => {
-    expect(renderToString(Icon({ name: 'clock' }))).toContain('aria-hidden="true"');
+    const html = renderToString(Icon({ name: 'clock' }));
+    expect(html).toContain('class="size-4 flex items-center"');
+    expect(html).toContain('aria-hidden="true"');
   });
 });
